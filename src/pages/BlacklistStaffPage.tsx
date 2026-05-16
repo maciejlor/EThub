@@ -14,7 +14,7 @@ import { getBlacklistStaff, addBlacklistStaff, removeBlacklistStaff, subscribeBl
 const STAFF_ROLES = ['Admin', 'Moderator', 'Event Manager', 'HR Manager', 'Driver Manager', 'Senior Staff', 'HR Staff', 'Event Staff'];
 
 export function BlacklistStaffPage() {
-  const [blacklistStaff, setBlacklistStaff] = useState<BlacklistStaffEntry[]>([]);
+  const [blacklistStaff, setBlacklistStaff] = useState<BlacklistStaffEntry[]>(getBlacklistStaff());
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [newStaff, setNewStaff] = useState({
     staffName: '',
@@ -26,8 +26,6 @@ export function BlacklistStaffPage() {
 
   // Load blacklist staff and subscribe to changes
   useEffect(() => {
-    setBlacklistStaff(getBlacklistStaff());
-    
     const unsubscribe = subscribeBlacklistStaffChanges(() => {
       setBlacklistStaff(getBlacklistStaff());
     });

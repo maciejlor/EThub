@@ -168,6 +168,32 @@ export async function fetchEts2LastPlayedUnix(steamId64: string): Promise<{
   }
 }
 
+export interface SteamPlayerSummary {
+  steamid: string;
+  personaname: string;
+  profileurl: string;
+  avatar: string;
+  avatarmedium: string;
+  avatarfull: string;
+  personastate: number;
+}
+
+/**
+ * Fetch player summary from Steam API
+ */
+export async function getSteamPlayerSummary(steamId64: string): Promise<SteamPlayerSummary | null> {
+  try {
+    const data = await steamJson<{ response?: { players?: SteamPlayerSummary[] } }>(
+      '/ISteamUser/GetPlayerSummaries/v0002/',
+      { steamids: steamId64 }
+    );
+    return data.response?.players?.[0] || null;
+  } catch (error) {
+    console.error('Failed to fetch Steam player summary:', error);
+    return null;
+  }
+}
+
 export function hasSteamApiKey(): boolean {
   return Boolean(steamApiKey());
 }

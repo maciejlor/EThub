@@ -9,7 +9,8 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
-import { UserCheckIcon, PlusIcon, TrashIcon, EditIcon, UserIcon, MailIcon, CalendarIcon, ShieldIcon } from 'lucide-react';
+import { UserCheckIcon, PlusIcon, TrashIcon, EditIcon, UserIcon, MailIcon, CalendarIcon, ShieldIcon, ExternalLinkIcon } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import { getUsers, addUser, updateUser, removeUser, subscribeUsersChanges, type UserEntry } from '@/lib/driver-storage';
 
 const ROLE_COLORS: Record<string, string> = {
@@ -29,7 +30,8 @@ const DEPARTMENT_COLORS: Record<string, string> = {
 };
 
 export function AllMembersPage() {
-  const [users, setUsers] = useState<UserEntry[]>([]);
+  const navigate = useNavigate();
+  const [users, setUsers] = useState<UserEntry[]>(getUsers());
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [editingUser, setEditingUser] = useState<UserEntry | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
@@ -55,8 +57,6 @@ export function AllMembersPage() {
   };
 
   useEffect(() => {
-    setUsers(getUsers());
-    
     const unsubscribe = subscribeUsersChanges(() => {
       setUsers(getUsers());
     });
@@ -333,16 +333,22 @@ export function AllMembersPage() {
                     <Card key={user.id} className='bg-card border-border'>
                       <CardHeader className='pb-3'>
                         <div className='flex items-center justify-between'>
-                          <div className='flex items-center gap-3'>
+                          <div 
+                            className='flex items-center gap-3 cursor-pointer hover:opacity-80 transition-opacity'
+                            onClick={() => navigate(`/profile/${user.id}`)}
+                          >
                             {user.avatar ? (
-                              <img src={user.avatar} alt={user.displayName} className='w-10 h-10 rounded-full' />
+                              <img src={user.avatar} alt={user.displayName} className='w-12 h-12 rounded-full border-2 border-primary/20 shadow-sm' />
                             ) : (
-                              <div className='w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center'>
-                                <UserIcon className='h-5 w-5 text-primary' />
+                              <div className='w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center border-2 border-primary/10'>
+                                <UserIcon className='h-6 w-6 text-primary' />
                               </div>
                             )}
                             <div>
-                              <CardTitle className='text-lg text-foreground'>{user.displayName}</CardTitle>
+                              <CardTitle className='text-lg text-foreground font-bold hover:text-primary transition-colors flex items-center gap-2'>
+                                {user.displayName}
+                                <ExternalLinkIcon className='h-3 w-3 opacity-0 group-hover:opacity-100' />
+                              </CardTitle>
                               <p className='text-sm text-muted-foreground'>@{user.username}</p>
                             </div>
                           </div>
@@ -489,16 +495,16 @@ export function AllMembersPage() {
                         </SelectContent>
                       </Select>
                     </div>
-                    <div className='flex items-center gap-2'>
+                    <div className='flex items-center gap-3 p-3 bg-background rounded-lg border border-border'>
                       <input
                         type='checkbox'
                         id='isActive'
                         checked={editingUser.isActive}
                         onChange={(e) => setEditingUser(prev => prev ? { ...prev, isActive: e.target.checked } : null)}
-                        className='rounded'
+                        className='h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary'
                       />
-                      <label htmlFor='isActive' className='text-sm font-medium text-foreground'>
-                        Active User
+                      <label htmlFor='isActive' className='text-sm font-semibold text-foreground cursor-pointer select-none'>
+                        Active Account
                       </label>
                     </div>
                     <div className='flex space-x-2'>

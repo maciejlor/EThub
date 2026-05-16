@@ -1,4 +1,3 @@
-
 export interface TruckersmpEvent {
   id: number;
   name: string;
@@ -71,17 +70,16 @@ export async function fetchUpcomingEvents(vtcId: number): Promise<UpcomingEvent[
   const eventsMap = new Map<number, UpcomingEvent>();
   try {
     const STORAGE_KEY = 'ethub_cached_events_v1';
-    let cachedEvents: UpcomingEvent[] = [];
     try {
       const cached = localStorage.getItem(STORAGE_KEY);
       if (cached) {
-        cachedEvents = JSON.parse(cached);
+        const cachedEvents: UpcomingEvent[] = JSON.parse(cached);
         for (const e of cachedEvents) {
           eventsMap.set(e.id, e);
         }
       }
-    } catch (e) {
-      console.warn('Failed to load cached events:', e);
+    } catch {
+      // Ignore cache errors
     }
 
     const [apiRes, htmlRes] = await Promise.allSettled([
@@ -93,7 +91,7 @@ export async function fetchUpcomingEvents(vtcId: number): Promise<UpcomingEvent[
     if (apiRes.status === 'fulfilled' && apiRes.value.ok) {
       const data = await apiRes.value.json();
       if (!data.error && Array.isArray(data.response)) {
-        data.response.forEach((found: any) => {
+        (data.response as TruckersmpEvent[]).forEach((found) => {
           let safeStartAt = found.start_at || found.meetup_at || '';
           if (safeStartAt && !safeStartAt.includes('T') && safeStartAt.includes(' ')) {
             safeStartAt = safeStartAt.replace(' ', 'T') + 'Z';
@@ -117,7 +115,7 @@ export async function fetchUpcomingEvents(vtcId: number): Promise<UpcomingEvent[
     if (htmlRes.status === 'fulfilled' && htmlRes.value.ok) {
       const data = await htmlRes.value.json();
       if (!data.error && Array.isArray(data.response)) {
-        data.response.forEach((found: any) => {
+        (data.response as TruckersmpEvent[]).forEach((found) => {
           const id = Number(found.id);
           
           let safeStartAt = found.start_at || found.meetup_at || '';
@@ -156,7 +154,9 @@ export async function fetchUpcomingEvents(vtcId: number): Promise<UpcomingEvent[
   try {
     const cached = localStorage.getItem('ethub_cached_events_v1');
     if (cached) return JSON.parse(cached);
-  } catch (e) {}
+  } catch {
+    // Ignore cache errors
+  }
 
   return [];
 }
@@ -199,7 +199,7 @@ export async function fetchTruckersmpEvent(id: number): Promise<TruckersmpEvent>
   }
 
   // 2. Final Fallback
-  return null as any;
+  return null as unknown as TruckersmpEvent;
 }
 
 export type TruckersmpAttendingEvent = UpcomingEvent;

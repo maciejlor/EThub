@@ -29,12 +29,11 @@ export function LoaRequestsPage() {
   const [reason, setReason] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
-  const [list, setList] = useState<LoaRequest[]>([]);
+  const [list, setList] = useState<LoaRequest[]>(getLoaRequests());
 
   const refresh = () => setList(getLoaRequests());
 
   useEffect(() => {
-    refresh();
     return subscribeLoaChanges(refresh);
   }, []);
 

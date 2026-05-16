@@ -18,7 +18,7 @@ const MONTHS = [
 ];
 
 export function EventInvitesPage() {
-  const [invites, setInvites] = useState<EventInviteEntry[]>([]);
+  const [invites, setInvites] = useState<EventInviteEntry[]>(getEventInvites());
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear().toString());
   const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth());
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
@@ -57,10 +57,6 @@ export function EventInvitesPage() {
 
   // Load invites and subscribe to changes
   useEffect(() => {
-    const loadedInvites = getEventInvites();
-    console.log('Loaded invites:', loadedInvites);
-    setInvites(loadedInvites);
-    
     const unsubscribe = subscribeEventInviteChanges(() => {
       const refreshedInvites = getEventInvites();
       console.log('Refreshed invites:', refreshedInvites);

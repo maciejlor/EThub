@@ -3,26 +3,48 @@ export interface TruckyJob {
   source_city_name: string;
   destination_city_name: string;
   cargo_name: string;
-  cargo_weight: number;
-  real_distance_km: number;
+  cargo_weight?: number;
+  cargo_mass?: number;
+  cargo_mass_t?: number;
+  real_distance_km?: number;
   planned_distance_km: number;
   status: string;
   source_company_name: string;
   destination_company_name: string;
+  
+  // Vehicle & Truck Info
   truck_name?: string;
-  vehicle_brand?: string;
+  vehicle_brand_name?: string;
   vehicle_model_name?: string;
+  vehicle_in_game_brand_id?: string;
+  vehicle_in_game_id?: string;
+  
+  // Trailer Info
   trailer_name?: string;
   trailer_body_type?: string;
+  owned_trailer_id?: number;
+  
+  // Dates & Times
   start_date?: string;
+  started_at?: string;
   created_at: string;
   stop_date?: string;
+  completed_at?: string;
+  canceled_at?: string;
+  ended_at?: string;
+  finished_at?: string;
+  
+  // Stats
   top_speed?: number;
   max_speed?: number;
   max_speed_kmh?: number;
   fuel_consumed?: number;
+  fuel_used_l?: number;
   fuel_used?: number;
   revenue?: number;
+  income?: number;
+  
+  // Objects
   driver?: {
     name: string;
     avatar_url?: string;
@@ -32,7 +54,9 @@ export interface TruckyJob {
       steam_username: string;
     };
   };
-  /** Present on some API payloads; surfaced in Job list banner UI */
+  vehicle?: Record<string, unknown>;
+  truck?: Record<string, unknown>;
+  
   game?: string;
   map?: string;
   dlc?: string | { name?: string };

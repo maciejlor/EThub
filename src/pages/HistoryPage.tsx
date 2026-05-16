@@ -41,7 +41,7 @@ const DEPARTMENT_COLORS: Record<string, string> = {
 };
 
 export function HistoryPage() {
-  const [history, setHistory] = useState<HistoryEntry[]>([]);
+  const [history, setHistory] = useState<HistoryEntry[]>(getHistory());
   const [searchTerm, setSearchTerm] = useState('');
   const [actionFilter, setActionFilter] = useState<string>('all');
   const [entityFilter, setEntityFilter] = useState<string>('all');
@@ -49,8 +49,6 @@ export function HistoryPage() {
   const [dateFilter, setDateFilter] = useState<string>('all');
 
   useEffect(() => {
-    setHistory(getHistory());
-    
     const unsubscribe = subscribeHistoryChanges(() => {
       setHistory(getHistory());
     });

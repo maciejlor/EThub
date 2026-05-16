@@ -65,14 +65,13 @@ export function LeftDriversPage() {
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
   const [saving, setSaving] = useState(false);
-  const [list, setList] = useState<LeftDriverEntry[]>([]);
+  const [list, setList] = useState<LeftDriverEntry[]>(getLeftDrivers());
   const [selectedYear, setSelectedYear] = useState<string>(new Date().getFullYear().toString());
   const [selectedMonth, setSelectedMonth] = useState<string>(months[new Date().getMonth()]);
 
   const refreshList = () => setList(getLeftDrivers());
 
   useEffect(() => {
-    refreshList();
     return subscribeLeftDriverChanges(refreshList);
   }, []);
 

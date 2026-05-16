@@ -136,42 +136,50 @@ function ConvoyDialog({ open, onClose, onSave, year, initial }: {
   open: boolean; onClose: () => void; onSave: (c: Convoy) => void; year: number; initial?: Convoy | null;
 }) {
   const isEdit = !!initial;
-  const [stage, setStage] = useState<1|2>(1);
-  const [month, setMonth] = useState('');
-  const [tmpLink, setTmpLink] = useState('');
+  const [stage, setStage] = useState<1 | 2>(1);
+  const [month, setMonth] = useState(initial ? String(initial.month) : '');
+  const [tmpLink, setTmpLink] = useState(initial?.tmpLink ?? '');
   const [tmpLoading, setTmpLoading] = useState(false);
-  const [tmpName, setTmpName] = useState('');
-  const [tmpBanner, setTmpBanner] = useState('');
-  const [tmpDate, setTmpDate] = useState('');
-  const [evidence, setEvidence] = useState('');
-  const [cc, setCc] = useState<Member[]>([{ ...EMPTY_MEMBER }]);
-  const [drivers, setDrivers] = useState<Member[]>([{ ...EMPTY_MEMBER }]);
-
-  useEffect(() => {
-    if (!open) return;
-    if (initial) {
-      setMonth(String(initial.month)); setTmpLink(initial.tmpLink);
-      setTmpName(initial.name); setTmpBanner(initial.tmpBanner ?? '');
-      setTmpDate(initial.tmpDate ?? ''); setEvidence(initial.evidence ?? '');
-      setCc(initial.convoyControl.length ? initial.convoyControl.map(m => ({ ...m })) : [{ ...EMPTY_MEMBER }]);
-      setDrivers(initial.drivers.length ? initial.drivers.map(m => ({ ...m })) : [{ ...EMPTY_MEMBER }]);
-      setStage(1);
-    } else {
-      setStage(1); setMonth(''); setTmpLink(''); setTmpName(''); setTmpBanner(''); setTmpDate(''); setEvidence('');
-      setCc([{ ...EMPTY_MEMBER }]); setDrivers([{ ...EMPTY_MEMBER }]);
-    }
-  }, [open, initial]);
+  const [tmpName, setTmpName] = useState(initial?.name ?? '');
+  const [tmpBanner, setTmpBanner] = useState(initial?.tmpBanner ?? '');
+  const [tmpDate, setTmpDate] = useState(initial?.tmpDate ?? '');
+  const [evidence, setEvidence] = useState(initial?.evidence ?? '');
+  const [cc, setCc] = useState<Member[]>(
+    initial?.convoyControl.length 
+      ? initial.convoyControl.map(m => ({ ...m })) 
+      : [{ ...EMPTY_MEMBER }]
+  );
+  const [drivers, setDrivers] = useState<Member[]>(
+    initial?.drivers.length 
+      ? initial.drivers.map(m => ({ ...m })) 
+      : [{ ...EMPTY_MEMBER }]
+  );
 
   // Auto-fetch TMP event when link changes
   useEffect(() => {
     const id = extractTmpEventId(tmpLink);
     if (!id) return;
-    setTmpLoading(true);
-    fetchTmpEvent(id).then(data => {
-      if (data) { setTmpName(data.name); setTmpBanner(data.banner); setTmpDate(data.date); }
-      setTmpLoading(false);
-    });
-  }, [tmpLink]);
+    
+    // Check if we already have this data (e.g. from initial)
+    if (initial && tmpLink === initial.tmpLink && tmpName === initial.name) return;
+
+    let active = true;
+    const load = async () => {
+      setTmpLoading(true);
+      try {
+        const data = await fetchTmpEvent(id);
+        if (active && data) {
+          setTmpName(data.name);
+          setTmpBanner(data.banner);
+          setTmpDate(data.date);
+        }
+      } finally {
+        if (active) setTmpLoading(false);
+      }
+    };
+    load();
+    return () => { active = false; };
+  }, [tmpLink, initial, tmpName]);
 
   const handleSave = () => {
     onSave({
@@ -406,7 +414,7 @@ export function ConvoyAttendancePage() {
           </div>
         </main>
 
-        <ConvoyDialog open={dialogOpen} onClose={closeDialog} onSave={handleSave} year={year} initial={editTarget} />
+        {dialogOpen && <ConvoyDialog open={dialogOpen} onClose={closeDialog} onSave={handleSave} year={year} initial={editTarget} />}
         <ConvoyDetailDialog convoy={detailTarget} open={!!detailTarget} onClose={() => setDetailTarget(null)} />
       </SidebarInset>
     </SidebarProvider>

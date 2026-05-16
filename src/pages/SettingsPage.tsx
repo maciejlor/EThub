@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { SidebarInset, SidebarProvider } from '@/components/ui/sidebar';
 import { AppSidebar } from '@/components/AppSidebar';
@@ -19,14 +19,14 @@ import {
   LinkIcon,
   UnlinkIcon,
   MessageCircleIcon,
-  Gamepad2Icon
+  Gamepad2Icon,
+  ImageIcon
 } from 'lucide-react';
 import { 
   getCurrentUser, 
   updateUserSettings, 
-  connectDiscord, 
-  connectSteam, 
   updateAvatar, 
+  updateCoverImage,
   getUserRank,
   getNextRank,
   setCurrentUser,
@@ -35,112 +35,101 @@ import {
   RANKS,
   type UserEntry 
 } from '@/lib/driver-storage';
+import { generateDiscordOAuthUrl, generateSteamOAuthUrl } from '@/lib/discord-auth';
 
 export function SettingsPage() {
   const navigate = useNavigate();
-  const [user, setUser] = useState<UserEntry | null>(null);
+  const [user, setUser] = useState<UserEntry | null>(() => {
+    let currentUser = getCurrentUser();
+    
+    // Create test users if none exist
+    if (!currentUser) {
+      const users = getUsers();
+      if (users.length === 0) {
+        // Create test users with different roles
+        const testUsers = [
+          {
+            username: 'admin_user',
+            email: 'admin@ethub.com',
+            displayName: 'Admin User',
+            role: 'Admin' as const,
+            department: 'Admin' as const,
+            isActive: true,
+            createdBy: 'System'
+          },
+          {
+            username: 'hr_manager',
+            email: 'hr@ethub.com',
+            displayName: 'HR Manager',
+            role: 'HR Manager' as const,
+            department: 'HR' as const,
+            isActive: true,
+            createdBy: 'System'
+          },
+          {
+            username: 'event_manager',
+            email: 'events@ethub.com',
+            displayName: 'Event Manager',
+            role: 'Event Manager' as const,
+            department: 'Event' as const,
+            isActive: true,
+            createdBy: 'System'
+          },
+          {
+            username: 'assistant_user',
+            email: 'assistant@ethub.com',
+            displayName: 'HR Staff',
+            role: 'HR Staff' as const,
+            department: 'HR' as const,
+            isActive: true,
+            createdBy: 'System'
+          },
+          {
+            username: 'staff_user',
+            email: 'staff@ethub.com',
+            displayName: 'Event Staff',
+            role: 'Event Staff' as const,
+            department: 'Event' as const,
+            isActive: true,
+            createdBy: 'System'
+          },
+          {
+            username: 'driver_user',
+            email: 'driver@ethub.com',
+            displayName: 'Driver',
+            role: 'Driver' as const,
+            department: 'Event' as const,
+            isActive: true,
+            createdBy: 'System'
+          }
+        ];
+
+        // Add all test users and get the created user objects
+        const createdUsers = testUsers.map(userData => addUser(userData));
+
+        // Set the first user as current
+        setCurrentUser(createdUsers[0].id);
+        currentUser = createdUsers[0];
+      } else {
+        // Use the first available user
+        setCurrentUser(users[0].id);
+        currentUser = users[0];
+      }
+    }
+    
+    return currentUser;
+  });
+
   const [isAvatarDialogOpen, setIsAvatarDialogOpen] = useState(false);
+  const [isCoverDialogOpen, setIsCoverDialogOpen] = useState(false);
   const [isUsernameDialogOpen, setIsUsernameDialogOpen] = useState(false);
-  const [isDiscordDialogOpen, setIsDiscordDialogOpen] = useState(false);
-  const [isSteamDialogOpen, setIsSteamDialogOpen] = useState(false);
   const [isEmailDialogOpen, setIsEmailDialogOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
 
   const [newAvatar, setNewAvatar] = useState('');
-  const [newUsername, setNewUsername] = useState('');
-  const [newEmail, setNewEmail] = useState('');
-  const [discordInviteCode, setDiscordInviteCode] = useState('');
-  const [steamProfileUrl, setSteamProfileUrl] = useState('');
-
-  useEffect(() => {
-    const initializeUser = () => {
-      let currentUser = getCurrentUser();
-      
-      // Create test users if none exist
-      if (!currentUser) {
-        const users = getUsers();
-        if (users.length === 0) {
-          // Create test users with different roles
-          const testUsers = [
-            {
-              username: 'admin_user',
-              email: 'admin@ethub.com',
-              displayName: 'Admin User',
-              role: 'Admin' as const,
-              department: 'Admin' as const,
-              isActive: true,
-              createdBy: 'System'
-            },
-            {
-              username: 'hr_manager',
-              email: 'hr@ethub.com',
-              displayName: 'HR Manager',
-              role: 'HR Manager' as const,
-              department: 'HR' as const,
-              isActive: true,
-              createdBy: 'System'
-            },
-            {
-              username: 'event_manager',
-              email: 'events@ethub.com',
-              displayName: 'Event Manager',
-              role: 'Event Manager' as const,
-              department: 'Event' as const,
-              isActive: true,
-              createdBy: 'System'
-            },
-            {
-              username: 'assistant_user',
-              email: 'assistant@ethub.com',
-              displayName: 'HR Staff',
-              role: 'HR Staff' as const,
-              department: 'HR' as const,
-              isActive: true,
-              createdBy: 'System'
-            },
-            {
-              username: 'staff_user',
-              email: 'staff@ethub.com',
-              displayName: 'Event Staff',
-              role: 'Event Staff' as const,
-              department: 'Event' as const,
-              isActive: true,
-              createdBy: 'System'
-            },
-            {
-              username: 'driver_user',
-              email: 'driver@ethub.com',
-              displayName: 'Driver',
-              role: 'Driver' as const,
-              department: 'Event' as const,
-              isActive: true,
-              createdBy: 'System'
-            }
-          ];
-
-          // Add all test users and get the created user objects
-          const createdUsers = testUsers.map(userData => addUser(userData));
-
-          // Set the first user as current
-          setCurrentUser(createdUsers[0].id);
-          currentUser = createdUsers[0];
-        } else {
-          // Use the first available user
-          setCurrentUser(users[0].id);
-          currentUser = users[0];
-        }
-      }
-      
-      return currentUser;
-    };
-
-    const currentUser = initializeUser();
-    setUser(currentUser);
-    if (currentUser) {
-      setNewUsername(currentUser.username);
-      setNewEmail(currentUser.email);
-    }
-  }, []);
+  const [newCover, setNewCover] = useState('');
+  const [newUsername, setNewUsername] = useState(user?.username || '');
+  const [newEmail, setNewEmail] = useState(user?.email || '');
 
   const handleAvatarUpdate = async () => {
     if (!user || !newAvatar.trim()) return;
@@ -156,6 +145,54 @@ export function SettingsPage() {
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const handleAvatarFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !user) return;
+
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      const base64String = reader.result as string;
+      const success = updateAvatar(user.id, base64String);
+      if (success) {
+        setUser(prev => prev ? { ...prev, avatar: base64String } : null);
+        setIsAvatarDialogOpen(false);
+      }
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleCoverUpdate = async () => {
+    if (!user || !newCover.trim()) return;
+    
+    setIsLoading(true);
+    try {
+      const success = updateCoverImage(user.id, newCover.trim());
+      if (success) {
+        setUser(prev => prev ? { ...prev, coverImage: newCover.trim() } : null);
+        setNewCover('');
+        setIsCoverDialogOpen(false);
+      }
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleCoverFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !user) return;
+
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      const base64String = reader.result as string;
+      const success = updateCoverImage(user.id, base64String);
+      if (success) {
+        setUser(prev => prev ? { ...prev, coverImage: base64String } : null);
+        setIsCoverDialogOpen(false);
+      }
+    };
+    reader.readAsDataURL(file);
   };
 
   const handleUsernameUpdate = () => {
@@ -182,15 +219,7 @@ export function SettingsPage() {
   };
 
   const handleDiscordConnect = () => {
-    if (!user || !discordInviteCode.trim()) return;
-    
-    // Simulate Discord OAuth connection
-    const success = connectDiscord(user.id, 'discord_user_id', discordInviteCode.trim());
-    if (success) {
-      setUser(prev => prev ? { ...prev, discordUsername: discordInviteCode.trim() } : null);
-      setDiscordInviteCode('');
-      setIsDiscordDialogOpen(false);
-    }
+    window.location.href = generateDiscordOAuthUrl();
   };
 
   const handleDiscordDisconnect = () => {
@@ -203,15 +232,7 @@ export function SettingsPage() {
   };
 
   const handleSteamConnect = () => {
-    if (!user || !steamProfileUrl.trim()) return;
-    
-    // Simulate Steam connection
-    const success = connectSteam(user.id, 'steam_user_id', steamProfileUrl.trim());
-    if (success) {
-      setUser(prev => prev ? { ...prev, steamUsername: steamProfileUrl.trim() } : null);
-      setSteamProfileUrl('');
-      setIsSteamDialogOpen(false);
-    }
+    window.location.href = generateSteamOAuthUrl();
   };
 
   const handleSteamDisconnect = () => {
@@ -326,12 +347,12 @@ export function SettingsPage() {
                       </Button>
                     </div>
                     <div className='flex-1'>
-                      <h3 className='text-lg font-semibold text-foreground'>{user.displayName}</h3>
+                      <h3 className='text-xl font-bold text-white'>{user.displayName}</h3>
                       <p className='text-sm text-muted-foreground'>@{user.username}</p>
                       <Badge className={currentRank ? 'mt-2' : ''} style={{ 
-                        backgroundColor: currentRank?.color + '20', 
+                        backgroundColor: (currentRank?.color || '#94a3b8') + '20', 
                         color: currentRank?.color,
-                        borderColor: currentRank?.color + '30'
+                        borderColor: (currentRank?.color || '#94a3b8') + '30'
                       }}>
                         {currentRank?.icon} {currentRank?.title || 'No Rank'}
                       </Badge>
@@ -345,7 +366,7 @@ export function SettingsPage() {
                   <div className='flex items-center justify-between'>
                     <div>
                       <h4 className='font-medium text-foreground'>Username</h4>
-                      <p className='text-sm text-muted-foreground'>@{user.username}</p>
+                      <p className='text-sm font-bold text-white'>@{user.username}</p>
                     </div>
                     <Dialog open={isUsernameDialogOpen} onOpenChange={setIsUsernameDialogOpen}>
                       <DialogTrigger asChild>
@@ -359,6 +380,34 @@ export function SettingsPage() {
                           <DialogTitle className='text-foreground'>Change Username</DialogTitle>
                         </DialogHeader>
                         <div className='space-y-4'>
+                          <div>
+                            <label className='text-sm font-medium text-foreground block mb-2'>Avatar URL</label>
+                            <Input
+                              value={newAvatar}
+                              onChange={(e) => setNewAvatar(e.target.value)}
+                              placeholder='Enter avatar image URL'
+                              className='bg-background border-border'
+                            />
+                          </div>
+                          <div className='relative'>
+                            <div className='absolute inset-0 flex items-center'>
+                              <span className='w-full border-t border-border' />
+                            </div>
+                            <div className='relative flex justify-center text-xs uppercase'>
+                              <span className='bg-card px-2 text-muted-foreground'>Or upload file</span>
+                            </div>
+                          </div>
+                          <div>
+                            <Input
+                              type='file'
+                              accept='image/*'
+                              onChange={handleAvatarFileUpload}
+                              className='bg-background border-border cursor-pointer'
+                            />
+                          </div>
+                          <div className='text-xs text-muted-foreground'>
+                            Upload a photo from your device or enter a URL.
+                          </div>
                           <div>
                             <label className='text-sm font-medium text-foreground block mb-2'>New Username</label>
                             <Input
@@ -419,6 +468,72 @@ export function SettingsPage() {
                               Update Email
                             </Button>
                             <Button onClick={() => setIsEmailDialogOpen(false)} variant='outline' className='flex-1 bg-background border-border'>
+                              Cancel
+                            </Button>
+                          </div>
+                        </div>
+                      </DialogContent>
+                    </Dialog>
+                  </div>
+
+                  <Separator />
+
+                  {/* Cover Image Section */}
+                  <div className='flex items-center justify-between'>
+                    <div>
+                      <h4 className='font-medium text-foreground'>Profile Banner</h4>
+                      <p className='text-sm text-muted-foreground'>Customize your profile header image</p>
+                      {user.coverImage && (
+                        <div className='mt-2 h-16 w-32 rounded border border-border overflow-hidden'>
+                          <img src={user.coverImage} className='w-full h-full object-cover' />
+                        </div>
+                      )}
+                    </div>
+                    <Dialog open={isCoverDialogOpen} onOpenChange={setIsCoverDialogOpen}>
+                      <DialogTrigger asChild>
+                        <Button variant='outline' className='bg-background border-border'>
+                          <ImageIcon className='mr-2 h-4 w-4' />
+                          Change Banner
+                        </Button>
+                      </DialogTrigger>
+                      <DialogContent className='bg-card border-border'>
+                        <DialogHeader>
+                          <DialogTitle className='text-foreground'>Update Profile Banner</DialogTitle>
+                        </DialogHeader>
+                        <div className='space-y-4'>
+                          <div>
+                            <label className='text-sm font-medium text-foreground block mb-2'>Banner Image URL</label>
+                            <Input
+                              value={newCover}
+                              onChange={(e) => setNewCover(e.target.value)}
+                              placeholder='https://images.unsplash.com/...'
+                              className='bg-background border-border'
+                            />
+                          </div>
+                          <div className='relative'>
+                            <div className='absolute inset-0 flex items-center'>
+                              <span className='w-full border-t border-border' />
+                            </div>
+                            <div className='relative flex justify-center text-xs uppercase'>
+                              <span className='bg-card px-2 text-muted-foreground'>Or upload file</span>
+                            </div>
+                          </div>
+                          <div>
+                            <Input
+                              type='file'
+                              accept='image/*'
+                              onChange={handleCoverFileUpload}
+                              className='bg-background border-border cursor-pointer'
+                            />
+                          </div>
+                          <p className='text-xs text-muted-foreground'>
+                            Recommended size: 1724 x 405 pixels for best display.
+                          </p>
+                          <div className='flex space-x-2'>
+                            <Button onClick={handleCoverUpdate} disabled={isLoading} className='flex-1 bg-primary text-primary-foreground hover:bg-primary/90'>
+                              {isLoading ? 'Updating...' : 'Save Banner'}
+                            </Button>
+                            <Button onClick={() => setIsCoverDialogOpen(false)} variant='outline' className='flex-1 bg-background border-border'>
                               Cancel
                             </Button>
                           </div>
@@ -534,15 +649,21 @@ export function SettingsPage() {
               </CardHeader>
               <CardContent className='space-y-4'>
                 {/* Discord */}
-                <div className='flex items-center justify-between p-4 border border-border rounded-lg'>
+                <div className='flex items-center justify-between p-4 border border-border rounded-lg bg-accent/5'>
                   <div className='flex items-center gap-3'>
-                    <MessageCircleIcon className='h-8 w-8 text-[#5865F2]' />
+                    <div className='relative'>
+                      {user.avatar && user.discordUsername ? (
+                        <img src={user.avatar} className='h-8 w-8 rounded-full' />
+                      ) : (
+                        <MessageCircleIcon className='h-8 w-8 text-[#5865F2]' />
+                      )}
+                    </div>
                     <div>
                       <h4 className='font-medium text-foreground'>Discord</h4>
                       {user.discordUsername ? (
-                        <p className='text-sm text-muted-foreground'>Connected as {user.discordUsername}</p>
+                        <p className='text-sm font-bold text-white'>Connected as {user.discordUsername}</p>
                       ) : (
-                        <p className='text-sm text-muted-foreground'>Not connected</p>
+                        <p className='text-sm text-muted-foreground'>Sign into EThub using your Discord account</p>
                       )}
                     </div>
                   </div>
@@ -550,57 +671,38 @@ export function SettingsPage() {
                     <Button 
                       variant='destructive' 
                       onClick={handleDiscordDisconnect}
-                      className='bg-destructive text-destructive-foreground hover:bg-destructive/90'
+                      className='bg-destructive/10 text-destructive hover:bg-destructive/20 border-destructive/20'
                     >
                       <UnlinkIcon className='mr-2 h-4 w-4' />
                       Disconnect
                     </Button>
                   ) : (
-                    <Dialog open={isDiscordDialogOpen} onOpenChange={setIsDiscordDialogOpen}>
-                      <DialogTrigger asChild>
-                        <Button className='bg-[#5865F2] text-white hover:bg-[#4752C4]'>
-                          <MessageCircleIcon className='mr-2 h-4 w-4' />
-                          Connect
-                        </Button>
-                      </DialogTrigger>
-                      <DialogContent className='bg-card border-border'>
-                        <DialogHeader>
-                          <DialogTitle className='text-foreground'>Connect Discord</DialogTitle>
-                        </DialogHeader>
-                        <div className='space-y-4'>
-                          <div>
-                            <label className='text-sm font-medium text-foreground block mb-2'>Discord Username</label>
-                            <Input
-                              value={discordInviteCode}
-                              onChange={(e) => setDiscordInviteCode(e.target.value)}
-                              placeholder='Enter your Discord username'
-                              className='bg-background border-border'
-                            />
-                          </div>
-                          <div className='flex space-x-2'>
-                            <Button onClick={handleDiscordConnect} className='flex-1 bg-[#5865F2] text-white hover:bg-[#4752C4]'>
-                              Connect Discord
-                            </Button>
-                            <Button onClick={() => setIsDiscordDialogOpen(false)} variant='outline' className='flex-1 bg-background border-border'>
-                              Cancel
-                            </Button>
-                          </div>
-                        </div>
-                      </DialogContent>
-                    </Dialog>
+                    <Button 
+                      onClick={handleDiscordConnect}
+                      className='bg-[#5865F2] text-white hover:bg-[#4752C4]'
+                    >
+                      <MessageCircleIcon className='mr-2 h-4 w-4' />
+                      Connect Discord
+                    </Button>
                   )}
                 </div>
 
                 {/* Steam */}
-                <div className='flex items-center justify-between p-4 border border-border rounded-lg'>
+                <div className='flex items-center justify-between p-4 border border-border rounded-lg bg-accent/5'>
                   <div className='flex items-center gap-3'>
-                    <Gamepad2Icon className='h-8 w-8 text-[#1B2838]' />
+                    <div className='relative'>
+                      {user.avatar && user.steamUsername ? (
+                        <img src={user.avatar} className='h-8 w-8 rounded-full' />
+                      ) : (
+                        <Gamepad2Icon className='h-8 w-8 text-[#1B2838] dark:text-white' />
+                      )}
+                    </div>
                     <div>
                       <h4 className='font-medium text-foreground'>Steam</h4>
                       {user.steamUsername ? (
-                        <p className='text-sm text-muted-foreground'>Connected as {user.steamUsername}</p>
+                        <p className='text-sm font-bold text-white'>Connected as {user.steamUsername}</p>
                       ) : (
-                        <p className='text-sm text-muted-foreground'>Not connected</p>
+                        <p className='text-sm text-muted-foreground'>Sign into EThub using your Steam account</p>
                       )}
                     </div>
                   </div>
@@ -608,44 +710,19 @@ export function SettingsPage() {
                     <Button 
                       variant='destructive' 
                       onClick={handleSteamDisconnect}
-                      className='bg-destructive text-destructive-foreground hover:bg-destructive/90'
+                      className='bg-destructive/10 text-destructive hover:bg-destructive/20 border-destructive/20'
                     >
                       <UnlinkIcon className='mr-2 h-4 w-4' />
                       Disconnect
                     </Button>
                   ) : (
-                    <Dialog open={isSteamDialogOpen} onOpenChange={setIsSteamDialogOpen}>
-                      <DialogTrigger asChild>
-                        <Button className='bg-[#1B2838] text-white hover:bg-[#2A3F5F]'>
-                          <Gamepad2Icon className='mr-2 h-4 w-4' />
-                          Connect
-                        </Button>
-                      </DialogTrigger>
-                      <DialogContent className='bg-card border-border'>
-                        <DialogHeader>
-                          <DialogTitle className='text-foreground'>Connect Steam</DialogTitle>
-                        </DialogHeader>
-                        <div className='space-y-4'>
-                          <div>
-                            <label className='text-sm font-medium text-foreground block mb-2'>Steam Profile URL</label>
-                            <Input
-                              value={steamProfileUrl}
-                              onChange={(e) => setSteamProfileUrl(e.target.value)}
-                              placeholder='https://steamcommunity.com/id/username'
-                              className='bg-background border-border'
-                            />
-                          </div>
-                          <div className='flex space-x-2'>
-                            <Button onClick={handleSteamConnect} className='flex-1 bg-[#1B2838] text-white hover:bg-[#2A3F5F]'>
-                              Connect Steam
-                            </Button>
-                            <Button onClick={() => setIsSteamDialogOpen(false)} variant='outline' className='flex-1 bg-background border-border'>
-                              Cancel
-                            </Button>
-                          </div>
-                        </div>
-                      </DialogContent>
-                    </Dialog>
+                    <Button 
+                      onClick={handleSteamConnect}
+                      className='bg-[#1B2838] text-white hover:bg-[#2A3F5F]'
+                    >
+                      <Gamepad2Icon className='mr-2 h-4 w-4' />
+                      Connect Steam
+                    </Button>
                   )}
                 </div>
               </CardContent>

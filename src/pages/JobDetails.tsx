@@ -44,16 +44,6 @@ export function JobDetailsPage() {
     loadJob();
   }, [id]);
 
-  const formatTimelineDate = (dateStr: string) => {
-    const d = new Date(dateStr);
-    const day = String(d.getDate()).padStart(2, '0');
-    const month = String(d.getMonth() + 1).padStart(2, '0');
-    const year = d.getFullYear();
-    const hours = String(d.getHours()).padStart(2, '0');
-    const mins = String(d.getMinutes()).padStart(2, '0');
-    const secs = String(d.getSeconds()).padStart(2, '0');
-    return `${day}.${month}.${year}, ${hours}:${mins}:${secs}`;
-  };
 
   const formatDateUTC = (dateStr?: string) => {
     if (!dateStr) return 'TBD';
@@ -67,11 +57,11 @@ export function JobDetailsPage() {
     return `${day}.${month}.${year}, ${hours}:${mins} (UTC)`;
   };
 
-  const formatTruckName = (j: any) => {
+  const formatTruckName = (j: TruckyJob) => {
     if (!j) return 'Standard Truck';
-    const v = j.vehicle || j.truck || j.vehicle_info || j.truck_info;
-    let b = j.vehicle_brand || j.truck_brand || v?.brand || v?.make || v?.brand_name || v?.name;
-    let m = j.vehicle_model_name || j.truck_model || v?.model || v?.model_name || v?.name || j.truck_name;
+    const v = j.vehicle || j.truck;
+    let b = j.vehicle_brand_name || v?.brand || v?.make || v?.brand_name || v?.name;
+    const m = j.vehicle_model_name || v?.model || v?.model_name || v?.name || j.truck_name;
 
     if (!b && (String(m).toLowerCase() === 's')) b = 'Scania';
     if (!b && (String(m).toLowerCase().includes('fh'))) b = 'Volvo';
@@ -85,13 +75,13 @@ export function JobDetailsPage() {
         : `${brandStr} ${modelStr}`;
       return combined.split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
     }
-    if (j.truck_name) return j.truck_name.replace(/[._]/g, ' ').split(' ').map((w: any) => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
+    if (j.truck_name) return j.truck_name.replace(/[._]/g, ' ').split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
     return b || m || 'Standard Truck';
   };
 
   const calculateDuration = (start?: string, end?: string) => {
-    const sStr = start || job?.start_date || job?.created_at;
-    const eStr = end || job?.stop_date || (job as any).ended_at || (job as any).finished_at;
+    const sStr = start || job?.start_date || job?.started_at || job?.created_at;
+    const eStr = end || job?.stop_date || job?.completed_at || job?.finished_at || job?.ended_at;
     
     if (!sStr || !eStr) return null;
     const s = new Date(sStr);
@@ -163,7 +153,7 @@ export function JobDetailsPage() {
                           <PackageIcon className='size-3' /> Cargo
                         </p>
                         <div className='text-lg font-semibold'>{job.cargo_name}</div>
-                        <p className='text-sm text-muted-foreground mt-1'>Weight: {Math.round(job.cargo_weight / 1000)} tons</p>
+                        <p className='text-sm text-muted-foreground mt-1'>Weight: {Math.round((job.cargo_weight || job.cargo_mass || job.cargo_mass_t || 0) / 1000)} tons</p>
                       </div>
                     </div>
 
@@ -226,9 +216,9 @@ export function JobDetailsPage() {
                           <div className='flex items-center justify-between mb-1'>
                             <h4 className='font-bold text-sm text-red-500'>Cancelled</h4>
                             <div className='flex flex-col'>
-                              <span className='text-xs text-red-500/70'>{formatDateUTC(job.stop_date || (job as any).ended_at || (job as any).finished_at || job.created_at)}</span>
-                              {(job.stop_date || (job as any).ended_at) && (
-                                <span className='text-[10px] text-muted-foreground mt-0.5'>Duration: {calculateDuration(job.start_date, job.stop_date || (job as any).ended_at)}</span>
+                              <span className='text-xs text-red-500/70'>{formatDateUTC(job.stop_date || job.canceled_at || job.ended_at || job.finished_at || job.created_at)}</span>
+                              {(job.stop_date || job.canceled_at || job.ended_at) && (
+                                <span className='text-[10px] text-muted-foreground mt-0.5'>Duration: {calculateDuration(job.start_date || job.started_at, job.stop_date || job.canceled_at || job.ended_at)}</span>
                               )}
                             </div>
                           </div>
@@ -244,9 +234,9 @@ export function JobDetailsPage() {
                           <div className='flex items-center justify-between mb-1'>
                             <h4 className='font-bold text-sm text-emerald-500'>Delivered</h4>
                             <div className='flex flex-col'>
-                              <span className='text-xs text-emerald-500/70'>{formatDateUTC(job.stop_date || (job as any).ended_at || (job as any).finished_at || job.created_at)}</span>
-                              {(job.stop_date || (job as any).ended_at) && (
-                                <span className='text-[10px] text-muted-foreground mt-0.5'>Duration: {calculateDuration(job.start_date, job.stop_date || (job as any).ended_at)}</span>
+                               <span className='text-xs text-emerald-500/70'>{formatDateUTC(job.stop_date || job.completed_at || job.finished_at || job.ended_at || job.created_at)}</span>
+                              {(job.stop_date || job.completed_at || job.finished_at || job.ended_at) && (
+                                <span className='text-[10px] text-muted-foreground mt-0.5'>Duration: {calculateDuration(job.start_date || job.started_at, job.stop_date || job.completed_at || job.finished_at || job.ended_at)}</span>
                               )}
                             </div>
                           </div>
@@ -284,11 +274,11 @@ export function JobDetailsPage() {
                   <div className='space-y-4'>
                     <div className='flex justify-between text-sm'>
                       <span className='text-muted-foreground'>Top Speed</span>
-                      <span className='font-bold'>{job.top_speed || (job as any).max_speed_kmh || (job as any).max_speed || 0} km/h</span>
+                      <span className='font-bold'>{job.top_speed || job.max_speed_kmh || job.max_speed || 0} km/h</span>
                     </div>
                     <div className='flex justify-between text-sm'>
                       <span className='text-muted-foreground'>Fuel Used</span>
-                      <span className='font-bold'>{Math.round(job.fuel_consumed || (job as any).fuel_used_l || (job as any).fuel_used || 0)} L</span>
+                      <span className='font-bold'>{Math.round(job.fuel_consumed || job.fuel_used_l || job.fuel_used || 0)} L</span>
                     </div>
                     <div className='flex justify-between text-sm'>
                       <span className='text-muted-foreground'>Revenue</span>
@@ -297,17 +287,6 @@ export function JobDetailsPage() {
                   </div>
                 </div>
 
-                {/* Debug info - only visible in dev */}
-                <div className='bg-background rounded-2xl border p-6 shadow-sm opacity-20 hover:opacity-100 transition-opacity'>
-                  <h3 className='text-[10px] font-bold uppercase text-muted-foreground mb-2'>Debug Keys</h3>
-                  <div className='text-[10px] font-mono break-all text-muted-foreground'>
-                    {Object.keys(job).join(', ')}
-                    <br />
-                    Vehicle Keys: {job.vehicle ? Object.keys(job.vehicle).join(', ') : 'No Vehicle Object'}
-                    <br />
-                    Truck Keys: {job.truck ? Object.keys(job.truck).join(', ') : 'No Truck Object'}
-                  </div>
-                </div>
               </div>
             </div>
           </Page>

@@ -41,12 +41,11 @@ export function BlacklistDriverPage() {
   const [reasons, setReasons] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
-  const [list, setList] = useState<BlacklistDriverEntry[]>([]);
+  const [list, setList] = useState<BlacklistDriverEntry[]>(getBlacklistDrivers());
 
   const refresh = () => setList(getBlacklistDriverEntries());
 
   useEffect(() => {
-    refresh();
     return subscribeBlacklistDriverChanges(refresh);
   }, []);
 

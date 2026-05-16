@@ -31,7 +31,7 @@ export function LoginPage() {
       } else {
         setError('Login failed. Please try again.');
       }
-    } catch (err) {
+    } catch {
       setError('An error occurred during login');
     } finally {
       setIsLoading(false);

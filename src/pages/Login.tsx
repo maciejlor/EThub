@@ -25,7 +25,7 @@ export function LoginPage() {
       const discordAuthUrl = `https://discord.com/api/oauth2/authorize?client_id=${clientId}&redirect_uri=${redirectUri}&response_type=code&scope=${scope}`;
       
       window.location.href = discordAuthUrl;
-    } catch (err) {
+    } catch {
       setError('Discord login failed. Please try again.');
       setIsLoading(false);
     }

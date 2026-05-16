@@ -11,7 +11,7 @@ import { ShieldXIcon, PlusIcon, TrashIcon } from 'lucide-react';
 import { getBlacklistVtcs, addBlacklistVtc, removeBlacklistVtc, subscribeBlacklistVtcChanges, type BlacklistVtcEntry } from '@/lib/driver-storage';
 
 export function BlacklistVTCsPage() {
-  const [blacklistVtcs, setBlacklistVtcs] = useState<BlacklistVtcEntry[]>([]);
+  const [blacklistVtcs, setBlacklistVtcs] = useState<BlacklistVtcEntry[]>(getBlacklistVtcs());
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [newVtc, setNewVtc] = useState({
     vtcName: '',
@@ -22,8 +22,6 @@ export function BlacklistVTCsPage() {
 
   // Load blacklist VTCs and subscribe to changes
   useEffect(() => {
-    setBlacklistVtcs(getBlacklistVtcs());
-    
     const unsubscribe = subscribeBlacklistVtcChanges(() => {
       setBlacklistVtcs(getBlacklistVtcs());
     });

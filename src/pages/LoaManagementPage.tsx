@@ -19,12 +19,11 @@ function formatDay(isoOrYmd: string) {
 }
 
 export function LoaManagementPage() {
-  const [list, setList] = useState<LoaRequest[]>([]);
+  const [list, setList] = useState<LoaRequest[]>(getLoaRequests());
 
   const refresh = () => setList(getLoaRequests());
 
   useEffect(() => {
-    refresh();
     return subscribeLoaChanges(refresh);
   }, []);
 

@@ -59,6 +59,12 @@ export default defineConfig({
         },
         rewrite: (p) => p.replace(/^\/trucky-global-api/, ''),
       },
+      '/discord-api': {
+        target: 'https://discord.com/api',
+        changeOrigin: true,
+        secure: true,
+        rewrite: (p) => p.replace(/^\/discord-api/, ''),
+      },
     },
   },
 });

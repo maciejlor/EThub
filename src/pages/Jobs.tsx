@@ -17,7 +17,7 @@ function visiblePageRange(current: number, total: number): number[] {
   const safeCurrent = Math.min(Math.max(1, Math.floor(current)), safeTotal);
   if (safeTotal <= PAGE_WINDOW) return Array.from({ length: safeTotal }, (_, i) => i + 1);
   let start = Math.max(1, safeCurrent - Math.floor(PAGE_WINDOW / 2));
-  let end = Math.min(safeTotal, start + PAGE_WINDOW - 1);
+  const end = Math.min(safeTotal, start + PAGE_WINDOW - 1);
   start = Math.max(1, end - PAGE_WINDOW + 1);
   return Array.from({ length: end - start + 1 }, (_, i) => start + i);
 }

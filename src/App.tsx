@@ -31,6 +31,7 @@ import { AllMembersPage } from '@/pages/AllMembersPage';
 import { SettingsPage } from '@/pages/SettingsPage';
 import { ViewProfilePage } from '@/pages/ViewProfilePage';
 import { DiscordCallbackPage } from '@/pages/DiscordCallbackPage';
+import { SteamCallbackPage } from '@/pages/SteamCallbackPage';
 
 // Authentication check component
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
@@ -49,6 +50,7 @@ export const App = () => {
       <Routes>
         <Route path='/login' element={<LoginPage />} />
         <Route path='/auth/discord/callback' element={<DiscordCallbackPage />} />
+        <Route path='/auth/steam/callback' element={<SteamCallbackPage />} />
         <Route path='/' element={<ProtectedRoute><DashboardPage /></ProtectedRoute>} />
         <Route path='/jobs' element={<ProtectedRoute><JobsPage /></ProtectedRoute>} />
         <Route path='/jobs/:id' element={<ProtectedRoute><JobDetailsPage /></ProtectedRoute>} />
@@ -93,8 +95,9 @@ export const App = () => {
         <Route path='/admin/history' element={<HistoryPage />} />
         <Route path='/admin/history-logs' element={<PlaceholderPage title='History' description='View audit logs and history.' />} />
         <Route path='/settings' element={<SettingsPage />} />
-        <Route path='/profile' element={<ViewProfilePage />} />
-        <Route path='/profile/:userId' element={<ViewProfilePage />} />
+
+        <Route path='/profile' element={<ProtectedRoute><ViewProfilePage /></ProtectedRoute>} />
+        <Route path='/profile/:userId' element={<ProtectedRoute><ViewProfilePage /></ProtectedRoute>} />
 
         <Route path='*' element={<Navigate to='/' replace />} />
       </Routes>

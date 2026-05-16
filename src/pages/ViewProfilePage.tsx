@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
+import { cn } from '@/lib/utils';
 import { 
   UserIcon, 
   CalendarIcon, 
@@ -18,7 +19,10 @@ import {
   ShieldIcon,
   ArrowLeftIcon,
   EditIcon,
-  BriefcaseIcon
+  BriefcaseIcon,
+  InfoIcon,
+  LayoutGridIcon,
+  ChevronRightIcon
 } from 'lucide-react';
 import { 
   getUsers, 
@@ -33,34 +37,24 @@ import { fetchTruckyJobsPage, type TruckyJob } from '@/lib/trucky';
 export function ViewProfilePage() {
   const { userId } = useParams<{ userId: string }>();
   const navigate = useNavigate();
-  const [user, setUser] = useState<UserEntry | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [user] = useState<UserEntry | null>(() => {
+    try {
+      if (userId) {
+        return getUsers().find(u => u.id === userId) || null;
+      }
+      return getCurrentUser();
+    } catch (e) {
+      console.error('State init error:', e);
+      return null;
+    }
+  });
+  const [loading, setLoading] = useState(false);
   const [jobs, setJobs] = useState<TruckyJob[]>([]);
   const [jobsLoading, setJobsLoading] = useState(false);
   const [jobsError, setJobsError] = useState<string | null>(null);
+  const [activeTab, setActiveTab] = useState<'jobs' | 'info'>('jobs');
 
-  const COMPANY_ID = 44349; // Same company ID as JobsPage
-
-  useEffect(() => {
-    const loadUser = () => {
-      setLoading(true);
-      
-      if (userId) {
-        // Load specific user by ID
-        const users = getUsers();
-        const foundUser = users.find(u => u.id === userId);
-        setUser(foundUser || null);
-      } else {
-        // Load current user if no userId provided
-        const currentUser = getCurrentUser();
-        setUser(currentUser);
-      }
-      
-      setLoading(false);
-    };
-
-    loadUser();
-  }, [userId]);
+  const COMPANY_ID = 44349;
 
   const currentRank = getUserRank(user?.rankLevel);
   const nextRank = getNextRank(user?.rankLevel);
@@ -77,7 +71,7 @@ export function ViewProfilePage() {
       
       const jobsPromise = fetchTruckyJobsPage(COMPANY_ID, 1, 5);
       
-      const result = await Promise.race([jobsPromise, timeoutPromise]) as any;
+      const result = await Promise.race([jobsPromise, timeoutPromise]) as Awaited<typeof jobsPromise>;
       setJobs(result.jobs);
     } catch (error) {
       console.error('Failed to load jobs:', error);
@@ -87,7 +81,6 @@ export function ViewProfilePage() {
     }
   };
 
-  // Load jobs when user is loaded
   useEffect(() => {
     if (user) {
       loadJobs();
@@ -100,7 +93,7 @@ export function ViewProfilePage() {
       if (loading) {
         setLoading(false);
       }
-    }, 5000); // 5 second timeout
+    }, 5000); 
 
     return () => clearTimeout(timeout);
   }, [loading]);
@@ -158,370 +151,341 @@ export function ViewProfilePage() {
     );
   }
 
-  return (
-    <SidebarProvider>
-      <AppSidebar />
-      <SidebarInset className='bg-background'>
-        <Header />
-        <main className='bg-background'>
-          <Page>
-            <div className='flex items-center gap-4 mb-8'>
-              <Button 
-                variant='outline' 
-                onClick={() => navigate(-1)}
-                className='bg-background border-border'
-              >
-                <ArrowLeftIcon className='mr-2 h-4 w-4' />
-                Back
-              </Button>
-              <div>
-                <h1 className='text-xl font-semibold lg:text-2xl text-foreground'>Profile</h1>
-                <p className='text-sm text-muted-foreground'>View user profile information</p>
+  try {
+    return (
+      <SidebarProvider>
+        <AppSidebar />
+        <SidebarInset className='bg-background'>
+          <Header />
+          <main className='bg-background'>
+            <Page>
+              <div className='flex items-center gap-4 mb-4'>
+                <Button 
+                  variant='outline' 
+                  onClick={() => navigate(-1)}
+                  className='bg-background border-border shadow-sm'
+                >
+                  <ArrowLeftIcon className='mr-2 h-4 w-4' />
+                  Back
+                </Button>
               </div>
-            </div>
 
-            <div className='grid gap-6 lg:grid-cols-3'>
-              {/* Main Profile Card */}
-              <Card className='bg-card border-border lg:col-span-2'>
-                <CardHeader>
-                  <div className='flex items-center justify-between'>
-                    <CardTitle className='text-lg flex items-center gap-2'>
-                      <UserIcon className='h-5 w-5' />
-                      Profile Information
-                    </CardTitle>
-                    {!userId && (
-                      <Button 
-                        variant='outline' 
-                        onClick={() => navigate('/settings')}
-                        className='bg-background border-border'
-                      >
-                        <EditIcon className='mr-2 h-4 w-4' />
-                        Edit Profile
-                      </Button>
-                    )}
-                  </div>
-                </CardHeader>
-                <CardContent className='space-y-6'>
-                  {/* Banner with Profile Info */}
-                  <div className='relative bg-gradient-to-r from-blue-600 to-purple-600 rounded-lg p-6 text-white'>
-                    <div className='flex items-center'>
-                      <div className='flex-1'>
-                        <h1 className='text-3xl font-bold text-white'>{user.username}</h1>
-                        <div className='flex items-center gap-2 mt-1'>
-                          <span className='text-white/80'>Profile -</span>
-                          {currentRank && (
-                            <span className='px-3 py-1 bg-white/20 rounded-full text-sm font-medium' style={{ 
-                              backgroundColor: currentRank?.color + '30', 
-                              color: 'white'
-                            }}>
-                              {currentRank?.icon} {currentRank?.title}
-                            </span>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Profile Details */}
-                  <div className='space-y-4 mt-6'>
-                    <div className='grid grid-cols-1 md:grid-cols-2 gap-4'>
-                      <div>
-                        <h4 className='text-sm font-medium text-muted-foreground'>Username</h4>
-                        <p className='text-foreground'>@{user.username}</p>
-                      </div>
-                      <div>
-                        <h4 className='text-sm font-medium text-muted-foreground'>Email</h4>
-                        <p className='text-foreground'>{user.email}</p>
-                      </div>
-                    </div>
-                    <div>
-                      <h4 className='text-sm font-medium text-muted-foreground'>Member Since</h4>
-                      <p className='text-foreground'>{new Date(user.createdAt).toLocaleDateString('en-US', { 
-                        year: 'numeric', 
-                        month: 'long', 
-                        day: 'numeric' 
-                      })}</p>
-                    </div>
-                    <div className='border-t border-border pt-4'>
-                      <p className='text-muted-foreground text-sm'>------------------------------</p>
-                    </div>
-                  </div>
-
-                  {/* Newest Jobs Section */}
-                  <div className='space-y-4'>
-                    <h3 className='font-medium text-foreground'>Newest Jobs from &lt;{user.username}&gt;</h3>
-                    {jobsLoading ? (
-                      <div className='space-y-3'>
-                        {[1, 2, 3].map((i) => (
-                          <div key={i} className='p-4 border border-border rounded-lg animate-pulse'>
-                            <div className='space-y-2'>
-                              <div className='h-4 bg-muted rounded w-1/3'></div>
-                              <div className='h-3 bg-muted rounded w-1/2'></div>
-                              <div className='h-3 bg-muted rounded w-1/4'></div>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    ) : jobsError ? (
-                      <div className='text-center py-8 p-4 border border-border rounded-lg'>
-                        <BriefcaseIcon className='h-12 w-12 text-muted-foreground mx-auto mb-3' />
-                        <h4 className='font-medium text-foreground mb-2'>Unable to Load Jobs</h4>
-                        <p className='text-sm text-muted-foreground mb-4'>
-                          {jobsError}
-                        </p>
-                        <Button onClick={loadJobs} className='bg-primary text-primary-foreground hover:bg-primary/90'>
-                          Retry
-                        </Button>
-                      </div>
-                    ) : jobs.length > 0 ? (
-                      <div className='space-y-3'>
-                        {jobs.map((job) => (
-                          <div key={job.id} className='p-4 border border-border rounded-lg'>
-                            <div className='flex items-center justify-between'>
-                              <div className='flex-1'>
-                                <h4 className='font-medium text-foreground'>{job.cargo_name}</h4>
-                                <p className='text-sm text-muted-foreground'>
-                                  {job.source_city_name} to {job.destination_city_name} • {job.real_distance_km.toLocaleString()} km
-                                </p>
-                                <p className='text-xs text-muted-foreground mt-1'>
-                                  €{job.revenue?.toLocaleString() || '0'} • Started: {new Date(job.created_at).toLocaleString()}
-                                </p>
-                                {job.stop_date && (
-                                  <p className='text-xs text-muted-foreground mt-1'>
-                                    Ended: {new Date(job.stop_date).toLocaleString()}
-                                  </p>
-                                )}
-                                {job.driver && (
-                                  <p className='text-xs text-muted-foreground mt-1'>
-                                    Driver: {job.driver.name}
-                                  </p>
-                                )}
-                              </div>
-                              <Badge className={
-                                job.status === 'completed' 
-                                  ? 'bg-green-500/20 text-green-700 dark:text-green-400 border-green-500/30'
-                                  : job.status === 'in_progress'
-                                  ? 'bg-yellow-500/20 text-yellow-700 dark:text-yellow-400 border-yellow-500/30'
-                                  : 'bg-blue-500/20 text-blue-700 dark:text-blue-400 border-blue-500/30'
-                              }>
-                                {job.status === 'completed' ? 'Completed' : 
-                                 job.status === 'in_progress' ? 'In Progress' : 
-                                 job.status === 'available' ? 'Available' : job.status}
-                              </Badge>
-                            </div>
-                          </div>
-                        ))}
-                        <p className='text-xs text-muted-foreground'>
-                          *Jobs are loaded from Trucky API • Showing 5 most recent jobs
-                        </p>
-                      </div>
-                    ) : (
-                      <div className='text-center py-8 p-4 border border-border rounded-lg'>
-                        <BriefcaseIcon className='h-12 w-12 text-muted-foreground mx-auto mb-3' />
-                        <h4 className='font-medium text-foreground mb-2'>No Jobs Available</h4>
-                        <p className='text-sm text-muted-foreground mb-4'>
-                          No jobs found from Trucky API. Check back later for new jobs.
-                        </p>
-                        <Button onClick={loadJobs} className='bg-primary text-primary-foreground hover:bg-primary/90'>
-                          Refresh Jobs
-                        </Button>
-                      </div>
-                    )}
-                  </div>
-
-                  <Separator />
-
+              {/* Premium Header Banner */}
+              <div className='relative mb-8 rounded-2xl overflow-hidden border border-white/5 shadow-2xl'>
+                <div className='h-[350px] relative'>
+                  <img 
+                    src={user.coverImage || 'https://images.unsplash.com/photo-1519003722824-194d4455a60c?q=80&w=2075&auto=format&fit=crop'} 
+                    alt='Cover' 
+                    className='w-full h-full object-cover'
+                  />
+                  <div className='absolute inset-0 bg-gradient-to-t from-black via-black/40 to-transparent'></div>
                   
-                  {/* Role and Department */}
-                  <div className='space-y-4'>
-                    <h3 className='font-medium text-foreground'>Role Information</h3>
-                    <div className='grid gap-3 md:grid-cols-2'>
-                      <div className='flex items-center gap-3'>
-                        <ShieldIcon className='h-5 w-5 text-muted-foreground' />
-                        <div>
-                          <p className='text-sm font-medium text-foreground'>Role</p>
-                          <Badge className='bg-blue-500/20 text-blue-700 dark:text-blue-400 border-blue-500/30'>
-                            {user.role}
-                          </Badge>
-                        </div>
-                      </div>
-                      <div className='flex items-center gap-3'>
-                        <ShieldIcon className='h-5 w-5 text-muted-foreground' />
-                        <div>
-                          <p className='text-sm font-medium text-foreground'>Department</p>
-                          <Badge className='bg-purple-500/20 text-purple-700 dark:text-purple-400 border-purple-500/30'>
-                            {user.department}
-                          </Badge>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-
-                  <Separator />
-
-                  {/* Account Information */}
-                  <div className='space-y-4'>
-                    <h3 className='font-medium text-foreground'>Account Information</h3>
-                    <div className='grid gap-3 md:grid-cols-2'>
-                      <div className='flex items-center gap-3'>
-                        <CalendarIcon className='h-5 w-5 text-muted-foreground' />
-                        <div>
-                          <p className='text-sm font-medium text-foreground'>Member Since</p>
-                          <p className='text-sm text-muted-foreground'>
-                            {new Date(user.createdAt).toLocaleDateString('en-US', { 
-                              year: 'numeric', 
-                              month: 'long', 
-                              day: 'numeric' 
-                            })}
-                          </p>
-                        </div>
-                      </div>
-                      {user.lastLogin && (
-                        <div className='flex items-center gap-3'>
-                          <CalendarIcon className='h-5 w-5 text-muted-foreground' />
-                          <div>
-                            <p className='text-sm font-medium text-foreground'>Last Login</p>
-                            <p className='text-sm text-muted-foreground'>
-                              {new Date(user.lastLogin).toLocaleDateString('en-US', { 
-                                year: 'numeric', 
-                                month: 'long', 
-                                day: 'numeric' 
-                              })}
-                            </p>
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-
-              {/* Connected Accounts */}
-              <Card className='bg-card border-border'>
-                <CardHeader>
-                  <CardTitle className='text-lg flex items-center gap-2'>
-                    <MessageCircleIcon className='h-5 w-5' />
-                    Connected Accounts
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className='space-y-4'>
-                  {/* Discord */}
-                  <div className='flex items-center gap-3 p-3 border border-border rounded-lg'>
-                    <MessageCircleIcon className='h-8 w-8 text-[#5865F2]' />
-                    <div className='flex-1'>
-                      <h4 className='font-medium text-foreground'>Discord</h4>
-                      {user.discordUsername ? (
-                        <p className='text-sm text-muted-foreground'>{user.discordUsername}</p>
-                      ) : (
-                        <p className='text-sm text-muted-foreground'>Not connected</p>
-                      )}
-                    </div>
-                    {user.discordUsername && (
-                      <Badge className='bg-green-500/20 text-green-700 dark:text-green-400 border-green-500/30'>
-                        Connected
-                      </Badge>
-                    )}
-                  </div>
-
-                  {/* Steam */}
-                  <div className='flex items-center gap-3 p-3 border border-border rounded-lg'>
-                    <Gamepad2Icon className='h-8 w-8 text-[#1B2838]' />
-                    <div className='flex-1'>
-                      <h4 className='font-medium text-foreground'>Steam</h4>
-                      {user.steamUsername ? (
-                        <p className='text-sm text-muted-foreground'>{user.steamUsername}</p>
-                      ) : (
-                        <p className='text-sm text-muted-foreground'>Not connected</p>
-                      )}
-                    </div>
-                    {user.steamUsername && (
-                      <Badge className='bg-green-500/20 text-green-700 dark:text-green-400 border-green-500/30'>
-                        Connected
-                      </Badge>
-                    )}
-                  </div>
-                </CardContent>
-              </Card>
-
-              {/* Rank Progress */}
-              <Card className='bg-card border-border'>
-                <CardHeader>
-                  <CardTitle className='text-lg flex items-center gap-2'>
-                    <TrophyIcon className='h-5 w-5' />
-                    Rank Progress
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className='space-y-4'>
-                  {currentRank && (
-                    <div className='text-center'>
-                      <div className='text-5xl mb-2'>{currentRank.icon}</div>
-                      <h3 className='font-semibold text-foreground' style={{ color: currentRank.color }}>
-                        {currentRank.title}
-                      </h3>
-                      <p className='text-sm text-muted-foreground'>Level {currentRank.level}</p>
+                  {!userId && (
+                    <div className='absolute top-4 right-4 flex gap-2'>
+                      <Button onClick={() => navigate('/settings')} size='sm' variant='secondary' className='bg-black/60 hover:bg-black/80 backdrop-blur-md text-white border-white/10'>
+                        <EditIcon className='h-3 w-3 mr-2' />
+                        Edit Cover
+                      </Button>
                     </div>
                   )}
+                </div>
 
-                  {nextRank && (
-                    <>
-                      <Separator />
-                      <div>
-                        <h4 className='font-medium text-foreground mb-2'>Next Rank</h4>
-                        <div className='flex items-center gap-2'>
-                          <span className='text-3xl'>{nextRank.icon}</span>
-                          <div>
-                            <p className='font-medium text-foreground' style={{ color: nextRank.color }}>
-                              {nextRank.title}
-                            </p>
-                            <p className='text-xs text-muted-foreground'>Level {nextRank.level}</p>
+                <div className='absolute bottom-0 left-0 right-0 p-8 pt-0'>
+                  <div className='flex flex-col md:flex-row items-end gap-6'>
+                    <div className='relative -mb-12 md:-mb-16'>
+                      <div className='p-1.5 bg-background rounded-full shadow-2xl'>
+                        {user.avatar ? (
+                          <img 
+                            src={user.avatar} 
+                            alt={user.displayName} 
+                            className='w-32 h-32 md:w-40 md:h-40 rounded-full border-4 border-white/5 object-cover'
+                          />
+                        ) : (
+                          <div className='w-32 h-32 md:w-40 md:h-40 rounded-full bg-primary/20 flex items-center justify-center'>
+                            <UserIcon className='h-16 w-16 text-primary' />
                           </div>
+                        )}
+                      </div>
+                      {currentRank && (
+                        <div className='absolute bottom-2 right-2'>
+                          <Badge className='px-3 py-1 text-xs font-bold uppercase shadow-lg border-2 border-background' style={{ backgroundColor: currentRank.color, color: 'white' }}>
+                            {currentRank.title}
+                          </Badge>
                         </div>
-                        <div className='mt-2 space-y-1'>
-                          {nextRank.requirements?.map((req, index) => (
-                            <div key={index} className='text-xs text-muted-foreground flex items-center gap-1'>
-                              <StarIcon className='h-3 w-3' />
-                              {req}
+                      )}
+                    </div>
+
+                    <div className='flex-1 pb-4 pt-4 md:pt-0'>
+                      <div className='flex items-center gap-3'>
+                        <h1 className='text-4xl md:text-5xl font-bold text-white tracking-tight drop-shadow-[0_2px_10px_rgba(0,0,0,0.5)]'>{user.displayName}</h1>
+                        {currentRank && (
+                          <Badge className='bg-primary text-white border-none font-bold px-3 py-1 text-sm'>
+                            LVL {currentRank.level}
+                          </Badge>
+                        )}
+                      </div>
+                      <div className='flex flex-wrap items-center gap-x-6 gap-y-2 mt-4 text-white/90 font-medium drop-shadow-sm'>
+                        <span className='font-bold text-primary bg-primary/10 px-2 py-0.5 rounded border border-primary/20 text-sm'># ID: {user.id.slice(-4)}</span>
+                        <span className='flex items-center gap-2 text-sm'>
+                          <CalendarIcon className='h-4 w-4' />
+                          Joined {new Date(user.createdAt).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}
+                        </span>
+                      </div>
+                    </div>
+
+                    <div className='flex gap-3 pb-4'>
+                      <div className='flex gap-2 p-1.5 bg-black/40 backdrop-blur-md rounded-xl border border-white/10'>
+                        <div className='p-2 bg-white/5 rounded-lg border border-white/5'>
+                          <MessageCircleIcon className={`h-5 w-5 ${user.discordUsername ? 'text-[#5865F2]' : 'text-white/20'}`} />
+                        </div>
+                        <div className='p-2 bg-white/5 rounded-lg border border-white/5'>
+                          <Gamepad2Icon className={`h-5 w-5 ${user.steamUsername ? 'text-white' : 'text-white/20'}`} />
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Tab Navigation */}
+              <div className='flex items-center gap-8 mb-8 border-b border-border/50 mt-16 md:mt-20'>
+                <button 
+                  onClick={() => setActiveTab('jobs')}
+                  className={cn(
+                    'pb-4 text-sm font-bold transition-all relative flex items-center gap-2',
+                    activeTab === 'jobs' ? 'text-white' : 'text-muted-foreground hover:text-white'
+                  )}
+                >
+                  <BriefcaseIcon className='h-4 w-4' />
+                  Jobs
+                  <span className='bg-muted px-1.5 py-0.5 rounded text-[10px] font-black'>{jobs.length}</span>
+                  {activeTab === 'jobs' && (
+                    <div className='absolute bottom-0 left-0 right-0 h-0.5 bg-primary rounded-full' />
+                  )}
+                </button>
+                <button 
+                  onClick={() => setActiveTab('info')}
+                  className={cn(
+                    'pb-4 text-sm font-bold transition-all relative flex items-center gap-2',
+                    activeTab === 'info' ? 'text-white' : 'text-muted-foreground hover:text-white'
+                  )}
+                >
+                  <InfoIcon className='h-4 w-4' />
+                  Info
+                  {activeTab === 'info' && (
+                    <div className='absolute bottom-0 left-0 right-0 h-0.5 bg-primary rounded-full' />
+                  )}
+                </button>
+              </div>
+
+              {activeTab === 'jobs' ? (
+                <div className='space-y-6'>
+                  <div className='flex items-center justify-between'>
+                    <h3 className='text-xl font-bold text-white flex items-center gap-2'>
+                      <LayoutGridIcon className='h-5 w-5 text-primary' />
+                      Recent Deliveries
+                    </h3>
+                    <p className='text-xs text-muted-foreground font-medium'>
+                      *Showing last 5 jobs
+                    </p>
+                  </div>
+
+                  {jobsLoading ? (
+                    <div className='grid gap-4 md:grid-cols-2'>
+                      {[1, 2, 3, 4].map((i) => (
+                        <div key={i} className='h-32 bg-card/50 rounded-2xl animate-pulse border border-border/50' />
+                      ))}
+                    </div>
+                  ) : jobsError ? (
+                    <div className='text-center py-20 bg-card/30 rounded-2xl border border-dashed border-border'>
+                      <BriefcaseIcon className='h-12 w-12 text-muted-foreground mx-auto mb-4 opacity-20' />
+                      <p className='text-muted-foreground font-medium mb-4'>{jobsError}</p>
+                      <Button onClick={loadJobs} variant='outline'>Retry Sync</Button>
+                    </div>
+                  ) : jobs.length > 0 ? (
+                    <div className='grid gap-4 md:grid-cols-2'>
+                      {jobs.map((job) => (
+                        <div key={job.id} className='group p-5 bg-card/40 hover:bg-card/60 transition-all rounded-2xl border border-white/5 hover:border-primary/30 shadow-sm relative overflow-hidden'>
+                          <div className='flex items-start justify-between relative z-10'>
+                            <div className='space-y-1'>
+                              <h4 className='font-bold text-lg text-white group-hover:text-primary transition-colors'>{job.cargo_name}</h4>
+                              <p className='text-sm text-muted-foreground flex items-center gap-2'>
+                                <span className='text-white/60'>{job.source_city_name}</span>
+                                <ChevronRightIcon className='h-3 w-3' />
+                                <span className='text-white/60'>{job.destination_city_name}</span>
+                              </p>
+                              <div className='flex items-center gap-3 mt-4'>
+                                <Badge variant='secondary' className='bg-white/5 text-[10px] font-black uppercase tracking-wider'>
+                                  {(job.real_distance_km || 0).toLocaleString()} KM
+                                </Badge>
+                                <Badge variant='secondary' className='bg-white/5 text-[10px] font-black uppercase tracking-wider text-primary'>
+                                  €{job.revenue?.toLocaleString() || '0'}
+                                </Badge>
+                              </div>
                             </div>
-                          ))}
-                        </div>
-                      </div>
-                    </>
-                  )}
-
-                  <Separator />
-
-                  <div>
-                    <h4 className='font-medium text-foreground mb-2'>All Ranks</h4>
-                    <div className='space-y-2 max-h-48 overflow-y-auto'>
-                      {RANKS.map((rank) => (
-                        <div 
-                          key={rank.level} 
-                          className={`flex items-center gap-2 p-2 rounded ${
-                            rank.level === currentRank?.level ? 'bg-primary/10' : ''
-                          }`}
-                        >
-                          <span className='text-lg'>{rank.icon}</span>
-                          <div className='flex-1'>
-                            <p className='text-sm font-medium text-foreground' style={{ color: rank.color }}>
-                              {rank.title}
-                            </p>
-                            <p className='text-xs text-muted-foreground'>Level {rank.level}</p>
-                          </div>
-                          {rank.level === currentRank?.level && (
-                            <Badge className='bg-green-500/20 text-green-700 dark:text-green-400 border-green-500/30'>
-                              Current
+                            <Badge className={cn(
+                              'text-[10px] font-black uppercase tracking-widest px-2 py-1',
+                              job.status === 'completed' 
+                                ? 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20'
+                                : 'bg-amber-500/10 text-amber-500 border-amber-500/20'
+                            )}>
+                              {job.status}
                             </Badge>
-                          )}
+                          </div>
+                          <div className='absolute -right-4 -bottom-4 w-24 h-24 bg-primary/5 rounded-full blur-3xl opacity-0 group-hover:opacity-100 transition-opacity' />
                         </div>
                       ))}
                     </div>
+                  ) : (
+                    <div className='text-center py-20 bg-card/30 rounded-2xl border border-dashed border-border'>
+                      <BriefcaseIcon className='h-12 w-12 text-muted-foreground mx-auto mb-4 opacity-20' />
+                      <p className='text-muted-foreground font-medium'>No jobs logged for this member yet.</p>
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <div className='grid gap-6 lg:grid-cols-3'>
+                  <div className='lg:col-span-2 space-y-6'>
+                    <Card className='bg-card/40 border-white/5 overflow-hidden rounded-2xl'>
+                      <CardHeader className='pb-4'>
+                        <CardTitle className='text-lg font-bold flex items-center gap-2'>
+                          <UserIcon className='h-5 w-5 text-primary' />
+                          Member Overview
+                        </CardTitle>
+                      </CardHeader>
+                      <CardContent className='space-y-8'>
+                        <div className='grid grid-cols-1 md:grid-cols-2 gap-8'>
+                          <div className='space-y-1'>
+                            <p className='text-xs font-black uppercase tracking-widest text-muted-foreground'>Login Handle</p>
+                            <p className='text-lg font-bold text-white'>@{user.username}</p>
+                          </div>
+                          <div className='space-y-1'>
+                            <p className='text-xs font-black uppercase tracking-widest text-muted-foreground'>Email Address</p>
+                            <p className='text-lg font-bold text-white'>{user.email}</p>
+                          </div>
+                          <div className='space-y-1'>
+                            <p className='text-xs font-black uppercase tracking-widest text-muted-foreground'>VTC Rank</p>
+                            <Badge className='bg-blue-500/10 text-blue-500 border-blue-500/20 font-black uppercase tracking-widest'>
+                              {user.role}
+                            </Badge>
+                          </div>
+                          <div className='space-y-1'>
+                            <p className='text-xs font-black uppercase tracking-widest text-muted-foreground'>Department</p>
+                            <Badge className='bg-purple-500/10 text-purple-500 border-purple-500/20 font-black uppercase tracking-widest'>
+                              {user.department}
+                            </Badge>
+                          </div>
+                        </div>
+
+                        <Separator className='bg-white/5' />
+
+                        <div className='space-y-4'>
+                          <h4 className='text-sm font-bold text-white uppercase tracking-widest flex items-center gap-2'>
+                            <ShieldIcon className='h-4 w-4 text-primary' />
+                            Driver Permissions
+                          </h4>
+                          <div className='flex flex-wrap gap-2'>
+                            <Badge variant='outline' className='border-white/10 text-white/60'>Convoy Management</Badge>
+                            <Badge variant='outline' className='border-white/10 text-white/60'>Job Logging</Badge>
+                            <Badge variant='outline' className='border-white/10 text-white/60'>VTC Statistics</Badge>
+                            <Badge variant='outline' className='border-white/10 text-white/60'>Member Access</Badge>
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+
+                    <Card className='bg-card/40 border-white/5 overflow-hidden rounded-2xl'>
+                      <CardHeader>
+                        <CardTitle className='text-lg font-bold flex items-center gap-2'>
+                          <MessageCircleIcon className='h-5 w-5 text-primary' />
+                          External Connections
+                        </CardTitle>
+                      </CardHeader>
+                      <CardContent>
+                        <div className='grid grid-cols-1 md:grid-cols-2 gap-4'>
+                          <div className='flex items-center gap-4 p-4 bg-white/5 rounded-xl border border-white/5'>
+                            <div className='relative'>
+                              <div className='p-3 bg-[#5865F2]/10 rounded-lg'>
+                                <MessageCircleIcon className='h-6 w-6 text-[#5865F2]' />
+                              </div>
+                              {user.discordAvatar && (
+                                <img 
+                                  src={user.discordAvatar} 
+                                  className='absolute -bottom-1 -right-1 w-6 h-6 rounded-full border-2 border-background' 
+                                  alt='Discord Avatar' 
+                                />
+                              )}
+                            </div>
+                            <div>
+                              <p className='text-xs font-black uppercase tracking-widest text-muted-foreground'>Discord</p>
+                              <p className='font-bold text-white'>{user.discordUsername || 'Not Linked'}</p>
+                            </div>
+                          </div>
+                          <div className='flex items-center gap-4 p-4 bg-white/5 rounded-xl border border-white/5'>
+                            <div className='p-3 bg-white/10 rounded-lg'>
+                              <Gamepad2Icon className='h-6 w-6 text-white' />
+                            </div>
+                            <div>
+                              <p className='text-xs font-black uppercase tracking-widest text-muted-foreground'>Steam</p>
+                              <p className='font-bold text-white'>{user.steamUsername || 'Not Linked'}</p>
+                            </div>
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
                   </div>
-                </CardContent>
-              </Card>
-            </div>
-          </Page>
-        </main>
-      </SidebarInset>
-    </SidebarProvider>
-  );
+
+                  <div className='space-y-6'>
+                    <Card className='bg-card/40 border-white/5 overflow-hidden rounded-2xl'>
+                      <CardHeader>
+                        <CardTitle className='text-lg font-bold flex items-center gap-2'>
+                          <TrophyIcon className='h-5 w-5 text-amber-500' />
+                          Experience
+                        </CardTitle>
+                      </CardHeader>
+                      <CardContent className='space-y-6'>
+                        {currentRank && (
+                          <div className='text-center py-4'>
+                            <div className='text-6xl mb-4 drop-shadow-xl'>{currentRank.icon}</div>
+                            <h3 className='text-2xl font-black uppercase tracking-tighter' style={{ color: currentRank.color }}>
+                              {currentRank.title}
+                            </h3>
+                            <p className='text-xs font-bold text-muted-foreground uppercase tracking-widest mt-1'>Member Level {currentRank.level}</p>
+                          </div>
+                        )}
+                        
+                        {nextRank && (
+                          <div className='p-4 bg-white/5 rounded-xl border border-white/5'>
+                            <p className='text-[10px] font-black uppercase tracking-widest text-muted-foreground mb-3'>Next Milestone</p>
+                            <div className='flex items-center gap-3'>
+                              <span className='text-3xl'>{nextRank.icon}</span>
+                              <div>
+                                <p className='font-bold text-white'>{nextRank.title}</p>
+                                <p className='text-[10px] text-muted-foreground uppercase tracking-wider'>Level {nextRank.level}</p>
+                              </div>
+                            </div>
+                          </div>
+                        )}
+                      </CardContent>
+                    </Card>
+                  </div>
+                </div>
+              )}
+            </Page>
+          </main>
+        </SidebarInset>
+      </SidebarProvider>
+    );
+  } catch (error) {
+    console.error('Profile render error:', error);
+    return (
+      <div className='flex items-center justify-center min-h-screen bg-background text-foreground p-8 text-center'>
+        <div>
+          <h2 className='text-2xl font-bold mb-4'>Something went wrong loading your profile.</h2>
+          <p className='text-muted-foreground mb-6'>Please try refreshing or check your settings.</p>
+          <Button onClick={() => window.location.reload()}>Refresh Page</Button>
+        </div>
+      </div>
+    );
+  }
 }

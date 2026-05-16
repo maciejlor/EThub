@@ -90,11 +90,13 @@ export interface UserEntry {
   createdBy: string;
   discordId?: string;
   discordUsername?: string;
+  discordAvatar?: string;
   steamId?: string;
   steamUsername?: string;
   rankLevel?: number;
   rankTitle?: string;
   rankColor?: string;
+  coverImage?: string;
 }
 
 const STORAGE_KEY = 'ethub_managed_drivers_v1';
@@ -901,6 +903,12 @@ export function updateAvatar(userId: string, avatarUrl: string): boolean {
 export function updateUsername(userId: string, newUsername: string): boolean {
   return updateUserSettings(userId, {
     username: newUsername,
+  });
+}
+
+export function updateCoverImage(userId: string, coverUrl: string): boolean {
+  return updateUserSettings(userId, {
+    coverImage: coverUrl,
   });
 }
 

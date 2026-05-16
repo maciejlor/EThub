@@ -43,7 +43,6 @@ export function RankingPage() {
   useEffect(() => {
     let cancelled = false;
     (async () => {
-      setLoading(true);
       setLoadError(null);
       try {
         const jobs = await fetchTruckyCompanyJobsAll(RANKING_COMPANY_ID);

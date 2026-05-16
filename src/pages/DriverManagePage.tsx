@@ -60,7 +60,7 @@ export function DriverManagePage() {
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
   const [saving, setSaving] = useState(false);
-  const [list, setList] = useState<ManagedDriverEntry[]>([]);
+  const [list, setList] = useState<ManagedDriverEntry[]>(getManagedDrivers());
   const [refreshingId, setRefreshingId] = useState<string | null>(null);
 
   const steamReady = hasSteamApiKey();
@@ -68,7 +68,6 @@ export function DriverManagePage() {
   const refreshList = () => setList(getManagedDrivers());
 
   useEffect(() => {
-    refreshList();
     return subscribeManagedDriverChanges(refreshList);
   }, []);
 

@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -21,27 +21,7 @@ export function DiscordCallbackPage() {
   const [message, setMessage] = useState('');
   const [user, setUser] = useState<DiscordUser | null>(null);
 
-  useEffect(() => {
-    const urlParams = new URLSearchParams(window.location.search);
-    const code = urlParams.get('code');
-    const error = urlParams.get('error');
-    
-    if (error) {
-      setStatus('error');
-      setMessage('Authorization denied. Please try again.');
-      return;
-    }
-
-    if (!code) {
-      setStatus('error');
-      setMessage('No authorization code received.');
-      return;
-    }
-
-    handleDiscordCallback(code);
-  }, []);
-
-  const handleDiscordCallback = async (code: string) => {
+  const handleDiscordCallback = useCallback(async (code: string) => {
     try {
       setStatus('checking');
       setMessage('Exchanging authorization code...');
@@ -50,7 +30,7 @@ export function DiscordCallbackPage() {
       // Exchange code for access token
       console.log('Exchanging code for token...');
       
-      const tokenResponse = await fetch('https://discord.com/api/oauth2/token', {
+      const tokenResponse = await fetch('/discord-api/oauth2/token', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/x-www-form-urlencoded',
@@ -83,7 +63,7 @@ export function DiscordCallbackPage() {
 
       // Get user information
       setMessage('Fetching user information...');
-      const userResponse = await fetch('https://discord.com/api/users/@me', {
+      const userResponse = await fetch('/discord-api/users/@me', {
         headers: {
           'Authorization': `Bearer ${accessToken}`,
         },
@@ -98,7 +78,7 @@ export function DiscordCallbackPage() {
 
       // Get user's guild member object for the specific server to get their roles
       setMessage('Checking server roles...');
-      const memberResponse = await fetch(`https://discord.com/api/users/@me/guilds/${DISCORD_CONFIG.SERVER_ID}/member`, {
+      const memberResponse = await fetch(`/discord-api/users/@me/guilds/${DISCORD_CONFIG.SERVER_ID}/member`, {
         headers: {
           'Authorization': `Bearer ${accessToken}`,
         },
@@ -148,6 +128,7 @@ export function DiscordCallbackPage() {
           createdBy: 'System (Auto-Join)',
           discordId: userData.id,
           discordUsername: userData.username,
+          discordAvatar: `https://cdn.discordapp.com/avatars/${userData.id}/${userData.avatar}.png`,
         });
       }
       setCurrentUser(matched.id);
@@ -167,7 +148,27 @@ export function DiscordCallbackPage() {
       setStatus('error');
       setMessage('Authentication failed. Please try again.');
     }
-  };
+  }, [navigate]);
+
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const code = urlParams.get('code');
+    const error = urlParams.get('error');
+    
+    if (error) {
+      setStatus('error');
+      setMessage('Authorization denied. Please try again.');
+      return;
+    }
+
+    if (!code) {
+      setStatus('error');
+      setMessage('No authorization code received.');
+      return;
+    }
+
+    handleDiscordCallback(code);
+  }, [handleDiscordCallback]);
 
   const getStatusIcon = () => {
     switch (status) {
