@@ -5,7 +5,7 @@ import { Header } from '@/components/Header';
 import { Page } from '@/components/Page';
 import { useNavigate } from 'react-router-dom';
 import { fetchTruckyJobsPage, type TruckyJob } from '@/lib/trucky';
-import { Button } from '@/components/ui/button';
+import { Button } from '@/components/ui/button'; // still used for pagination
 
 const COMPANY_ID = 44349;
 const PAGE_SIZE = 12;
@@ -89,13 +89,6 @@ export function JobsPage() {
                     Latest deliveries logged in Trucky.
                   </p>
                 </div>
-                <Button 
-                  variant='outline'
-                  className='bg-[#0f0f0f] hover:bg-[#1a1a1a] text-white border-gray-800/50 text-xs px-4 rounded-md'
-                  onClick={() => setCurrentPage(1)}
-                >
-                  View all jobs
-                </Button>
               </div>
 
               {loadError && (

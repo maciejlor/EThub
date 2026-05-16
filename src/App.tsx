@@ -29,7 +29,6 @@ import { BlacklistStaffPage } from '@/pages/BlacklistStaffPage';
 import { HistoryPage } from '@/pages/HistoryPage';
 import { AllMembersPage } from '@/pages/AllMembersPage';
 import { SettingsPage } from '@/pages/SettingsPage';
-import { ViewProfilePage } from '@/pages/ViewProfilePage';
 import { DiscordCallbackPage } from '@/pages/DiscordCallbackPage';
 import { SteamCallbackPage } from '@/pages/SteamCallbackPage';
 
@@ -96,8 +95,6 @@ export const App = () => {
         <Route path='/admin/history-logs' element={<PlaceholderPage title='History' description='View audit logs and history.' />} />
         <Route path='/settings' element={<SettingsPage />} />
 
-        <Route path='/profile' element={<ProtectedRoute><ViewProfilePage /></ProtectedRoute>} />
-        <Route path='/profile/:userId' element={<ProtectedRoute><ViewProfilePage /></ProtectedRoute>} />
 
         <Route path='*' element={<Navigate to='/' replace />} />
       </Routes>

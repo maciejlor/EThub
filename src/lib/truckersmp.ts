@@ -67,99 +67,75 @@ export async function fetchTruckersmpVtcInfo(vtcId: number) {
 }
 
 export async function fetchUpcomingEvents(vtcId: number): Promise<UpcomingEvent[]> {
+  // Use v2 key to bust any stale v1 cache
+  const STORAGE_KEY = 'ethub_cached_events_v2';
   const eventsMap = new Map<number, UpcomingEvent>();
-  try {
-    const STORAGE_KEY = 'ethub_cached_events_v1';
-    try {
-      const cached = localStorage.getItem(STORAGE_KEY);
-      if (cached) {
-        const cachedEvents: UpcomingEvent[] = JSON.parse(cached);
-        for (const e of cachedEvents) {
-          eventsMap.set(e.id, e);
-        }
-      }
-    } catch {
-      // Ignore cache errors
-    }
 
-    const [apiRes, htmlRes] = await Promise.allSettled([
+  function processEvent(found: TruckersmpEvent) {
+    let safeStartAt = found.start_at || '';
+    if (safeStartAt && !safeStartAt.includes('T') && safeStartAt.includes(' ')) {
+      safeStartAt = safeStartAt.replace(' ', 'T') + 'Z';
+    }
+    const arrivalCity =
+      found.arrive?.city || found.arrival?.city || 'To be determined';
+    eventsMap.set(Number(found.id), {
+      id: Number(found.id),
+      name: cleanEventName(found.name || 'Convoy'),
+      startDate: safeStartAt,
+      bannerUrl: found.banner || '',
+      participants: (found as any).attendances?.confirmed || 0,
+      game: found.game === 'ATS' ? 'ATS' : 'ETS2',
+      server: found.server?.name || 'Event Server',
+      departureCity: found.departure?.city || 'To be determined',
+      arrivalCity,
+    });
+  }
+
+  try {
+    // Fetch both: events hosted BY the VTC, and events the VTC is attending
+    const [hostedRes, attendingRes] = await Promise.allSettled([
       fetch(`/tmp-api/v2/vtc/${vtcId}/events`),
-      fetch(`/tmp-api/v2/vtc/${vtcId}/events/attending`)
+      fetch(`/tmp-api/v2/vtc/${vtcId}/events/attending`),
     ]);
 
-    // 1. Process Official API Data (All Past & Upcoming Hosted Events - 100% Accurate Time)
-    if (apiRes.status === 'fulfilled' && apiRes.value.ok) {
-      const data = await apiRes.value.json();
+    if (hostedRes.status === 'fulfilled' && hostedRes.value.ok) {
+      const data = await hostedRes.value.json();
       if (!data.error && Array.isArray(data.response)) {
-        (data.response as TruckersmpEvent[]).forEach((found) => {
-          let safeStartAt = found.start_at || found.meetup_at || '';
-          if (safeStartAt && !safeStartAt.includes('T') && safeStartAt.includes(' ')) {
-            safeStartAt = safeStartAt.replace(' ', 'T') + 'Z';
-          }
-          eventsMap.set(Number(found.id), {
-            id: Number(found.id),
-            name: found.name || 'Upcoming Convoy',
-            startDate: safeStartAt,
-            bannerUrl: found.banner || '',
-            participants: found.attendances?.confirmed || 0,
-            game: found.game === 'ATS' ? 'ATS' : 'ETS2',
-            server: found.server?.name || 'Event Server',
-            departureCity: found.departure?.city || 'To be determined',
-            arrivalCity: found.arrive?.city || 'To be determined'
-          });
-        });
+        (data.response as TruckersmpEvent[]).forEach(processEvent);
       }
     }
 
-    // 2. Process Official API Data for Attending Events (More reliable than scraper, includes 80+ events)
-    if (htmlRes.status === 'fulfilled' && htmlRes.value.ok) {
-      const data = await htmlRes.value.json();
+    if (attendingRes.status === 'fulfilled' && attendingRes.value.ok) {
+      const data = await attendingRes.value.json();
       if (!data.error && Array.isArray(data.response)) {
-        (data.response as TruckersmpEvent[]).forEach((found) => {
-          const id = Number(found.id);
-          
-          let safeStartAt = found.start_at || found.meetup_at || '';
-          if (safeStartAt && !safeStartAt.includes('T') && safeStartAt.includes(' ')) {
-            safeStartAt = safeStartAt.replace(' ', 'T') + 'Z';
-          }
-
-          eventsMap.set(id, {
-            id: id,
-            name: cleanEventName(found.name || 'Upcoming Convoy'),
-            startDate: safeStartAt,
-            bannerUrl: found.banner || '',
-            participants: found.attendances?.confirmed || 0,
-            game: found.game === 'ATS' ? 'ATS' : 'ETS2',
-            server: found.server?.name || 'Event Server',
-            departureCity: found.departure?.city || 'To be determined',
-            arrivalCity: found.arrive?.city || 'To be determined'
-          });
-        });
+        (data.response as TruckersmpEvent[]).forEach(processEvent);
       }
     }
 
-    const mergedEvents = Array.from(eventsMap.values());
+    const result = Array.from(eventsMap.values());
+
     try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(mergedEvents));
-    } catch (e) {
-      console.warn('Failed to save cached events:', e);
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(result));
+    } catch {
+      // ignore storage quota errors
     }
 
-    return mergedEvents;
+    return result;
   } catch (e) {
-    console.error('Failed to fetch merged events list:', e);
+    console.error('Failed to fetch events:', e);
   }
-  
-  // Return cached events if fetch fails
+
+  // Fallback to fresh cache if fetch fails
   try {
-    const cached = localStorage.getItem('ethub_cached_events_v1');
+    const cached = localStorage.getItem(STORAGE_KEY);
     if (cached) return JSON.parse(cached);
   } catch {
-    // Ignore cache errors
+    // ignore
   }
 
   return [];
 }
+
 
 export async function fetchTruckersmpEvent(id: number): Promise<TruckersmpEvent> {
   // Try Official TruckersMP API via Vite Proxy

@@ -13,11 +13,14 @@ import { getBlacklistVtcs, addBlacklistVtc, removeBlacklistVtc, subscribeBlackli
 export function BlacklistVTCsPage() {
   const [blacklistVtcs, setBlacklistVtcs] = useState<BlacklistVtcEntry[]>(getBlacklistVtcs());
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
+  const currentUser = JSON.parse(localStorage.getItem('ethub_current_user') || '{"displayName": "System"}');
+
   const [newVtc, setNewVtc] = useState({
     vtcName: '',
     reason: '',
-    blacklistedDate: new Date().toISOString().split('T')[0],
-    addedBy: 'Current User'
+    tmpVtcLink: '',
+    discordVtcLink: '',
+    addedBy: currentUser.displayName
   });
 
   // Load blacklist VTCs and subscribe to changes
@@ -37,15 +40,17 @@ export function BlacklistVTCsPage() {
     addBlacklistVtc({
       vtcName: newVtc.vtcName,
       reason: newVtc.reason,
-      blacklistedDate: newVtc.blacklistedDate,
+      tmpVtcLink: newVtc.tmpVtcLink,
+      discordVtcLink: newVtc.discordVtcLink,
       addedBy: newVtc.addedBy
     });
 
     setNewVtc({
       vtcName: '',
       reason: '',
-      blacklistedDate: new Date().toISOString().split('T')[0],
-      addedBy: 'Current User'
+      tmpVtcLink: '',
+      discordVtcLink: '',
+      addedBy: currentUser.displayName
     });
     setIsAddDialogOpen(false);
   };
@@ -96,12 +101,22 @@ export function BlacklistVTCsPage() {
                       />
                     </div>
                     <div>
-                      <label htmlFor='blacklistedDate' className='text-sm font-medium text-foreground block mb-2'>Blacklisted Date</label>
+                      <label htmlFor='tmpVtcLink' className='text-sm font-medium text-foreground block mb-2'>TMP VTC Link</label>
                       <Input
-                        id='blacklistedDate'
-                        type='date'
-                        value={newVtc.blacklistedDate}
-                        onChange={(e) => setNewVtc(prev => ({ ...prev, blacklistedDate: e.target.value }))}
+                        id='tmpVtcLink'
+                        value={newVtc.tmpVtcLink}
+                        onChange={(e) => setNewVtc(prev => ({ ...prev, tmpVtcLink: e.target.value }))}
+                        placeholder='Enter TMP VTC link'
+                        className='bg-background border-border'
+                      />
+                    </div>
+                    <div>
+                      <label htmlFor='discordVtcLink' className='text-sm font-medium text-foreground block mb-2'>Discord VTC Link</label>
+                      <Input
+                        id='discordVtcLink'
+                        value={newVtc.discordVtcLink}
+                        onChange={(e) => setNewVtc(prev => ({ ...prev, discordVtcLink: e.target.value }))}
+                        placeholder='Enter Discord VTC link'
                         className='bg-background border-border'
                       />
                     </div>
@@ -141,7 +156,10 @@ export function BlacklistVTCsPage() {
                           <strong>Reason:</strong> {vtc.reason}
                         </div>
                         <div className='text-sm text-muted-foreground'>
-                          <strong>Blacklisted:</strong> {new Date(vtc.blacklistedDate).toLocaleDateString()}
+                          <strong>TMP Link:</strong> <a href={vtc.tmpVtcLink} target='_blank' rel='noopener noreferrer' className='text-primary hover:underline'>{vtc.tmpVtcLink || 'N/A'}</a>
+                        </div>
+                        <div className='text-sm text-muted-foreground'>
+                          <strong>Discord Link:</strong> <a href={vtc.discordVtcLink} target='_blank' rel='noopener noreferrer' className='text-primary hover:underline'>{vtc.discordVtcLink || 'N/A'}</a>
                         </div>
                         <div className='text-sm text-muted-foreground'>
                           <strong>Added by:</strong> {vtc.addedBy}

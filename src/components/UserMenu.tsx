@@ -15,21 +15,28 @@ import {
   DropdownMenuTrigger,
   DropdownMenuShortcut,
 } from '@/components/ui/dropdown-menu';
-import { Button } from '@/components/ui/button';
-import { UserIcon, SettingsIcon, LogOutIcon, PlusIcon } from 'lucide-react';
-import Avatar from 'react-avatar';
-
-/**
- * Custom modules
- */
 import { SidebarMenuButton } from '@/components/ui/sidebar';
-
-/**
- * Constants
- */
 import { APP_SIDEBAR } from '@/constants';
+import { useState, useEffect } from 'react';
+
+import { 
+  getCurrentUser,
+  type UserEntry
+} from '@/lib/driver-storage';
 
 export const UserMenu = () => {
+  const [user, setUser] = useState<UserEntry | null>(null);
+
+  useEffect(() => {
+    const current = getCurrentUser();
+    if (current) {
+      setUser(current);
+    }
+  }, []);
+
+  const displayName = user?.displayName || user?.discordUsername || user?.username || 'Member';
+  const avatarUrl = user?.avatar || 'https://api.dicebear.com/7.x/avataaars/svg?seed=' + displayName;
+
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
@@ -37,18 +44,15 @@ export const UserMenu = () => {
           size='lg'
           className='data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground'
         >
-          <Avatar
-            src={APP_SIDEBAR.curProfile.src}
-            size='32px'
-            round='8px'
+          <img 
+            src={avatarUrl}
+            className='size-8 rounded-lg object-cover'
+            alt={displayName}
           />
 
           <div className='grid flex-1 text-left text-sm leading-tight group-data-[collapsible=icon]:hidden'>
             <span className='truncate font-semibold'>
-              {APP_SIDEBAR.curProfile.name}
-            </span>
-            <span className='truncate text-xs text-muted-foreground'>
-              {APP_SIDEBAR.curProfile.email}
+              {displayName}
             </span>
           </div>
 
@@ -61,73 +65,43 @@ export const UserMenu = () => {
         align='end'
         className='w-60'
       >
+        {/* Primary Items (Profile & Settings) only once */}
         {APP_SIDEBAR.userMenu.itemsPrimary.map((item) => (
-            <DropdownMenuItem key={item.title}>
-              <item.Icon />
-
-              <span>{item.title}</span>
-
-              {item.kbd && (
-                <DropdownMenuShortcut>{item.kbd}</DropdownMenuShortcut>
-              )}
-            </DropdownMenuItem>
-          ))}
-
-        <DropdownMenuSeparator />
-
-        <DropdownMenuLabel>Account</DropdownMenuLabel>
-
-          <DropdownMenuItem onClick={() => window.location.href = '/profile'}>
-            <UserIcon className='mr-2 h-4 w-4' />
-            View Profile
-          </DropdownMenuItem>
-
-          <DropdownMenuItem onClick={() => window.location.href = '/settings'}>
-            <SettingsIcon className='mr-2 h-4 w-4' />
-            Account Settings
-          </DropdownMenuItem>
-
-          <DropdownMenuSeparator />
-
           <DropdownMenuItem 
-            onClick={() => {
-              localStorage.removeItem('ethub_authenticated');
-              localStorage.removeItem('ethub_discord_user');
-              localStorage.removeItem('ethub_auth_method');
-              localStorage.removeItem('ethub_login_time');
-              window.location.href = '/login';
-            }}
-            className='text-red-600 focus:text-red-700'
+            key={item.title}
+            onClick={() => window.location.href = item.url}
           >
-            <LogOutIcon className='mr-2 h-4 w-4' />
-            Sign out
+            <item.Icon className='mr-2 h-4 w-4' />
+            <span>{item.title}</span>
+            {item.kbd && (
+              <DropdownMenuShortcut>{item.kbd}</DropdownMenuShortcut>
+            )}
           </DropdownMenuItem>
-
-          <DropdownMenuItem asChild>
-            <Button
-              variant='outline'
-              size='sm'
-              className='w-full'
-            >
-              <PlusIcon />
-
-              <span>Add account</span>
-            </Button>
-          </DropdownMenuItem>
+        ))}
 
         <DropdownMenuSeparator />
 
-          {APP_SIDEBAR.userMenu.itemsSecondary.map((item) => (
-            <DropdownMenuItem key={item.title}>
-              <item.Icon />
-
-              <span>{item.title}</span>
-
-              {item.kbd && (
-                <DropdownMenuShortcut>{item.kbd}</DropdownMenuShortcut>
-              )}
-            </DropdownMenuItem>
-          ))}
+        {/* Secondary Items (Sign out) */}
+        {APP_SIDEBAR.userMenu.itemsSecondary.map((item) => (
+          <DropdownMenuItem 
+            key={item.title}
+            onClick={() => {
+              if (item.title === 'Sign out') {
+                localStorage.removeItem('ethub_authenticated');
+                localStorage.removeItem('ethub_discord_user');
+                localStorage.removeItem('ethub_auth_method');
+                localStorage.removeItem('ethub_login_time');
+                window.location.href = '/login';
+              }
+            }}
+          >
+            <item.Icon className='mr-2 h-4 w-4' />
+            <span>{item.title}</span>
+            {item.kbd && (
+              <DropdownMenuShortcut>{item.kbd}</DropdownMenuShortcut>
+            )}
+          </DropdownMenuItem>
+        ))}
       </DropdownMenuContent>
     </DropdownMenu>
   );

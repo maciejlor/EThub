@@ -9,14 +9,13 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
-import { UserCheckIcon, PlusIcon, TrashIcon, EditIcon, UserIcon, MailIcon, CalendarIcon, ShieldIcon, ExternalLinkIcon } from 'lucide-react';
+import { UserCheckIcon, PlusIcon, TrashIcon, EditIcon, UserIcon, CalendarIcon, ShieldIcon, ExternalLinkIcon } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { getUsers, addUser, updateUser, removeUser, subscribeUsersChanges, type UserEntry } from '@/lib/driver-storage';
 
 const ROLE_COLORS: Record<string, string> = {
   'Admin': 'bg-red-500/20 text-red-700 dark:text-red-400 border-red-500/30',
-  'HR Manager': 'bg-blue-500/20 text-blue-700 dark:text-blue-400 border-blue-500/30',
-  'Event Manager': 'bg-purple-500/20 text-purple-700 dark:text-purple-400 border-purple-500/30',
+  'Overseer': 'bg-orange-500/20 text-orange-700 dark:text-orange-400 border-orange-500/30',
   'HR Staff': 'bg-blue-500/15 text-blue-700 dark:text-blue-400 border-blue-500/30',
   'Event Staff': 'bg-purple-500/15 text-purple-700 dark:text-purple-400 border-purple-500/30',
   'Senior Staff': 'bg-green-500/20 text-green-700 dark:text-green-400 border-green-500/30',
@@ -39,6 +38,8 @@ export function AllMembersPage() {
   const [departmentFilter, setDepartmentFilter] = useState<string>('all');
   const [statusFilter, setStatusFilter] = useState<string>('all');
 
+  const currentUser = JSON.parse(localStorage.getItem('ethub_current_user') || '{"displayName": "System"}');
+
   const [newUser, setNewUser] = useState({
     username: '',
     password: '',
@@ -47,7 +48,7 @@ export function AllMembersPage() {
     role: 'HR Staff' as UserEntry['role'],
     department: 'HR' as UserEntry['department'],
     isActive: true,
-    createdBy: 'Current User',
+    createdBy: currentUser.displayName,
   });
 
   const deriveDepartmentFromRole = (role: UserEntry['role']): UserEntry['department'] => {
@@ -110,7 +111,7 @@ export function AllMembersPage() {
       role: 'HR Staff',
       department: 'HR',
       isActive: true,
-      createdBy: 'Current User'
+      createdBy: currentUser.displayName
     });
     setIsAddDialogOpen(false);
   };
@@ -230,8 +231,7 @@ export function AllMembersPage() {
                           <SelectItem value='Driver' className='text-foreground hover:bg-accent'>Driver</SelectItem>
                           <SelectItem value='HR Staff' className='text-foreground hover:bg-accent'>HR Staff</SelectItem>
                           <SelectItem value='Event Staff' className='text-foreground hover:bg-accent'>Event Staff</SelectItem>
-                          <SelectItem value='Event Manager' className='text-foreground hover:bg-accent'>Event Manager</SelectItem>
-                          <SelectItem value='HR Manager' className='text-foreground hover:bg-accent'>HR Manager</SelectItem>
+                          <SelectItem value='Overseer' className='text-foreground hover:bg-accent'>Overseer</SelectItem>
                           <SelectItem value='Admin' className='text-foreground hover:bg-accent'>Admin</SelectItem>
                         </SelectContent>
                       </Select>
@@ -267,15 +267,15 @@ export function AllMembersPage() {
                       <SelectTrigger className='bg-background border-border'>
                         <SelectValue />
                       </SelectTrigger>
-                      <SelectContent className='bg-card border-border'>
-                        <SelectItem value='all'>All Roles</SelectItem>
-                        <SelectItem value='HR Staff'>HR Staff</SelectItem>
-                        <SelectItem value='Event Staff'>Event Staff</SelectItem>
-                        <SelectItem value='Senior Staff'>Senior Staff</SelectItem>
-                        <SelectItem value='HR Manager'>HR Manager</SelectItem>
-                        <SelectItem value='Event Manager'>Event Manager</SelectItem>
-                        <SelectItem value='Admin'>Admin</SelectItem>
-                      </SelectContent>
+                        <SelectContent className='bg-card border-border'>
+                          <SelectItem value='all'>All Roles</SelectItem>
+                          <SelectItem value='Driver'>Driver</SelectItem>
+                          <SelectItem value='HR Staff'>HR Staff</SelectItem>
+                          <SelectItem value='Event Staff'>Event Staff</SelectItem>
+                          <SelectItem value='Senior Staff'>Senior Staff</SelectItem>
+                          <SelectItem value='Overseer'>Overseer</SelectItem>
+                          <SelectItem value='Admin'>Admin</SelectItem>
+                        </SelectContent>
                     </Select>
                   </div>
 
@@ -360,11 +360,7 @@ export function AllMembersPage() {
                         </div>
                       </CardHeader>
                       <CardContent className='space-y-3'>
-                        <div className='flex items-center gap-2 text-sm text-muted-foreground'>
-                          <MailIcon className='h-4 w-4' />
-                          <span>{user.email}</span>
-                        </div>
-                        
+
                         <div className='flex items-center gap-2'>
                           <Badge className={ROLE_COLORS[user.role]}>
                             <ShieldIcon className='h-3 w-3 mr-1' />
@@ -431,15 +427,7 @@ export function AllMembersPage() {
                         className='bg-background border-border'
                       />
                     </div>
-                    <div>
-                      <label className='text-sm font-medium text-foreground block mb-2'>Email</label>
-                      <Input
-                        type='email'
-                        value={editingUser.email}
-                        onChange={(e) => setEditingUser(prev => prev ? { ...prev, email: e.target.value } : null)}
-                        className='bg-background border-border'
-                      />
-                    </div>
+
                     <div>
                       <label className='text-sm font-medium text-foreground block mb-2'>Display Name</label>
                       <Input
@@ -473,11 +461,11 @@ export function AllMembersPage() {
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent className='bg-card border-border'>
+                          <SelectItem value='Driver' className='text-foreground hover:bg-accent'>Driver</SelectItem>
                           <SelectItem value='HR Staff' className='text-foreground hover:bg-accent'>HR Staff</SelectItem>
                           <SelectItem value='Event Staff' className='text-foreground hover:bg-accent'>Event Staff</SelectItem>
                           <SelectItem value='Senior Staff' className='text-foreground hover:bg-accent'>Senior Staff</SelectItem>
-                          <SelectItem value='HR Manager' className='text-foreground hover:bg-accent'>HR Manager</SelectItem>
-                          <SelectItem value='Event Manager' className='text-foreground hover:bg-accent'>Event Manager</SelectItem>
+                          <SelectItem value='Overseer' className='text-foreground hover:bg-accent'>Overseer</SelectItem>
                           <SelectItem value='Admin' className='text-foreground hover:bg-accent'>Admin</SelectItem>
                         </SelectContent>
                       </Select>

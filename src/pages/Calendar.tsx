@@ -58,6 +58,9 @@ export function CalendarPage() {
   useEffect(() => {
     let cancelled = false;
 
+    // Clear stale cache so past events load fresh
+    try { localStorage.removeItem('ethub_cached_events_v1'); } catch { /**/ }
+
     fetchVtcAttendingEvents(74784)
       .then((data) => {
         if (cancelled) return;
@@ -100,6 +103,7 @@ export function CalendarPage() {
 
   const weekDays = useMemo(() => ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'], []);
 
+  // Build map of all events (past AND upcoming) keyed by day
   const eventsByDay = useMemo(() => {
     const map = new Map<string, TruckersmpAttendingEvent[]>();
     for (const e of events) {
@@ -126,9 +130,9 @@ export function CalendarPage() {
         <main>
           <Page>
             <div className='flex flex-col gap-6'>
-              {/* Top Header - Scheduling */}
+              {/* Top Header */}
               <div className='flex flex-col gap-4 lg:flex-row lg:justify-between lg:items-center'>
-                <h1 className='text-xl font-semibold lg:text-2xl'>Scheduling</h1>
+                <h1 className='text-xl font-semibold lg:text-2xl'>Calendar</h1>
 
                 <div className='flex flex-wrap items-center gap-3'>
                   {/* View Toggles */}
@@ -158,7 +162,7 @@ export function CalendarPage() {
               {/* Full Width Calendar Grid */}
               <div className='grid grid-cols-1 gap-6'>
 
-                {/* Right Panel - Calendar Grid */}
+                {/* Calendar Grid */}
                 <Card className='rounded-xl border p-6 lg:p-8 shadow-sm relative overflow-hidden flex flex-col bg-background'>
                   <div className='absolute top-0 right-0 w-full h-[300px] bg-gradient-to-b from-primary/[0.03] to-transparent pointer-events-none' />
                   

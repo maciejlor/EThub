@@ -7,21 +7,20 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { ShieldAlertIcon, PlusIcon, TrashIcon } from 'lucide-react';
 import { getBlacklistStaff, addBlacklistStaff, removeBlacklistStaff, subscribeBlacklistStaffChanges, type BlacklistStaffEntry } from '@/lib/driver-storage';
-
-const STAFF_ROLES = ['Admin', 'Moderator', 'Event Manager', 'HR Manager', 'Driver Manager', 'Senior Staff', 'HR Staff', 'Event Staff'];
 
 export function BlacklistStaffPage() {
   const [blacklistStaff, setBlacklistStaff] = useState<BlacklistStaffEntry[]>(getBlacklistStaff());
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
+  const currentUser = JSON.parse(localStorage.getItem('ethub_current_user') || '{"displayName": "System"}');
+
   const [newStaff, setNewStaff] = useState({
     staffName: '',
-    role: '',
+    tmpProfileLink: '',
+    discordId: '',
     reason: '',
-    blacklistedDate: new Date().toISOString().split('T')[0],
-    addedBy: 'Current User'
+    addedBy: currentUser.displayName
   });
 
   // Load blacklist staff and subscribe to changes
@@ -34,24 +33,24 @@ export function BlacklistStaffPage() {
   }, []);
 
   const handleAddStaff = () => {
-    if (!newStaff.staffName || !newStaff.role || !newStaff.reason) {
+    if (!newStaff.staffName || !newStaff.reason) {
       return;
     }
 
     addBlacklistStaff({
       staffName: newStaff.staffName,
-      role: newStaff.role,
+      tmpProfileLink: newStaff.tmpProfileLink,
+      discordId: newStaff.discordId,
       reason: newStaff.reason,
-      blacklistedDate: newStaff.blacklistedDate,
       addedBy: newStaff.addedBy
     });
 
     setNewStaff({
       staffName: '',
-      role: '',
+      tmpProfileLink: '',
+      discordId: '',
       reason: '',
-      blacklistedDate: new Date().toISOString().split('T')[0],
-      addedBy: 'Current User'
+      addedBy: currentUser.displayName
     });
     setIsAddDialogOpen(false);
   };
@@ -92,19 +91,24 @@ export function BlacklistStaffPage() {
                       />
                     </div>
                     <div>
-                      <label htmlFor='role' className='text-sm font-medium text-foreground block mb-2'>Role</label>
-                      <Select value={newStaff.role} onValueChange={(value) => setNewStaff(prev => ({ ...prev, role: value }))}>
-                        <SelectTrigger className='bg-background border-border'>
-                          <SelectValue placeholder='Select role' />
-                        </SelectTrigger>
-                        <SelectContent className='bg-card border-border'>
-                          {STAFF_ROLES.map(role => (
-                            <SelectItem key={role} value={role} className='text-foreground hover:bg-accent'>
-                              {role}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
+                      <label htmlFor='tmpProfileLink' className='text-sm font-medium text-foreground block mb-2'>TMP Profile Link</label>
+                      <Input
+                        id='tmpProfileLink'
+                        value={newStaff.tmpProfileLink}
+                        onChange={(e) => setNewStaff(prev => ({ ...prev, tmpProfileLink: e.target.value }))}
+                        placeholder='Enter TMP profile link'
+                        className='bg-background border-border'
+                      />
+                    </div>
+                    <div>
+                      <label htmlFor='discordId' className='text-sm font-medium text-foreground block mb-2'>Discord ID</label>
+                      <Input
+                        id='discordId'
+                        value={newStaff.discordId}
+                        onChange={(e) => setNewStaff(prev => ({ ...prev, discordId: e.target.value }))}
+                        placeholder='Enter Discord user ID'
+                        className='bg-background border-border'
+                      />
                     </div>
                     <div>
                       <label htmlFor='reason' className='text-sm font-medium text-foreground block mb-2'>Reason</label>
@@ -113,16 +117,6 @@ export function BlacklistStaffPage() {
                         value={newStaff.reason}
                         onChange={(e) => setNewStaff(prev => ({ ...prev, reason: e.target.value }))}
                         placeholder='Enter blacklist reason'
-                        className='bg-background border-border'
-                      />
-                    </div>
-                    <div>
-                      <label htmlFor='blacklistedDate' className='text-sm font-medium text-foreground block mb-2'>Blacklisted Date</label>
-                      <Input
-                        id='blacklistedDate'
-                        type='date'
-                        value={newStaff.blacklistedDate}
-                        onChange={(e) => setNewStaff(prev => ({ ...prev, blacklistedDate: e.target.value }))}
                         className='bg-background border-border'
                       />
                     </div>
@@ -159,13 +153,13 @@ export function BlacklistStaffPage() {
                       </CardHeader>
                       <CardContent className='space-y-3'>
                         <div className='text-sm text-muted-foreground'>
-                          <strong>Role:</strong> {staff.role}
+                          <strong>TMP Link:</strong> <a href={staff.tmpProfileLink} target='_blank' rel='noopener noreferrer' className='text-primary hover:underline'>{staff.tmpProfileLink || 'N/A'}</a>
                         </div>
                         <div className='text-sm text-muted-foreground'>
+                          <strong>Discord ID:</strong> {staff.discordId || 'N/A'}
+                        </div>
+                        <div className='text-sm text-muted-foreground font-medium'>
                           <strong>Reason:</strong> {staff.reason}
-                        </div>
-                        <div className='text-sm text-muted-foreground'>
-                          <strong>Blacklisted:</strong> {new Date(staff.blacklistedDate).toLocaleDateString()}
                         </div>
                         <div className='text-sm text-muted-foreground'>
                           <strong>Added by:</strong> {staff.addedBy}

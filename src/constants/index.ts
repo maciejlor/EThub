@@ -234,12 +234,6 @@ export const APP_SIDEBAR = {
   userMenu: {
     itemsPrimary: [
       {
-        title: 'View profile',
-        url: '/profile',
-        Icon: UserIcon,
-        kbd: '⌘K->P',
-      },
-      {
         title: 'Account settings',
         url: '/settings',
         Icon: SettingsIcon,

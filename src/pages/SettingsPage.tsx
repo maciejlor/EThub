@@ -61,7 +61,7 @@ export function SettingsPage() {
             username: 'hr_manager',
             email: 'hr@ethub.com',
             displayName: 'HR Manager',
-            role: 'HR Manager' as const,
+            role: 'HR Staff' as const,
             department: 'HR' as const,
             isActive: true,
             createdBy: 'System'
@@ -70,7 +70,7 @@ export function SettingsPage() {
             username: 'event_manager',
             email: 'events@ethub.com',
             displayName: 'Event Manager',
-            role: 'Event Manager' as const,
+            role: 'Event Staff' as const,
             department: 'Event' as const,
             isActive: true,
             createdBy: 'System'
@@ -319,10 +319,7 @@ export function SettingsPage() {
                 </CardHeader>
                 <CardContent className='space-y-6'>
                   {/* Avatar Section */}
-                  <div 
-                    className='flex items-center gap-4 cursor-pointer hover:bg-accent/50 p-2 rounded-lg transition-colors'
-                    onClick={() => navigate('/profile')}
-                  >
+                  <div className='flex items-center gap-4 p-2 rounded-lg'>
                     <div className='relative'>
                       {user.avatar ? (
                         <img 
@@ -349,14 +346,9 @@ export function SettingsPage() {
                     <div className='flex-1'>
                       <h3 className='text-xl font-bold text-white'>{user.displayName}</h3>
                       <p className='text-sm text-muted-foreground'>@{user.username}</p>
-                      <Badge className={currentRank ? 'mt-2' : ''} style={{ 
-                        backgroundColor: (currentRank?.color || '#94a3b8') + '20', 
-                        color: currentRank?.color,
-                        borderColor: (currentRank?.color || '#94a3b8') + '30'
-                      }}>
+                      <Badge className='mt-2 bg-primary/10 text-primary border-primary/20 font-black uppercase tracking-widest'>
                         {currentRank?.icon} {currentRank?.title || 'No Rank'}
                       </Badge>
-                      <p className='text-xs text-muted-foreground mt-1'>Click to view full profile</p>
                     </div>
                   </div>
 
@@ -377,45 +369,20 @@ export function SettingsPage() {
                       </DialogTrigger>
                       <DialogContent className='bg-card border-border'>
                         <DialogHeader>
-                          <DialogTitle className='text-foreground'>Change Username</DialogTitle>
+                          <DialogTitle className='text-foreground'>Profile Settings</DialogTitle>
                         </DialogHeader>
                         <div className='space-y-4'>
                           <div>
-                            <label className='text-sm font-medium text-foreground block mb-2'>Avatar URL</label>
-                            <Input
-                              value={newAvatar}
-                              onChange={(e) => setNewAvatar(e.target.value)}
-                              placeholder='Enter avatar image URL'
-                              className='bg-background border-border'
-                            />
-                          </div>
-                          <div className='relative'>
-                            <div className='absolute inset-0 flex items-center'>
-                              <span className='w-full border-t border-border' />
-                            </div>
-                            <div className='relative flex justify-center text-xs uppercase'>
-                              <span className='bg-card px-2 text-muted-foreground'>Or upload file</span>
-                            </div>
-                          </div>
-                          <div>
-                            <Input
-                              type='file'
-                              accept='image/*'
-                              onChange={handleAvatarFileUpload}
-                              className='bg-background border-border cursor-pointer'
-                            />
-                          </div>
-                          <div className='text-xs text-muted-foreground'>
-                            Upload a photo from your device or enter a URL.
-                          </div>
-                          <div>
-                            <label className='text-sm font-medium text-foreground block mb-2'>New Username</label>
+                            <label className='text-sm font-medium text-foreground block mb-2'>Display Name / Username</label>
                             <Input
                               value={newUsername}
                               onChange={(e) => setNewUsername(e.target.value)}
-                              placeholder='Enter new username'
+                              placeholder='Enter custom username'
                               className='bg-background border-border'
                             />
+                          </div>
+                          <div className='text-xs text-muted-foreground'>
+                            This name will be shown on the dashboard and your menu.
                           </div>
                           <div className='flex space-x-2'>
                             <Button onClick={handleUsernameUpdate} className='flex-1 bg-primary text-primary-foreground hover:bg-primary/90'>
@@ -430,213 +397,10 @@ export function SettingsPage() {
                     </Dialog>
                   </div>
 
-                  <Separator />
 
-                  {/* Email Section */}
-                  <div className='flex items-center justify-between'>
-                    <div>
-                      <h4 className='font-medium text-foreground'>Email</h4>
-                      <p className='text-sm text-muted-foreground'>{user.email}</p>
-                    </div>
-                    <Dialog open={isEmailDialogOpen} onOpenChange={setIsEmailDialogOpen}>
-                      <DialogTrigger asChild>
-                        <Button variant='outline' className='bg-background border-border'>
-                          <EditIcon className='mr-2 h-4 w-4' />
-                          Edit
-                        </Button>
-                      </DialogTrigger>
-                      <DialogContent className='bg-card border-border'>
-                        <DialogHeader>
-                          <DialogTitle className='text-foreground'>Change Email</DialogTitle>
-                        </DialogHeader>
-                        <div className='space-y-4'>
-                          <div>
-                            <label className='text-sm font-medium text-foreground block mb-2'>New Email</label>
-                            <Input
-                              type='email'
-                              value={newEmail}
-                              onChange={(e) => setNewEmail(e.target.value)}
-                              placeholder='Enter new email address'
-                              className='bg-background border-border'
-                            />
-                          </div>
-                          <div className='text-xs text-muted-foreground'>
-                            This will update your account email address for notifications and login.
-                          </div>
-                          <div className='flex space-x-2'>
-                            <Button onClick={handleEmailUpdate} className='flex-1 bg-primary text-primary-foreground hover:bg-primary/90'>
-                              Update Email
-                            </Button>
-                            <Button onClick={() => setIsEmailDialogOpen(false)} variant='outline' className='flex-1 bg-background border-border'>
-                              Cancel
-                            </Button>
-                          </div>
-                        </div>
-                      </DialogContent>
-                    </Dialog>
-                  </div>
-
-                  <Separator />
-
-                  {/* Cover Image Section */}
-                  <div className='flex items-center justify-between'>
-                    <div>
-                      <h4 className='font-medium text-foreground'>Profile Banner</h4>
-                      <p className='text-sm text-muted-foreground'>Customize your profile header image</p>
-                      {user.coverImage && (
-                        <div className='mt-2 h-16 w-32 rounded border border-border overflow-hidden'>
-                          <img src={user.coverImage} className='w-full h-full object-cover' />
-                        </div>
-                      )}
-                    </div>
-                    <Dialog open={isCoverDialogOpen} onOpenChange={setIsCoverDialogOpen}>
-                      <DialogTrigger asChild>
-                        <Button variant='outline' className='bg-background border-border'>
-                          <ImageIcon className='mr-2 h-4 w-4' />
-                          Change Banner
-                        </Button>
-                      </DialogTrigger>
-                      <DialogContent className='bg-card border-border'>
-                        <DialogHeader>
-                          <DialogTitle className='text-foreground'>Update Profile Banner</DialogTitle>
-                        </DialogHeader>
-                        <div className='space-y-4'>
-                          <div>
-                            <label className='text-sm font-medium text-foreground block mb-2'>Banner Image URL</label>
-                            <Input
-                              value={newCover}
-                              onChange={(e) => setNewCover(e.target.value)}
-                              placeholder='https://images.unsplash.com/...'
-                              className='bg-background border-border'
-                            />
-                          </div>
-                          <div className='relative'>
-                            <div className='absolute inset-0 flex items-center'>
-                              <span className='w-full border-t border-border' />
-                            </div>
-                            <div className='relative flex justify-center text-xs uppercase'>
-                              <span className='bg-card px-2 text-muted-foreground'>Or upload file</span>
-                            </div>
-                          </div>
-                          <div>
-                            <Input
-                              type='file'
-                              accept='image/*'
-                              onChange={handleCoverFileUpload}
-                              className='bg-background border-border cursor-pointer'
-                            />
-                          </div>
-                          <p className='text-xs text-muted-foreground'>
-                            Recommended size: 1724 x 405 pixels for best display.
-                          </p>
-                          <div className='flex space-x-2'>
-                            <Button onClick={handleCoverUpdate} disabled={isLoading} className='flex-1 bg-primary text-primary-foreground hover:bg-primary/90'>
-                              {isLoading ? 'Updating...' : 'Save Banner'}
-                            </Button>
-                            <Button onClick={() => setIsCoverDialogOpen(false)} variant='outline' className='flex-1 bg-background border-border'>
-                              Cancel
-                            </Button>
-                          </div>
-                        </div>
-                      </DialogContent>
-                    </Dialog>
-                  </div>
-
-                  <Separator />
-
-                  {/* Role & Department */}
-                  <div className='grid grid-cols-2 gap-4'>
-                    <div>
-                      <h4 className='font-medium text-foreground'>Role</h4>
-                      <Badge className='mt-1 bg-blue-500/20 text-blue-700 dark:text-blue-400 border-blue-500/30'>
-                        {user.role}
-                      </Badge>
-                    </div>
-                    <div>
-                      <h4 className='font-medium text-foreground'>Department</h4>
-                      <Badge className='mt-1 bg-purple-500/20 text-purple-700 dark:text-purple-400 border-purple-500/30'>
-                        {user.department}
-                      </Badge>
-                    </div>
-                  </div>
                 </CardContent>
               </Card>
 
-              {/* Rank Progress */}
-              <Card className='bg-card border-border'>
-                <CardHeader>
-                  <CardTitle className='text-lg flex items-center gap-2'>
-                    <TrophyIcon className='h-5 w-5' />
-                    Rank Progress
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className='space-y-4'>
-                  {currentRank && (
-                    <div className='text-center'>
-                      <div className='text-4xl mb-2'>{currentRank.icon}</div>
-                      <h3 className='font-semibold text-foreground' style={{ color: currentRank.color }}>
-                        {currentRank.title}
-                      </h3>
-                      <p className='text-sm text-muted-foreground'>Level {currentRank.level}</p>
-                    </div>
-                  )}
-
-                  {nextRank && (
-                    <>
-                      <Separator />
-                      <div>
-                        <h4 className='font-medium text-foreground mb-2'>Next Rank</h4>
-                        <div className='flex items-center gap-2'>
-                          <span className='text-2xl'>{nextRank.icon}</span>
-                          <div>
-                            <p className='font-medium text-foreground' style={{ color: nextRank.color }}>
-                              {nextRank.title}
-                            </p>
-                            <p className='text-xs text-muted-foreground'>Level {nextRank.level}</p>
-                          </div>
-                        </div>
-                        <div className='mt-2 space-y-1'>
-                          {nextRank.requirements?.map((req, index) => (
-                            <div key={index} className='text-xs text-muted-foreground flex items-center gap-1'>
-                              <StarIcon className='h-3 w-3' />
-                              {req}
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    </>
-                  )}
-
-                  <Separator />
-
-                  <div>
-                    <h4 className='font-medium text-foreground mb-2'>All Ranks</h4>
-                    <div className='space-y-2 max-h-48 overflow-y-auto'>
-                      {RANKS.map((rank) => (
-                        <div 
-                          key={rank.level} 
-                          className={`flex items-center gap-2 p-2 rounded ${
-                            rank.level === currentRank?.level ? 'bg-primary/10' : ''
-                          }`}
-                        >
-                          <span className='text-lg'>{rank.icon}</span>
-                          <div className='flex-1'>
-                            <p className='text-sm font-medium text-foreground' style={{ color: rank.color }}>
-                              {rank.title}
-                            </p>
-                            <p className='text-xs text-muted-foreground'>Level {rank.level}</p>
-                          </div>
-                          {rank.level === currentRank?.level && (
-                            <Badge className='bg-green-500/20 text-green-700 dark:text-green-400 border-green-500/30'>
-                              Current
-                            </Badge>
-                          )}
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
             </div>
 
             {/* Connected Accounts */}

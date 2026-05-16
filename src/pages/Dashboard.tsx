@@ -10,6 +10,12 @@ import { UsersIcon, BriefcaseIcon, MapIcon, CalendarIcon } from 'lucide-react';
 import { fetchTruckersmpVtcInfo, fetchUpcomingEvents, type UpcomingEvent } from '@/lib/truckersmp';
 import { fetchTruckyVtcInfo, fetchTruckyJobs, fetchTruckyCompletedDeliveryTotals, type TruckyVtcInfo, type TruckyJob } from '@/lib/trucky';
 import { APP_SIDEBAR } from '@/constants';
+import { 
+  getCurrentUser, 
+  getUsers, 
+  setCurrentUser,
+  type UserEntry 
+} from '@/lib/driver-storage';
 import { StatCard } from '@/components/StatCard';
 import { UpcomingConvoyCard } from '@/components/UpcomingConvoyCard';
 
@@ -20,6 +26,15 @@ export function DashboardPage() {
   const [recentJobs, setRecentJobs] = useState<TruckyJob[]>([]);
   const [completedTotals, setCompletedTotals] = useState({ jobs: 0, distanceKm: 0 });
   const [loading, setLoading] = useState(true);
+
+  const [currentUser, setLocalUser] = useState<UserEntry | null>(null);
+
+  useEffect(() => {
+    const user = getCurrentUser();
+    if (user) {
+      setLocalUser(user);
+    }
+  }, []);
 
   useEffect(() => {
     const loadData = async () => {
@@ -66,7 +81,7 @@ export function DashboardPage() {
 
         <main>
           <Page>
-            <PageHeader name={APP_SIDEBAR.curProfile.name.split(' ')[0]} />
+            <PageHeader name={currentUser?.displayName || currentUser?.discordUsername || currentUser?.username || 'Member'} />
 
             {/* Stat Cards */}
             <div className='grid gap-6 mt-8 sm:grid-cols-2 lg:grid-cols-4'>

@@ -14,7 +14,7 @@ import {
 } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Link, useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import type { TruckyJob } from '@/lib/trucky';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 
@@ -41,9 +41,6 @@ export const DashboardTable = ({ jobs }: Props) => {
           <h2 className='text-lg font-semibold'>Detail informations of jobs</h2>
           <p className='text-sm text-muted-foreground'>Latest deliveries logged in Trucky.</p>
         </div>
-        <Button variant='outline' size='sm' className='text-xs font-semibold' asChild>
-          <Link to='/jobs'>View all jobs</Link>
-        </Button>
       </div>
 
       <Table>

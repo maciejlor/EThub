@@ -39,7 +39,8 @@ export interface BlacklistVtcEntry {
   id: string;
   vtcName: string;
   reason: string;
-  blacklistedDate: string;
+  tmpVtcLink: string;
+  discordVtcLink: string;
   addedAt: string;
   addedBy: string;
 }
@@ -47,9 +48,9 @@ export interface BlacklistVtcEntry {
 export interface BlacklistStaffEntry {
   id: string;
   staffName: string;
-  role: string;
+  tmpProfileLink: string;
+  discordId: string;
   reason: string;
-  blacklistedDate: string;
   addedAt: string;
   addedBy: string;
 }
@@ -77,8 +78,7 @@ export interface UserEntry {
   password?: string;
   role:
     | 'Admin'
-    | 'HR Manager'
-    | 'Event Manager'
+    | 'Overseer'
     | 'HR Staff'
     | 'Event Staff'
     | 'Senior Staff'
@@ -220,7 +220,7 @@ export function removeManagedDriver(id: string): boolean {
     entityName: driverToRemove.username,
     entityId: id,
     description: `Removed driver ${driverToRemove.username} from managed drivers`,
-    performedBy: 'Current User',
+    performedBy: getActorName(),
     department: 'HR',
   });
   
@@ -404,7 +404,7 @@ export function updateEventInviteStatus(id: string, status: EventInviteEntry['st
     entityName: `${list[index].convoyName} - ${list[index].vtcName}`,
     entityId: id,
     description: `Updated event invite status from ${oldStatus} to ${status} for ${list[index].vtcName}`,
-    performedBy: 'Current User',
+    performedBy: getActorName(),
     department: 'Event',
     changes: {
       status: { old: oldStatus, new: status }
@@ -453,7 +453,8 @@ function safeParseBlacklistVtcs(raw: string | null): BlacklistVtcEntry[] {
         typeof o.id === 'string' &&
         typeof o.vtcName === 'string' &&
         typeof o.reason === 'string' &&
-        typeof o.blacklistedDate === 'string' &&
+        typeof o.tmpVtcLink === 'string' &&
+        typeof o.discordVtcLink === 'string' &&
         typeof o.addedAt === 'string' &&
         typeof o.addedBy === 'string'
       );
@@ -530,9 +531,9 @@ function safeParseBlacklistStaff(raw: string | null): BlacklistStaffEntry[] {
       return (
         typeof o.id === 'string' &&
         typeof o.staffName === 'string' &&
-        typeof o.role === 'string' &&
+        typeof o.tmpProfileLink === 'string' &&
+        typeof o.discordId === 'string' &&
         typeof o.reason === 'string' &&
-        typeof o.blacklistedDate === 'string' &&
         typeof o.addedAt === 'string' &&
         typeof o.addedBy === 'string'
       );
@@ -598,6 +599,27 @@ export function subscribeBlacklistStaffChanges(fn: () => void): () => void {
 
 // History Storage
 const HISTORY_STORAGE_KEY = 'ethub_history_v1';
+
+/** Returns the display name of the currently logged-in user for audit log entries. */
+function getActorName(): string {
+  try {
+    const raw = localStorage.getItem('ethub_current_user');
+    if (raw) {
+      const parsed = JSON.parse(raw) as { displayName?: string };
+      if (parsed.displayName) return parsed.displayName;
+    }
+    // Fallback: look up by session storage user id
+    const userId = sessionStorage.getItem('ethub_current_user_id');
+    if (userId) {
+      const users = safeParseUsers(localStorage.getItem(USERS_STORAGE_KEY));
+      const found = users.find(u => u.id === userId);
+      if (found?.displayName) return found.displayName;
+    }
+  } catch {
+    // ignore
+  }
+  return 'System';
+}
 
 function safeParseHistory(raw: string | null): HistoryEntry[] {
   if (!raw) return [];
@@ -771,7 +793,7 @@ export function updateUser(id: string, updates: Partial<Omit<UserEntry, 'id' | '
       entityId: id,
       description: `Updated user ${updatedUser.displayName}`,
       changes,
-      performedBy: 'Current User',
+      performedBy: getActorName(),
       department: 'Admin',
     });
   }
@@ -796,7 +818,7 @@ export function removeUser(id: string): boolean {
     entityName: removedUser.displayName,
     entityId: id,
     description: `Deleted user account for ${removedUser.displayName}`,
-    performedBy: 'Current User',
+    performedBy: getActorName(),
     department: 'Admin',
   });
   
@@ -872,7 +894,7 @@ export function updateUserSettings(userId: string, settings: Partial<UserEntry>)
       entityId: userId,
       description: `Updated user settings for ${updatedUser.displayName}`,
       changes,
-      performedBy: 'Current User',
+      performedBy: getActorName(),
       department: 'System',
     });
   }
