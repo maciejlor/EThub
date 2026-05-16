@@ -6,25 +6,23 @@
 /**
  * Components
  */
-import Avatar from 'react-avatar';
 import {
   DropdownMenu,
   DropdownMenuContent,
-  DropdownMenuGroup,
   DropdownMenuItem,
   DropdownMenuLabel,
-  DropdownMenuRadioGroup,
-  DropdownMenuRadioItem,
   DropdownMenuSeparator,
-  DropdownMenuShortcut,
   DropdownMenuTrigger,
+  DropdownMenuShortcut,
 } from '@/components/ui/dropdown-menu';
 import { Button } from '@/components/ui/button';
+import { UserIcon, SettingsIcon, LogOutIcon, PlusIcon } from 'lucide-react';
+import Avatar from 'react-avatar';
 
 /**
- * Assets
+ * Custom modules
  */
-import { PlusIcon } from 'lucide-react';
+import { SidebarMenuButton } from '@/components/ui/sidebar';
 
 /**
  * Constants
@@ -34,16 +32,28 @@ import { APP_SIDEBAR } from '@/constants';
 export const UserMenu = () => {
   return (
     <DropdownMenu>
-      <DropdownMenuTrigger>
-        <div className='relative'>
+      <DropdownMenuTrigger asChild>
+        <SidebarMenuButton
+          size='lg'
+          className='data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground'
+        >
           <Avatar
             src={APP_SIDEBAR.curProfile.src}
             size='32px'
             round='8px'
           />
 
-          <div className='absolute bottom-0 right-0 size-2 rounded-full bg-emerald-500 dark:bg-emerald-400 ring-sidebar ring-1'></div>
-        </div>
+          <div className='grid flex-1 text-left text-sm leading-tight group-data-[collapsible=icon]:hidden'>
+            <span className='truncate font-semibold'>
+              {APP_SIDEBAR.curProfile.name}
+            </span>
+            <span className='truncate text-xs text-muted-foreground'>
+              {APP_SIDEBAR.curProfile.email}
+            </span>
+          </div>
+
+          <div className='ml-auto size-4 group-data-[collapsible=icon]:hidden opacity-50' />
+        </SidebarMenuButton>
       </DropdownMenuTrigger>
 
       <DropdownMenuContent
@@ -51,8 +61,7 @@ export const UserMenu = () => {
         align='end'
         className='w-60'
       >
-        <DropdownMenuGroup>
-          {APP_SIDEBAR.userMenu.itemsPrimary.map((item) => (
+        {APP_SIDEBAR.userMenu.itemsPrimary.map((item) => (
             <DropdownMenuItem key={item.title}>
               <item.Icon />
 
@@ -63,43 +72,36 @@ export const UserMenu = () => {
               )}
             </DropdownMenuItem>
           ))}
-        </DropdownMenuGroup>
 
         <DropdownMenuSeparator />
 
-        <DropdownMenuRadioGroup
-          value={APP_SIDEBAR.curProfile.email}
-          className='space-y-1'
-        >
-          <DropdownMenuLabel>Switch account</DropdownMenuLabel>
+        <DropdownMenuLabel>Account</DropdownMenuLabel>
 
-          {APP_SIDEBAR.allProfiles.map((profile) => (
-            <DropdownMenuRadioItem
-              key={profile.email}
-              value={profile.email}
-              className='data-[state=checked]:bg-secondary'
-            >
-              <div className='grid grid-cols-[max-content_minmax(0,1fr)] items-center gap-2'>
-                <div className='relative'>
-                  <Avatar
-                    src={profile.src}
-                    size='36px'
-                    round='8px'
-                  />
+          <DropdownMenuItem onClick={() => window.location.href = '/profile'}>
+            <UserIcon className='mr-2 h-4 w-4' />
+            View Profile
+          </DropdownMenuItem>
 
-                  <div className='absolute bottom-0 right-0 size-2 rounded-full bg-emerald-500 dark:bg-emerald-400 ring-sidebar ring-1'></div>
-                </div>
+          <DropdownMenuItem onClick={() => window.location.href = '/settings'}>
+            <SettingsIcon className='mr-2 h-4 w-4' />
+            Account Settings
+          </DropdownMenuItem>
 
-                <div>
-                  <h3 className='text-sm font-semibold'>{profile.name}</h3>
+          <DropdownMenuSeparator />
 
-                  <p className='text-sm text-muted-foreground truncate'>
-                    {profile.email}
-                  </p>
-                </div>
-              </div>
-            </DropdownMenuRadioItem>
-          ))}
+          <DropdownMenuItem 
+            onClick={() => {
+              localStorage.removeItem('ethub_authenticated');
+              localStorage.removeItem('ethub_discord_user');
+              localStorage.removeItem('ethub_auth_method');
+              localStorage.removeItem('ethub_login_time');
+              window.location.href = '/login';
+            }}
+            className='text-red-600 focus:text-red-700'
+          >
+            <LogOutIcon className='mr-2 h-4 w-4' />
+            Sign out
+          </DropdownMenuItem>
 
           <DropdownMenuItem asChild>
             <Button
@@ -112,11 +114,9 @@ export const UserMenu = () => {
               <span>Add account</span>
             </Button>
           </DropdownMenuItem>
-        </DropdownMenuRadioGroup>
 
         <DropdownMenuSeparator />
 
-        <DropdownMenuGroup>
           {APP_SIDEBAR.userMenu.itemsSecondary.map((item) => (
             <DropdownMenuItem key={item.title}>
               <item.Icon />
@@ -128,7 +128,6 @@ export const UserMenu = () => {
               )}
             </DropdownMenuItem>
           ))}
-        </DropdownMenuGroup>
       </DropdownMenuContent>
     </DropdownMenu>
   );

@@ -1,21 +1,64 @@
-/**
- * @copyright 2025 codewithsadee
- * @license Apache-2.0
- */
-
+import { useEffect, useState, useMemo } from 'react';
 import { SidebarInset, SidebarProvider } from '@/components/ui/sidebar';
 import { AppSidebar } from '@/components/AppSidebar';
 import { Header } from '@/components/Header';
 import { Page, PageHeader } from '@/components/Page';
 import { DashboardCard } from '@/components/DashboardCard';
 import { AppBarChart } from '@/components/AppBarChart';
-import { AppRadialChart } from '@/components/AppRadialChart';
 import { DashboardTable } from '@/components/DashboardTable';
-import { TrendingUpIcon } from 'lucide-react';
+import { UsersIcon, BriefcaseIcon, MapIcon, CalendarIcon } from 'lucide-react';
+import { fetchTruckersmpVtcInfo, fetchUpcomingEvents, type UpcomingEvent } from '@/lib/truckersmp';
+import { fetchTruckyVtcInfo, fetchTruckyJobs, fetchTruckyCompletedDeliveryTotals, type TruckyVtcInfo, type TruckyJob } from '@/lib/trucky';
+import { APP_SIDEBAR } from '@/constants';
+import { StatCard } from '@/components/StatCard';
+import { UpcomingConvoyCard } from '@/components/UpcomingConvoyCard';
 
 export function DashboardPage() {
+  const [vtcInfo, setVtcInfo] = useState<{ members_count: number } | null>(null);
+  const [truckyInfo, setTruckyInfo] = useState<TruckyVtcInfo | null>(null);
+  const [vtcEvents, setVtcEvents] = useState<UpcomingEvent[]>([]);
+  const [recentJobs, setRecentJobs] = useState<TruckyJob[]>([]);
+  const [completedTotals, setCompletedTotals] = useState({ jobs: 0, distanceKm: 0 });
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const loadData = async () => {
+      const results = await Promise.allSettled([
+        fetchTruckersmpVtcInfo(74784),
+        fetchUpcomingEvents(74784),
+        fetchTruckyVtcInfo(44349),
+        fetchTruckyJobs(44349, 100),
+        fetchTruckyCompletedDeliveryTotals(44349),
+      ]);
+
+      if (results[0].status === 'fulfilled') setVtcInfo(results[0].value);
+      if (results[1].status === 'fulfilled') setVtcEvents(results[1].value);
+      if (results[2].status === 'fulfilled') setTruckyInfo(results[2].value);
+      if (results[3].status === 'fulfilled') setRecentJobs(results[3].value);
+      if (results[4].status === 'fulfilled') setCompletedTotals(results[4].value);
+
+      setLoading(false);
+    };
+    loadData();
+  }, []);
+
+  const attendingThisMonth = useMemo(() => {
+    const now = new Date();
+    const m = now.getMonth();
+    const y = now.getFullYear();
+    return vtcEvents.filter((e) => {
+      const d = new Date(e.startDate);
+      return d && d.getMonth() === m && d.getFullYear() === y;
+    }).length;
+  }, [vtcEvents]);
+
+  // Use Trucky member count if TruckersMP scraper fails or returns 0
+  const totalMembers = useMemo(() => {
+    return vtcInfo?.members_count || truckyInfo?.members_count || 0;
+  }, [vtcInfo, truckyInfo]);
+
   return (
-    <SidebarProvider open={false}>
+    <SidebarProvider>
       <AppSidebar />
 
       <SidebarInset>
@@ -23,49 +66,56 @@ export function DashboardPage() {
 
         <main>
           <Page>
-            <PageHeader />
+            <PageHeader name={APP_SIDEBAR.curProfile.name.split(' ')[0]} />
 
-            <div className='grid gap-6 py-8 lg:grid-cols-[1fr_360px]'>
-              <DashboardCard
-                title='Vendor breakdown'
-                description='Keep track of vendors and their security ratings.'
-                buttonText='View full report'
-              >
-                <AppBarChart />
-              </DashboardCard>
-
-              <DashboardCard
-                title='Vendor monitored'
-                description="You're using 80% of available spots."
-                buttonText='Upgrade plan'
-              >
-                <div className='flex items-start justify-between'>
-                  <AppRadialChart />
-
-                  <div className='flex items-center gap-2'>
-                    <TrendingUpIcon
-                      size={20}
-                      className='text-emerald-500 dark:text-emerald-400'
-                    />
-
-                    <span className='font-medium text-emerald-500 dark:text-emerald-400'>
-                      10%
-                    </span>
-                  </div>
-                </div>
-
-                <div className='mt-6 lg:mt-8'>
-                  <p className='font-medium'>You've almost reached your limit</p>
-
-                  <p className='text-muted-foreground'>
-                    You have used 80% of your available spots. Upgrade plan to
-                    monitor more vendors.
-                  </p>
-                </div>
-              </DashboardCard>
+            {/* Stat Cards */}
+            <div className='grid gap-6 mt-8 sm:grid-cols-2 lg:grid-cols-4'>
+              <StatCard
+                title='Drivers Number'
+                value={totalMembers}
+                subtitle='Total VTC Members'
+                icon={UsersIcon}
+                loading={loading}
+              />
+              <StatCard
+                title='Total Jobs'
+                value={completedTotals.jobs.toLocaleString()}
+                subtitle='All-time completed deliveries'
+                icon={BriefcaseIcon}
+                loading={loading}
+              />
+              <StatCard
+                title='Total Distance'
+                value={`${completedTotals.distanceKm.toLocaleString()} km`}
+                subtitle='Distance on completed jobs'
+                icon={MapIcon}
+                loading={loading}
+              />
+              <StatCard
+                title='Events This Month'
+                value={attendingThisMonth}
+                subtitle='VTC Events Attending'
+                icon={CalendarIcon}
+                loading={loading}
+              />
             </div>
 
-            <DashboardTable />
+            <div className='grid gap-6 py-8 lg:grid-cols-[1fr_550px]'>
+              <DashboardCard
+                title='Job Statistics'
+                description='Performance overview of distance and deliveries.'
+                buttonText='View performance'
+                className='h-[600px]'
+              >
+                <div className='relative h-full'>
+                  <AppBarChart jobs={recentJobs} />
+                </div>
+              </DashboardCard>
+
+              <UpcomingConvoyCard events={vtcEvents} />
+            </div>
+
+            <DashboardTable jobs={recentJobs} />
           </Page>
         </main>
       </SidebarInset>

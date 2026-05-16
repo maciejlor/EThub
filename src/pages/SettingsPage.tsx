@@ -1,0 +1,689 @@
+import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { SidebarInset, SidebarProvider } from '@/components/ui/sidebar';
+import { AppSidebar } from '@/components/AppSidebar';
+import { Header } from '@/components/Header';
+import { Page } from '@/components/Page';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Badge } from '@/components/ui/badge';
+import { Separator } from '@/components/ui/separator';
+import { 
+  UserIcon, 
+  CameraIcon, 
+  EditIcon, 
+  TrophyIcon,
+  StarIcon,
+  LinkIcon,
+  UnlinkIcon,
+  MessageCircleIcon,
+  Gamepad2Icon
+} from 'lucide-react';
+import { 
+  getCurrentUser, 
+  updateUserSettings, 
+  connectDiscord, 
+  connectSteam, 
+  updateAvatar, 
+  getUserRank,
+  getNextRank,
+  setCurrentUser,
+  getUsers,
+  addUser,
+  RANKS,
+  type UserEntry 
+} from '@/lib/driver-storage';
+
+export function SettingsPage() {
+  const navigate = useNavigate();
+  const [user, setUser] = useState<UserEntry | null>(null);
+  const [isAvatarDialogOpen, setIsAvatarDialogOpen] = useState(false);
+  const [isUsernameDialogOpen, setIsUsernameDialogOpen] = useState(false);
+  const [isDiscordDialogOpen, setIsDiscordDialogOpen] = useState(false);
+  const [isSteamDialogOpen, setIsSteamDialogOpen] = useState(false);
+  const [isEmailDialogOpen, setIsEmailDialogOpen] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+
+  const [newAvatar, setNewAvatar] = useState('');
+  const [newUsername, setNewUsername] = useState('');
+  const [newEmail, setNewEmail] = useState('');
+  const [discordInviteCode, setDiscordInviteCode] = useState('');
+  const [steamProfileUrl, setSteamProfileUrl] = useState('');
+
+  useEffect(() => {
+    const initializeUser = () => {
+      let currentUser = getCurrentUser();
+      
+      // Create test users if none exist
+      if (!currentUser) {
+        const users = getUsers();
+        if (users.length === 0) {
+          // Create test users with different roles
+          const testUsers = [
+            {
+              username: 'admin_user',
+              email: 'admin@ethub.com',
+              displayName: 'Admin User',
+              role: 'Admin' as const,
+              department: 'Admin' as const,
+              isActive: true,
+              createdBy: 'System'
+            },
+            {
+              username: 'hr_manager',
+              email: 'hr@ethub.com',
+              displayName: 'HR Manager',
+              role: 'HR Manager' as const,
+              department: 'HR' as const,
+              isActive: true,
+              createdBy: 'System'
+            },
+            {
+              username: 'event_manager',
+              email: 'events@ethub.com',
+              displayName: 'Event Manager',
+              role: 'Event Manager' as const,
+              department: 'Event' as const,
+              isActive: true,
+              createdBy: 'System'
+            },
+            {
+              username: 'assistant_user',
+              email: 'assistant@ethub.com',
+              displayName: 'HR Staff',
+              role: 'HR Staff' as const,
+              department: 'HR' as const,
+              isActive: true,
+              createdBy: 'System'
+            },
+            {
+              username: 'staff_user',
+              email: 'staff@ethub.com',
+              displayName: 'Event Staff',
+              role: 'Event Staff' as const,
+              department: 'Event' as const,
+              isActive: true,
+              createdBy: 'System'
+            },
+            {
+              username: 'driver_user',
+              email: 'driver@ethub.com',
+              displayName: 'Driver',
+              role: 'Driver' as const,
+              department: 'Event' as const,
+              isActive: true,
+              createdBy: 'System'
+            }
+          ];
+
+          // Add all test users and get the created user objects
+          const createdUsers = testUsers.map(userData => addUser(userData));
+
+          // Set the first user as current
+          setCurrentUser(createdUsers[0].id);
+          currentUser = createdUsers[0];
+        } else {
+          // Use the first available user
+          setCurrentUser(users[0].id);
+          currentUser = users[0];
+        }
+      }
+      
+      return currentUser;
+    };
+
+    const currentUser = initializeUser();
+    setUser(currentUser);
+    if (currentUser) {
+      setNewUsername(currentUser.username);
+      setNewEmail(currentUser.email);
+    }
+  }, []);
+
+  const handleAvatarUpdate = async () => {
+    if (!user || !newAvatar.trim()) return;
+    
+    setIsLoading(true);
+    try {
+      const success = updateAvatar(user.id, newAvatar.trim());
+      if (success) {
+        setUser(prev => prev ? { ...prev, avatar: newAvatar.trim() } : null);
+        setNewAvatar('');
+        setIsAvatarDialogOpen(false);
+      }
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleUsernameUpdate = () => {
+    if (!user || !newUsername.trim()) return;
+    
+    const success = updateUserSettings(user.id, { 
+      username: newUsername.trim(),
+      displayName: newUsername.trim()
+    });
+    if (success) {
+      setUser(prev => prev ? { ...prev, username: newUsername.trim(), displayName: newUsername.trim() } : null);
+      setIsUsernameDialogOpen(false);
+    }
+  };
+
+  const handleEmailUpdate = () => {
+    if (!user || !newEmail.trim()) return;
+    
+    const success = updateUserSettings(user.id, { email: newEmail.trim() });
+    if (success) {
+      setUser(prev => prev ? { ...prev, email: newEmail.trim() } : null);
+      setIsEmailDialogOpen(false);
+    }
+  };
+
+  const handleDiscordConnect = () => {
+    if (!user || !discordInviteCode.trim()) return;
+    
+    // Simulate Discord OAuth connection
+    const success = connectDiscord(user.id, 'discord_user_id', discordInviteCode.trim());
+    if (success) {
+      setUser(prev => prev ? { ...prev, discordUsername: discordInviteCode.trim() } : null);
+      setDiscordInviteCode('');
+      setIsDiscordDialogOpen(false);
+    }
+  };
+
+  const handleDiscordDisconnect = () => {
+    if (!user) return;
+    
+    const success = updateUserSettings(user.id, { discordId: undefined, discordUsername: undefined });
+    if (success) {
+      setUser(prev => prev ? { ...prev, discordId: undefined, discordUsername: undefined } : null);
+    }
+  };
+
+  const handleSteamConnect = () => {
+    if (!user || !steamProfileUrl.trim()) return;
+    
+    // Simulate Steam connection
+    const success = connectSteam(user.id, 'steam_user_id', steamProfileUrl.trim());
+    if (success) {
+      setUser(prev => prev ? { ...prev, steamUsername: steamProfileUrl.trim() } : null);
+      setSteamProfileUrl('');
+      setIsSteamDialogOpen(false);
+    }
+  };
+
+  const handleSteamDisconnect = () => {
+    if (!user) return;
+    
+    const success = updateUserSettings(user.id, { steamId: undefined, steamUsername: undefined });
+    if (success) {
+      setUser(prev => prev ? { ...prev, steamId: undefined, steamUsername: undefined } : null);
+    }
+  };
+
+  const currentRank = getUserRank(user?.rankLevel);
+  const nextRank = getNextRank(user?.rankLevel);
+
+  if (!user) {
+    return (
+      <SidebarProvider>
+        <AppSidebar />
+        <SidebarInset className='bg-background'>
+          <Header />
+          <main className='bg-background'>
+            <Page>
+              <div className='flex flex-col gap-4 lg:flex-row lg:justify-between mb-8'>
+                <div>
+                  <h1 className='text-xl font-semibold lg:text-2xl text-foreground'>Settings</h1>
+                  <p className='text-sm text-muted-foreground'>Manage your profile, connections, and preferences.</p>
+                </div>
+              </div>
+              <div className='text-center py-16'>
+                <UserIcon className='h-16 w-16 text-muted-foreground mx-auto mb-4' />
+                <h3 className='text-xl font-semibold text-foreground mb-2'>Authentication Required</h3>
+                <p className='text-muted-foreground mb-4'>Please log in to access your settings.</p>
+                <Button onClick={() => {
+                  const users = getUsers();
+                  if (users.length === 0) {
+                    const testUser = addUser({
+                      username: 'testuser',
+                      email: 'test@example.com',
+                      displayName: 'Test User',
+                      role: 'HR Staff',
+                      department: 'HR',
+                      isActive: true,
+                      createdBy: 'System'
+                    });
+                    setCurrentUser(testUser.id);
+                    window.location.reload();
+                  } else {
+                    setCurrentUser(users[0].id);
+                    window.location.reload();
+                  }
+                }} className='bg-primary text-primary-foreground hover:bg-primary/90'>
+                  Log In / Create Test User
+                </Button>
+              </div>
+            </Page>
+          </main>
+        </SidebarInset>
+      </SidebarProvider>
+    );
+  }
+
+  return (
+    <SidebarProvider>
+      <AppSidebar />
+      <SidebarInset className='bg-background'>
+        <Header />
+        <main className='bg-background'>
+          <Page>
+            <div className='flex flex-col gap-4 lg:flex-row lg:justify-between mb-8'>
+              <div>
+                <h1 className='text-xl font-semibold lg:text-2xl text-foreground'>Settings</h1>
+                <p className='text-sm text-muted-foreground'>Manage your profile, connections, and preferences.</p>
+              </div>
+            </div>
+
+            <div className='grid gap-6 lg:grid-cols-3'>
+              {/* Profile Section */}
+              <Card className='bg-card border-border lg:col-span-2'>
+                <CardHeader>
+                  <CardTitle className='text-lg flex items-center gap-2'>
+                    <UserIcon className='h-5 w-5' />
+                    Profile Information
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className='space-y-6'>
+                  {/* Avatar Section */}
+                  <div 
+                    className='flex items-center gap-4 cursor-pointer hover:bg-accent/50 p-2 rounded-lg transition-colors'
+                    onClick={() => navigate('/profile')}
+                  >
+                    <div className='relative'>
+                      {user.avatar ? (
+                        <img 
+                          src={user.avatar} 
+                          alt={user.displayName} 
+                          className='w-20 h-20 rounded-full object-cover'
+                        />
+                      ) : (
+                        <div className='w-20 h-20 rounded-full bg-primary/10 flex items-center justify-center'>
+                          <UserIcon className='h-10 w-10 text-primary' />
+                        </div>
+                      )}
+                      <Button
+                        size='sm'
+                        className='absolute bottom-0 right-0 bg-primary text-primary-foreground hover:bg-primary/90'
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setIsAvatarDialogOpen(true);
+                        }}
+                      >
+                        <CameraIcon className='h-3 w-3' />
+                      </Button>
+                    </div>
+                    <div className='flex-1'>
+                      <h3 className='text-lg font-semibold text-foreground'>{user.displayName}</h3>
+                      <p className='text-sm text-muted-foreground'>@{user.username}</p>
+                      <Badge className={currentRank ? 'mt-2' : ''} style={{ 
+                        backgroundColor: currentRank?.color + '20', 
+                        color: currentRank?.color,
+                        borderColor: currentRank?.color + '30'
+                      }}>
+                        {currentRank?.icon} {currentRank?.title || 'No Rank'}
+                      </Badge>
+                      <p className='text-xs text-muted-foreground mt-1'>Click to view full profile</p>
+                    </div>
+                  </div>
+
+                  <Separator />
+
+                  {/* Username Section */}
+                  <div className='flex items-center justify-between'>
+                    <div>
+                      <h4 className='font-medium text-foreground'>Username</h4>
+                      <p className='text-sm text-muted-foreground'>@{user.username}</p>
+                    </div>
+                    <Dialog open={isUsernameDialogOpen} onOpenChange={setIsUsernameDialogOpen}>
+                      <DialogTrigger asChild>
+                        <Button variant='outline' className='bg-background border-border'>
+                          <EditIcon className='mr-2 h-4 w-4' />
+                          Edit
+                        </Button>
+                      </DialogTrigger>
+                      <DialogContent className='bg-card border-border'>
+                        <DialogHeader>
+                          <DialogTitle className='text-foreground'>Change Username</DialogTitle>
+                        </DialogHeader>
+                        <div className='space-y-4'>
+                          <div>
+                            <label className='text-sm font-medium text-foreground block mb-2'>New Username</label>
+                            <Input
+                              value={newUsername}
+                              onChange={(e) => setNewUsername(e.target.value)}
+                              placeholder='Enter new username'
+                              className='bg-background border-border'
+                            />
+                          </div>
+                          <div className='flex space-x-2'>
+                            <Button onClick={handleUsernameUpdate} className='flex-1 bg-primary text-primary-foreground hover:bg-primary/90'>
+                              Update Username
+                            </Button>
+                            <Button onClick={() => setIsUsernameDialogOpen(false)} variant='outline' className='flex-1 bg-background border-border'>
+                              Cancel
+                            </Button>
+                          </div>
+                        </div>
+                      </DialogContent>
+                    </Dialog>
+                  </div>
+
+                  <Separator />
+
+                  {/* Email Section */}
+                  <div className='flex items-center justify-between'>
+                    <div>
+                      <h4 className='font-medium text-foreground'>Email</h4>
+                      <p className='text-sm text-muted-foreground'>{user.email}</p>
+                    </div>
+                    <Dialog open={isEmailDialogOpen} onOpenChange={setIsEmailDialogOpen}>
+                      <DialogTrigger asChild>
+                        <Button variant='outline' className='bg-background border-border'>
+                          <EditIcon className='mr-2 h-4 w-4' />
+                          Edit
+                        </Button>
+                      </DialogTrigger>
+                      <DialogContent className='bg-card border-border'>
+                        <DialogHeader>
+                          <DialogTitle className='text-foreground'>Change Email</DialogTitle>
+                        </DialogHeader>
+                        <div className='space-y-4'>
+                          <div>
+                            <label className='text-sm font-medium text-foreground block mb-2'>New Email</label>
+                            <Input
+                              type='email'
+                              value={newEmail}
+                              onChange={(e) => setNewEmail(e.target.value)}
+                              placeholder='Enter new email address'
+                              className='bg-background border-border'
+                            />
+                          </div>
+                          <div className='text-xs text-muted-foreground'>
+                            This will update your account email address for notifications and login.
+                          </div>
+                          <div className='flex space-x-2'>
+                            <Button onClick={handleEmailUpdate} className='flex-1 bg-primary text-primary-foreground hover:bg-primary/90'>
+                              Update Email
+                            </Button>
+                            <Button onClick={() => setIsEmailDialogOpen(false)} variant='outline' className='flex-1 bg-background border-border'>
+                              Cancel
+                            </Button>
+                          </div>
+                        </div>
+                      </DialogContent>
+                    </Dialog>
+                  </div>
+
+                  <Separator />
+
+                  {/* Role & Department */}
+                  <div className='grid grid-cols-2 gap-4'>
+                    <div>
+                      <h4 className='font-medium text-foreground'>Role</h4>
+                      <Badge className='mt-1 bg-blue-500/20 text-blue-700 dark:text-blue-400 border-blue-500/30'>
+                        {user.role}
+                      </Badge>
+                    </div>
+                    <div>
+                      <h4 className='font-medium text-foreground'>Department</h4>
+                      <Badge className='mt-1 bg-purple-500/20 text-purple-700 dark:text-purple-400 border-purple-500/30'>
+                        {user.department}
+                      </Badge>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Rank Progress */}
+              <Card className='bg-card border-border'>
+                <CardHeader>
+                  <CardTitle className='text-lg flex items-center gap-2'>
+                    <TrophyIcon className='h-5 w-5' />
+                    Rank Progress
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className='space-y-4'>
+                  {currentRank && (
+                    <div className='text-center'>
+                      <div className='text-4xl mb-2'>{currentRank.icon}</div>
+                      <h3 className='font-semibold text-foreground' style={{ color: currentRank.color }}>
+                        {currentRank.title}
+                      </h3>
+                      <p className='text-sm text-muted-foreground'>Level {currentRank.level}</p>
+                    </div>
+                  )}
+
+                  {nextRank && (
+                    <>
+                      <Separator />
+                      <div>
+                        <h4 className='font-medium text-foreground mb-2'>Next Rank</h4>
+                        <div className='flex items-center gap-2'>
+                          <span className='text-2xl'>{nextRank.icon}</span>
+                          <div>
+                            <p className='font-medium text-foreground' style={{ color: nextRank.color }}>
+                              {nextRank.title}
+                            </p>
+                            <p className='text-xs text-muted-foreground'>Level {nextRank.level}</p>
+                          </div>
+                        </div>
+                        <div className='mt-2 space-y-1'>
+                          {nextRank.requirements?.map((req, index) => (
+                            <div key={index} className='text-xs text-muted-foreground flex items-center gap-1'>
+                              <StarIcon className='h-3 w-3' />
+                              {req}
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    </>
+                  )}
+
+                  <Separator />
+
+                  <div>
+                    <h4 className='font-medium text-foreground mb-2'>All Ranks</h4>
+                    <div className='space-y-2 max-h-48 overflow-y-auto'>
+                      {RANKS.map((rank) => (
+                        <div 
+                          key={rank.level} 
+                          className={`flex items-center gap-2 p-2 rounded ${
+                            rank.level === currentRank?.level ? 'bg-primary/10' : ''
+                          }`}
+                        >
+                          <span className='text-lg'>{rank.icon}</span>
+                          <div className='flex-1'>
+                            <p className='text-sm font-medium text-foreground' style={{ color: rank.color }}>
+                              {rank.title}
+                            </p>
+                            <p className='text-xs text-muted-foreground'>Level {rank.level}</p>
+                          </div>
+                          {rank.level === currentRank?.level && (
+                            <Badge className='bg-green-500/20 text-green-700 dark:text-green-400 border-green-500/30'>
+                              Current
+                            </Badge>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* Connected Accounts */}
+            <Card className='bg-card border-border mt-6'>
+              <CardHeader>
+                <CardTitle className='text-lg flex items-center gap-2'>
+                  <LinkIcon className='h-5 w-5' />
+                  Connected Accounts
+                </CardTitle>
+              </CardHeader>
+              <CardContent className='space-y-4'>
+                {/* Discord */}
+                <div className='flex items-center justify-between p-4 border border-border rounded-lg'>
+                  <div className='flex items-center gap-3'>
+                    <MessageCircleIcon className='h-8 w-8 text-[#5865F2]' />
+                    <div>
+                      <h4 className='font-medium text-foreground'>Discord</h4>
+                      {user.discordUsername ? (
+                        <p className='text-sm text-muted-foreground'>Connected as {user.discordUsername}</p>
+                      ) : (
+                        <p className='text-sm text-muted-foreground'>Not connected</p>
+                      )}
+                    </div>
+                  </div>
+                  {user.discordUsername ? (
+                    <Button 
+                      variant='destructive' 
+                      onClick={handleDiscordDisconnect}
+                      className='bg-destructive text-destructive-foreground hover:bg-destructive/90'
+                    >
+                      <UnlinkIcon className='mr-2 h-4 w-4' />
+                      Disconnect
+                    </Button>
+                  ) : (
+                    <Dialog open={isDiscordDialogOpen} onOpenChange={setIsDiscordDialogOpen}>
+                      <DialogTrigger asChild>
+                        <Button className='bg-[#5865F2] text-white hover:bg-[#4752C4]'>
+                          <MessageCircleIcon className='mr-2 h-4 w-4' />
+                          Connect
+                        </Button>
+                      </DialogTrigger>
+                      <DialogContent className='bg-card border-border'>
+                        <DialogHeader>
+                          <DialogTitle className='text-foreground'>Connect Discord</DialogTitle>
+                        </DialogHeader>
+                        <div className='space-y-4'>
+                          <div>
+                            <label className='text-sm font-medium text-foreground block mb-2'>Discord Username</label>
+                            <Input
+                              value={discordInviteCode}
+                              onChange={(e) => setDiscordInviteCode(e.target.value)}
+                              placeholder='Enter your Discord username'
+                              className='bg-background border-border'
+                            />
+                          </div>
+                          <div className='flex space-x-2'>
+                            <Button onClick={handleDiscordConnect} className='flex-1 bg-[#5865F2] text-white hover:bg-[#4752C4]'>
+                              Connect Discord
+                            </Button>
+                            <Button onClick={() => setIsDiscordDialogOpen(false)} variant='outline' className='flex-1 bg-background border-border'>
+                              Cancel
+                            </Button>
+                          </div>
+                        </div>
+                      </DialogContent>
+                    </Dialog>
+                  )}
+                </div>
+
+                {/* Steam */}
+                <div className='flex items-center justify-between p-4 border border-border rounded-lg'>
+                  <div className='flex items-center gap-3'>
+                    <Gamepad2Icon className='h-8 w-8 text-[#1B2838]' />
+                    <div>
+                      <h4 className='font-medium text-foreground'>Steam</h4>
+                      {user.steamUsername ? (
+                        <p className='text-sm text-muted-foreground'>Connected as {user.steamUsername}</p>
+                      ) : (
+                        <p className='text-sm text-muted-foreground'>Not connected</p>
+                      )}
+                    </div>
+                  </div>
+                  {user.steamUsername ? (
+                    <Button 
+                      variant='destructive' 
+                      onClick={handleSteamDisconnect}
+                      className='bg-destructive text-destructive-foreground hover:bg-destructive/90'
+                    >
+                      <UnlinkIcon className='mr-2 h-4 w-4' />
+                      Disconnect
+                    </Button>
+                  ) : (
+                    <Dialog open={isSteamDialogOpen} onOpenChange={setIsSteamDialogOpen}>
+                      <DialogTrigger asChild>
+                        <Button className='bg-[#1B2838] text-white hover:bg-[#2A3F5F]'>
+                          <Gamepad2Icon className='mr-2 h-4 w-4' />
+                          Connect
+                        </Button>
+                      </DialogTrigger>
+                      <DialogContent className='bg-card border-border'>
+                        <DialogHeader>
+                          <DialogTitle className='text-foreground'>Connect Steam</DialogTitle>
+                        </DialogHeader>
+                        <div className='space-y-4'>
+                          <div>
+                            <label className='text-sm font-medium text-foreground block mb-2'>Steam Profile URL</label>
+                            <Input
+                              value={steamProfileUrl}
+                              onChange={(e) => setSteamProfileUrl(e.target.value)}
+                              placeholder='https://steamcommunity.com/id/username'
+                              className='bg-background border-border'
+                            />
+                          </div>
+                          <div className='flex space-x-2'>
+                            <Button onClick={handleSteamConnect} className='flex-1 bg-[#1B2838] text-white hover:bg-[#2A3F5F]'>
+                              Connect Steam
+                            </Button>
+                            <Button onClick={() => setIsSteamDialogOpen(false)} variant='outline' className='flex-1 bg-background border-border'>
+                              Cancel
+                            </Button>
+                          </div>
+                        </div>
+                      </DialogContent>
+                    </Dialog>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Avatar Upload Dialog */}
+            <Dialog open={isAvatarDialogOpen} onOpenChange={setIsAvatarDialogOpen}>
+              <DialogContent className='bg-card border-border'>
+                <DialogHeader>
+                  <DialogTitle className='text-foreground'>Update Avatar</DialogTitle>
+                </DialogHeader>
+                <div className='space-y-4'>
+                  <div>
+                    <label className='text-sm font-medium text-foreground block mb-2'>Avatar URL</label>
+                    <Input
+                      value={newAvatar}
+                      onChange={(e) => setNewAvatar(e.target.value)}
+                      placeholder='Enter avatar image URL'
+                      className='bg-background border-border'
+                    />
+                  </div>
+                  <div className='text-xs text-muted-foreground'>
+                    Enter a URL to your avatar image. Supported formats: JPG, PNG, GIF.
+                  </div>
+                  <div className='flex space-x-2'>
+                    <Button onClick={handleAvatarUpdate} disabled={isLoading} className='flex-1 bg-primary text-primary-foreground hover:bg-primary/90'>
+                      {isLoading ? 'Updating...' : 'Update Avatar'}
+                    </Button>
+                    <Button onClick={() => setIsAvatarDialogOpen(false)} variant='outline' className='flex-1 bg-background border-border'>
+                      Cancel
+                    </Button>
+                  </div>
+                </div>
+              </DialogContent>
+            </Dialog>
+          </Page>
+        </main>
+      </SidebarInset>
+    </SidebarProvider>
+  );
+}

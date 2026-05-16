@@ -18,10 +18,13 @@ export const Page = ({ children }: React.PropsWithChildren) => {
   return <div className='px-4 py-8 md:p-8'>{children}</div>;
 };
 
-export const PageHeader = () => {
+export const PageHeader = ({ name = 'Sadee' }: { name?: string }) => {
   return (
     <div className='flex flex-col gap-4 lg:flex-row lg:justify-between'>
-      <h1 className='text-xl font-semibold lg:text-2xl'>Welcome back, Sadee</h1>
+      <div>
+        <h1 className='text-xl font-semibold lg:text-2xl'>Welcome back, {name}</h1>
+        <p className='text-sm text-muted-foreground'>Here's your Daily Dashboard Overview.</p>
+      </div>
 
       <div className='flex gap-3'>
         <div className='flex max-lg:hidden'>

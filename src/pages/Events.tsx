@@ -42,10 +42,8 @@ export function EventsPage() {
 
   useEffect(() => {
     let cancelled = false;
-    setLoading(true);
-    setError(null);
 
-    fetchVtcAttendingEvents('74784-eternal')
+    fetchVtcAttendingEvents(74784)
       .then((data) => {
         if (cancelled) return;
         setEvents(data);
@@ -86,14 +84,15 @@ export function EventsPage() {
   const eventsByDay = useMemo(() => {
     const map = new Map<string, TruckersmpAttendingEvent[]>();
     for (const e of events) {
-      if (!e.startAt) continue;
-      const key = toDayKey(e.startAt);
+      const d = new Date(e.startDate);
+      if (isNaN(d.getTime())) continue;
+      const key = toDayKey(d);
       const arr = map.get(key) ?? [];
       arr.push(e);
       map.set(key, arr);
     }
     for (const arr of map.values()) {
-      arr.sort((a, b) => (a.startAt?.getTime() ?? 0) - (b.startAt?.getTime() ?? 0));
+      arr.sort((a, b) => new Date(a.startDate).getTime() - new Date(b.startDate).getTime());
     }
     return map;
   }, [events]);
@@ -103,14 +102,14 @@ export function EventsPage() {
   }, [eventsByDay, selected]);
 
   const upcoming = useMemo(() => {
-    const now = Date.now();
+    const now = today.getTime();
     return events
-      .filter((e) => (e.startAt?.getTime() ?? Number.POSITIVE_INFINITY) >= now)
+      .filter((e) => new Date(e.startDate).getTime() >= now)
       .slice(0, 20);
-  }, [events]);
+  }, [events, today]);
 
   return (
-    <SidebarProvider open={false}>
+    <SidebarProvider>
       <AppSidebar />
 
       <SidebarInset>
@@ -256,9 +255,9 @@ export function EventsPage() {
                             to={`/events/${e.id}`}
                             className='block rounded-lg border bg-background p-3 hover:bg-muted/30'
                           >
-                            <div className='text-sm font-medium'>{e.title}</div>
+                            <div className='text-sm font-medium'>{e.name}</div>
                             <div className='mt-1 text-xs text-muted-foreground'>
-                              {e.startAt ? e.startAt.toLocaleString() : e.startText}
+                              {new Date(e.startDate).toLocaleString()}
                             </div>
                           </Link>
                         ))
@@ -286,9 +285,9 @@ export function EventsPage() {
                           >
                             <div className='mt-0.5 size-2 rounded-full bg-amber-500/80' />
                             <div className='min-w-0'>
-                              <div className='truncate text-sm font-medium'>{e.title}</div>
+                              <div className='truncate text-sm font-medium'>{e.name}</div>
                               <div className='mt-1 text-xs text-muted-foreground'>
-                                {e.startAt ? e.startAt.toLocaleString() : e.startText}
+                                {new Date(e.startDate).toLocaleString()}
                               </div>
                             </div>
                           </Link>

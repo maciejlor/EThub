@@ -19,10 +19,8 @@ export function EventDetailsPage() {
 
   useEffect(() => {
     let cancelled = false;
-    setLoading(true);
-    setError(null);
 
-    fetchVtcAttendingEvents('74784-eternal')
+    fetchVtcAttendingEvents(74784)
       .then((data) => {
         if (cancelled) return;
         setEvents(data);
@@ -44,7 +42,7 @@ export function EventDetailsPage() {
   const event = useMemo(() => events.find((e) => e.id === eventId), [events, eventId]);
 
   return (
-    <SidebarProvider open={false}>
+    <SidebarProvider>
       <AppSidebar />
 
       <SidebarInset>
@@ -80,10 +78,10 @@ export function EventDetailsPage() {
               ) : (
                 <div className='grid gap-6 lg:grid-cols-[360px_1fr]'>
                   <div className='overflow-hidden rounded-xl border bg-card'>
-                    {event.coverImage ? (
+                    {event.bannerUrl ? (
                       <img
-                        src={event.coverImage}
-                        alt={event.title}
+                        src={event.bannerUrl}
+                        alt={event.name}
                         className='aspect-[16/9] w-full object-cover'
                         loading='lazy'
                       />
@@ -91,16 +89,16 @@ export function EventDetailsPage() {
                       <div className='aspect-[16/9] w-full bg-muted' />
                     )}
                     <div className='p-4'>
-                      <div className='text-sm font-medium'>{event.title}</div>
+                      <div className='text-sm font-medium'>{event.name}</div>
                       <div className='mt-2 text-sm text-muted-foreground'>
-                        {event.startAt ? event.startAt.toLocaleString() : event.startText}
+                        {new Date(event.startDate).toLocaleString()}
                       </div>
                       {event.game && (
                         <div className='mt-1 text-sm text-muted-foreground'>{event.game}</div>
                       )}
                       <div className='mt-4 flex gap-2'>
                         <Button asChild className='w-full'>
-                          <a href={event.url} target='_blank' rel='noreferrer'>
+                          <a href={`https://truckersmp.com/events/${event.id}`} target='_blank' rel='noreferrer'>
                             Open on TruckersMP
                           </a>
                         </Button>

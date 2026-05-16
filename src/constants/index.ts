@@ -7,21 +7,34 @@
  * Assets
  */
 import {
-  BookOpenIcon,
-  CalendarDaysIcon,
-  ChartPieIcon,
-  CopyCheckIcon,
-  CopyIcon,
-  FolderKanbanIcon,
-  HomeIcon,
   LayoutDashboardIcon,
-  LifeBuoyIcon,
-  LogOutIcon,
-  PencilIcon,
-  SettingsIcon,
-  TrashIcon,
-  UserIcon,
+  ImageIcon,
   UsersIcon,
+  DownloadIcon,
+  MapIcon,
+  BriefcaseIcon,
+  CalendarDaysIcon,
+  TrophyIcon,
+  FileQuestionIcon,
+  FileTextIcon,
+  UserCogIcon,
+  ClipboardListIcon,
+  UserXIcon,
+  CalendarCheckIcon,
+  MailIcon,
+  ShieldXIcon,
+  UserCheckIcon,
+  ShieldAlertIcon,
+  HistoryIcon,
+  LifeBuoyIcon,
+  SettingsIcon,
+  UserIcon,
+  LogOutIcon,
+  UserMinusIcon,
+  FilePlusIcon,
+  PencilIcon,
+  TrashIcon,
+  CopyIcon,
 } from 'lucide-react';
 
 /**
@@ -30,58 +43,163 @@ import {
 import type { Vendor } from '@/components/Columns';
 
 export const VENDOR_BREAKDOWN = [
-  { month: 'Jan 2025', asia: 35, us: 20, eu: 30 },
-  { month: 'Feb 2025', asia: 30, us: 30, eu: 32 },
-  { month: 'Mar 2025', asia: 24, us: 20, eu: 30 },
-  { month: 'Apr 2025', asia: 28, us: 30, eu: 24 },
-  { month: 'May 2025', asia: 10, us: 28, eu: 32 },
-  { month: 'Jun 2025', asia: 13, us: 30, eu: 33 },
-  { month: 'Jul 2025', asia: 10, us: 20, eu: 30 },
-  { month: 'Aug 2025', asia: 20, us: 30, eu: 35 },
-  { month: 'Sept 2025', asia: 10, us: 20, eu: 30 },
-  { month: 'Oct 2025', asia: 28, us: 30, eu: 20 },
-  { month: 'Nov 2025', asia: 24, us: 30, eu: 30 },
-  { month: 'Dec 2025', asia: 35, us: 40, eu: 20 },
+  { month: 'January', distance: 12500 },
+  { month: 'February', distance: 15000 },
+  { month: 'March', distance: 18000 },
+  { month: 'April', distance: 22000 },
+  { month: 'May', distance: 26000 },
+  { month: 'June', distance: 21000 },
 ];
 
 export const VENDOR_MONITORED = [{ year: '2025', monitored: 240, limit: 60 }];
 
 export const APP_SIDEBAR = {
-  primaryNav: [
+  navMain: [
     {
-      title: 'Home',
-      url: '/',
-      Icon: HomeIcon,
+      title: 'Main',
+      items: [
+        {
+          title: 'Dashboard',
+          url: '/',
+          Icon: LayoutDashboardIcon,
+        },
+        {
+          title: 'Banner',
+          url: '#',
+          Icon: ImageIcon,
+          isComingSoon: true,
+        },
+        {
+          title: 'Members',
+          url: '/members',
+          Icon: UsersIcon,
+        },
+        {
+          title: 'Download',
+          url: '/download',
+          Icon: DownloadIcon,
+        },
+      ],
     },
     {
-      title: 'Dashboard',
-      url: '/',
-      Icon: LayoutDashboardIcon,
+      title: 'Game',
+      items: [
+        {
+          title: 'Map',
+          url: '#',
+          Icon: MapIcon,
+          isComingSoon: true,
+        },
+        {
+          title: 'Jobs',
+          url: '/jobs',
+          Icon: BriefcaseIcon,
+        },
+        {
+          title: 'Events',
+          url: '/calendar',
+          Icon: CalendarDaysIcon,
+        },
+        {
+          title: 'Ranking',
+          url: '/ranking',
+          Icon: TrophyIcon,
+        },
+      ],
     },
     {
-      title: 'Convoy',
-      url: '/calendar',
-      Icon: CalendarDaysIcon,
+      title: 'Drivers',
+      items: [
+        {
+          title: 'FAQ',
+          url: '/faq',
+          Icon: FileQuestionIcon,
+        },
+        {
+          title: 'LOA Requests',
+          url: '/loa-requests',
+          Icon: FileTextIcon,
+        },
+      ],
     },
     {
-      title: 'Project',
-      url: '#',
-      Icon: FolderKanbanIcon,
+      title: 'HR Department',
+      isCollapsible: true,
+      items: [
+        {
+          title: 'LOA Management',
+          url: '/hr/loa-management',
+          Icon: UserCogIcon,
+        },
+        {
+          title: 'Attendance Logs',
+          url: '/hr/attendance-logs',
+          Icon: ClipboardListIcon,
+        },
+        {
+          title: 'Blacklist Driver',
+          url: '/hr/blacklist-driver',
+          Icon: UserXIcon,
+        },
+        {
+          title: 'Driver Manage',
+          url: '/hr/driver-manage',
+          Icon: UsersIcon,
+        },
+        {
+          title: 'Left Drivers',
+          url: '/hr/left-drivers',
+          Icon: UserMinusIcon,
+        },
+        {
+          title: 'HR Applications',
+          url: '/hr/applications',
+          Icon: FilePlusIcon,
+        },
+      ],
     },
     {
-      title: 'Tasks',
-      url: '#',
-      Icon: CopyCheckIcon,
+      title: 'Event Department',
+      isCollapsible: true,
+      items: [
+        {
+          title: 'Event Calendar Manage',
+          url: '/event/calendar-manage',
+          Icon: CalendarCheckIcon,
+          isComingSoon: true,
+        },
+        {
+          title: 'Event invites',
+          url: '/event/invites',
+          Icon: MailIcon,
+        },
+        {
+          title: 'Blacklist VTC\'s',
+          url: '/event/blacklist-vtcs',
+          Icon: ShieldXIcon,
+        },
+      ],
     },
     {
-      title: 'Reporting',
-      url: '#',
-      Icon: ChartPieIcon,
-    },
-    {
-      title: 'Users',
-      url: '#',
-      Icon: UsersIcon,
+      title: 'Admin',
+      isCollapsible: true,
+      items: [
+        {
+          title: 'All members',
+          url: '/admin/members',
+          Icon: UserCheckIcon,
+        },
+        {
+          title: 'Blacklist Staff/Management',
+          url: '/admin/blacklist-staff',
+          Icon: ShieldAlertIcon,
+        },
+        {
+          title: 'History',
+          url: '/admin/history',
+          Icon: HistoryIcon,
+        },
+      ],
     },
   ],
   secondaryNav: [
@@ -92,20 +210,20 @@ export const APP_SIDEBAR = {
     },
     {
       title: 'Settings',
-      url: '#',
+      url: '/settings',
       Icon: SettingsIcon,
     },
   ],
   curProfile: {
-    src: 'https://randomuser.me/api/portraits/men/47.jpg',
-    name: 'Salvador Pearson',
-    email: 'salvador.pearson@example.com',
+    src: 'https://avatars.akamai.steamstatic.com/fef49e7fa7e1997310d705b2a6158ff8dc1cdfeb_full.jpg',
+    name: 'maciejlor',
+    email: 'maciejlor@ethub.com',
   },
   allProfiles: [
     {
-      src: 'https://randomuser.me/api/portraits/men/47.jpg',
-      name: 'Salvador Pearson',
-      email: 'salvador.pearson@example.com',
+      src: 'https://api.dicebear.com/7.x/avataaars/svg?seed=maciejlor',
+      name: 'maciejlor',
+      email: 'maciejlor@steam.com',
     },
     {
       src: 'https://randomuser.me/api/portraits/women/43.jpg',
@@ -117,20 +235,15 @@ export const APP_SIDEBAR = {
     itemsPrimary: [
       {
         title: 'View profile',
-        url: '#',
+        url: '/profile',
         Icon: UserIcon,
         kbd: '⌘K->P',
       },
       {
         title: 'Account settings',
-        url: '#',
+        url: '/settings',
         Icon: SettingsIcon,
         kbd: '⌘S',
-      },
-      {
-        title: 'Documentation',
-        url: '#',
-        Icon: BookOpenIcon,
       },
     ],
     itemsSecondary: [

@@ -34,7 +34,12 @@ type Props = {
   title: string;
   description: string;
   text?: string;
-  buttonText: string;
+  buttonText?: string;
+  className?: string;
+  hideMenu?: boolean;
+  hideFooter?: boolean;
+  hideHeader?: boolean;
+  noPadding?: boolean;
 };
 
 /**
@@ -46,44 +51,55 @@ export const DashboardCard = ({
   title,
   description,
   buttonText,
+  className,
+  hideMenu = false,
+  hideFooter = false,
+  hideHeader = false,
+  noPadding = false,
   children,
 }: React.PropsWithChildren<Props>) => {
   return (
-    <Card className='bg-background'>
-      <CardHeader className='border-b flex justify-between'>
-        <div>
-          <CardTitle className='text-lg'>{title}</CardTitle>
+    <Card className={`bg-background overflow-hidden ${className || ''}`}>
+      {!hideHeader && (
+        <CardHeader className='border-b flex justify-between'>
+          <div>
+            <CardTitle className='text-lg'>{title}</CardTitle>
 
-          <CardDescription>{description}</CardDescription>
-        </div>
+            <CardDescription>{description}</CardDescription>
+          </div>
 
-        <DropdownMenu>
-          <DropdownMenuTrigger>
-            <EllipsisVerticalIcon size={20} />
-          </DropdownMenuTrigger>
+          {!hideMenu && (
+            <DropdownMenu>
+              <DropdownMenuTrigger>
+                <EllipsisVerticalIcon size={20} />
+              </DropdownMenuTrigger>
 
-          <DropdownMenuContent align='end'>
-            {DASHBOARD_CARD_MENU.map((item) => (
-              <DropdownMenuItem key={item.label}>
-                <item.Icon />
+              <DropdownMenuContent align='end'>
+                {DASHBOARD_CARD_MENU.map((item) => (
+                  <DropdownMenuItem key={item.label}>
+                    <item.Icon />
 
-                {item.label}
-              </DropdownMenuItem>
-            ))}
-          </DropdownMenuContent>
-        </DropdownMenu>
-      </CardHeader>
+                    {item.label}
+                  </DropdownMenuItem>
+                ))}
+              </DropdownMenuContent>
+            </DropdownMenu>
+          )}
+        </CardHeader>
+      )}
 
-      <CardContent className='grid grid-cols-1 grow'>{children}</CardContent>
+      <CardContent className={`grid grid-cols-1 grow overflow-hidden ${noPadding ? 'p-0' : ''}`}>{children}</CardContent>
 
-      <CardFooter className='border-t'>
-        <Button
-          variant='outline'
-          className='ml-auto'
-        >
-          {buttonText}
-        </Button>
-      </CardFooter>
+      {!hideFooter && buttonText && (
+        <CardFooter className='border-t'>
+          <Button
+            variant='outline'
+            className='ml-auto'
+          >
+            {buttonText}
+          </Button>
+        </CardFooter>
+      )}
     </Card>
   );
 };

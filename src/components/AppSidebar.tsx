@@ -21,9 +21,21 @@ import {
   SidebarMenuItem,
   SidebarMenuButton,
   SidebarGroup,
+  SidebarGroupLabel,
   SidebarGroupContent,
+  SidebarTrigger,
+  SidebarMenuSub,
+  SidebarMenuSubItem,
+  SidebarMenuSubButton,
 } from '@/components/ui/sidebar';
 import { Button } from '@/components/ui/button';
+import {
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+} from '@/components/ui/dropdown-menu';
 import { UserMenu } from '@/components/UserMenu';
 import { Link } from 'react-router-dom';
 
@@ -35,8 +47,12 @@ import { useSidebar } from '@/components/ui/sidebar';
 /**
  * Assets
  */
-import { LogOutIcon } from 'lucide-react';
-import { Logo } from '@/assets/Logo';
+import { 
+  ChevronRightIcon,
+  LogOutIcon
+} from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
+import * as React from 'react';
 
 /**
  * Constants
@@ -44,7 +60,16 @@ import { Logo } from '@/assets/Logo';
 import { APP_SIDEBAR } from '@/constants';
 
 export const AppSidebar = () => {
-  const { isMobile } = useSidebar();
+  const { state, isMobile } = useSidebar();
+  const [openGroups, setOpenGroups] = React.useState<Record<string, boolean>>({
+    'Human Resources Department': true,
+    'Event Department': true,
+    'Admin': true
+  });
+
+  const toggleGroup = (title: string) => {
+    setOpenGroups(prev => ({ ...prev, [title]: !prev[title] }));
+  };
 
   return (
     <Sidebar
@@ -53,20 +78,155 @@ export const AppSidebar = () => {
     >
       {/* Sidebar Header */}
       <SidebarHeader>
-        <SidebarMenu>
-          <SidebarMenuItem className='px-0.5 max-lg:p-2'>
-            <Logo variant={isMobile ? 'default' : 'icon'} />
-          </SidebarMenuItem>
-        </SidebarMenu>
+        <div className="flex flex-col gap-2 p-2">
+          <SidebarMenu>
+            <SidebarMenuItem className="group/menu-item relative px-0.5 max-lg:p-2">
+              <Link to="/" className="flex items-center gap-2">
+                <img 
+                  src="/src/assets/ethub.png" 
+                  alt="ET logo" 
+                  className={cn(
+                    "h-8 w-auto transition-all duration-300",
+                    state === 'collapsed' && !isMobile ? "h-6" : "h-7"
+                  )} 
+                />
+              </Link>
+            </SidebarMenuItem>
+          </SidebarMenu>
+        </div>
       </SidebarHeader>
 
       {/* Sidebar Content */}
       <SidebarContent>
-        {/* Primary Nav */}
-        <SidebarGroup>
+        {APP_SIDEBAR.navMain.map((group) => (
+          <SidebarGroup key={group.title}>
+            <SidebarGroupLabel className='px-2 py-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground group-data-[collapsible=icon]:hidden'>
+              {group.title}
+            </SidebarGroupLabel>
+            <SidebarGroupContent>
+              <SidebarMenu>
+                {group.isCollapsible ? (() => {
+                  const GroupIcon = group.items[0].Icon;
+                  const isCollapsed = state === 'collapsed' && !isMobile;
+
+                  if (isCollapsed) {
+                    return (
+                      <SidebarMenuItem>
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <SidebarMenuButton tooltip={(group as any).shortTitle || group.title}>
+                              <GroupIcon />
+                            </SidebarMenuButton>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent
+                            side='right'
+                            align='start'
+                            className='min-w-48'
+                          >
+                            <div className='px-2 py-1.5 text-xs font-bold uppercase tracking-wider text-muted-foreground/70'>
+                              {(group as any).shortTitle || group.title}
+                            </div>
+                            <DropdownMenuSeparator />
+                            {group.items.map((subItem) => {
+                              const Icon = subItem.Icon;
+                              return (
+                                <DropdownMenuItem key={subItem.title} asChild>
+                                  <Link to={subItem.url} className='flex items-center gap-2 cursor-pointer'>
+                                    <Icon className='size-4' />
+                                    <span className='text-xs font-medium'>{subItem.title}</span>
+                                    {subItem.isComingSoon && (
+                                      <Badge variant='secondary' className='ml-auto text-[8px] h-4 px-1 leading-none uppercase font-bold tracking-tighter opacity-70'>
+                                        Soon
+                                      </Badge>
+                                    )}
+                                  </Link>
+                                </DropdownMenuItem>
+                              );
+                            })}
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </SidebarMenuItem>
+                    );
+                  }
+
+                  return (
+                    <SidebarMenuItem>
+                      <SidebarMenuButton
+                        onClick={() => toggleGroup(group.title)}
+                        className='font-semibold text-sm'
+                      >
+                        <GroupIcon />
+                        <span>{group.title}</span>
+                        <ChevronRightIcon 
+                          className={cn(
+                            'ml-auto size-4 transition-transform duration-200',
+                            openGroups[group.title] && 'rotate-90'
+                          )} 
+                        />
+                      </SidebarMenuButton>
+                      {openGroups[group.title] && (
+                        <SidebarMenuSub>
+                          {group.items.map((subItem) => {
+                            const Icon = subItem.Icon;
+                            return (
+                              <SidebarMenuSubItem key={subItem.title}>
+                                <SidebarMenuSubButton
+                                  asChild
+                                  size='md'
+                                  className='font-medium'
+                                >
+                                  <Link to={subItem.url}>
+                                    <Icon className='size-4' />
+                                    <span>{subItem.title}</span>
+                                    {subItem.isComingSoon && (
+                                      <Badge variant='secondary' className='ml-auto text-[8px] h-4 px-1 leading-none uppercase font-bold tracking-tighter opacity-70'>
+                                        Soon
+                                      </Badge>
+                                    )}
+                                  </Link>
+                                </SidebarMenuSubButton>
+                              </SidebarMenuSubItem>
+                            );
+                          })}
+                        </SidebarMenuSub>
+                      )}
+                    </SidebarMenuItem>
+                  );
+                })() : (
+                  group.items.map((item) => {
+                    const Icon = item.Icon;
+                    return (
+                      <SidebarMenuItem key={item.title}>
+                        <SidebarMenuButton
+                          tooltip={item.title}
+                          asChild
+                          className='font-semibold text-sm'
+                        >
+                          <Link to={item.url}>
+                            <Icon />
+                            <span>{item.title}</span>
+                            {item.isComingSoon && (
+                              <Badge variant='secondary' className='ml-auto text-[9px] h-4 px-1.5 leading-none uppercase font-bold tracking-tight opacity-70'>
+                                Soon
+                              </Badge>
+                            )}
+                          </Link>
+                        </SidebarMenuButton>
+                      </SidebarMenuItem>
+                    );
+                  })
+                )}
+            </SidebarMenu>
+          </SidebarGroupContent>
+        </SidebarGroup>
+      ))}
+
+      {/* Secondary Nav */}
+      {isMobile && (
+        <SidebarGroup className='mt-auto'>
           <SidebarGroupContent>
             <SidebarMenu>
-              {APP_SIDEBAR.primaryNav.map((item) => (
+              {APP_SIDEBAR.secondaryNav.map((item) => (
                 <SidebarMenuItem key={item.title}>
                   <SidebarMenuButton
                     tooltip={item.title}
@@ -74,7 +234,6 @@ export const AppSidebar = () => {
                   >
                     <Link to={item.url}>
                       <item.Icon />
-
                       <span>{item.title}</span>
                     </Link>
                   </SidebarMenuButton>
@@ -83,31 +242,8 @@ export const AppSidebar = () => {
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
-
-        {/* Secondary Nav */}
-        {isMobile && (
-          <SidebarGroup className='mt-auto'>
-            <SidebarGroupContent>
-              <SidebarMenu>
-                {APP_SIDEBAR.secondaryNav.map((item) => (
-                  <SidebarMenuItem key={item.title}>
-                    <SidebarMenuButton
-                      tooltip={item.title}
-                      asChild
-                    >
-                      <Link to={item.url}>
-                        <item.Icon />
-
-                        <span>{item.title}</span>
-                      </Link>
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
-                ))}
-              </SidebarMenu>
-            </SidebarGroupContent>
-          </SidebarGroup>
-        )}
-      </SidebarContent>
+      )}
+    </SidebarContent>
 
       {/* Sidebar Footer */}
       <SidebarFooter className={cn(isMobile && 'border-t')}>
@@ -146,7 +282,10 @@ export const AppSidebar = () => {
                 </Button>
               </div>
             ) : (
-              <UserMenu />
+              <div className='flex items-center gap-1 group-data-[collapsible=icon]:flex-col'>
+                <UserMenu />
+                <SidebarTrigger className='ml-auto group-data-[collapsible=icon]:ml-0 group-data-[collapsible=icon]:rotate-180 transition-transform duration-200' />
+              </div>
             )}
           </SidebarMenuItem>
         </SidebarMenu>
