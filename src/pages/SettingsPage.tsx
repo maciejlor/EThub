@@ -10,17 +10,18 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
-import { 
-  UserIcon, 
-  CameraIcon, 
-  EditIcon, 
+import {
+  UserIcon,
+  CameraIcon,
+  EditIcon,
   TrophyIcon,
   StarIcon,
   LinkIcon,
   UnlinkIcon,
   MessageCircleIcon,
   Gamepad2Icon,
-  ImageIcon
+  ImageIcon,
+  TruckIcon
 } from 'lucide-react';
 import { 
   getCurrentUser, 
@@ -125,12 +126,14 @@ export function SettingsPage() {
   const [isCoverDialogOpen, setIsCoverDialogOpen] = useState(false);
   const [isUsernameDialogOpen, setIsUsernameDialogOpen] = useState(false);
   const [isEmailDialogOpen, setIsEmailDialogOpen] = useState(false);
+  const [isTruckyIdDialogOpen, setIsTruckyIdDialogOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
 
   const [newAvatar, setNewAvatar] = useState('');
   const [newCover, setNewCover] = useState('');
   const [newUsername, setNewUsername] = useState(user?.username || '');
   const [newEmail, setNewEmail] = useState(user?.email || '');
+  const [newTruckyId, setNewTruckyId] = useState(user?.truckyId || '');
 
   const handleAvatarUpdate = async () => {
     if (!user || !newAvatar.trim()) return;
@@ -235,11 +238,21 @@ export function SettingsPage() {
 
   const handleEmailUpdate = () => {
     if (!user || !newEmail.trim()) return;
-    
+
     const success = updateUserSettings(user.id, { email: newEmail.trim() });
     if (success) {
       setUser(prev => prev ? { ...prev, email: newEmail.trim() } : null);
       setIsEmailDialogOpen(false);
+    }
+  };
+
+  const handleTruckyIdUpdate = () => {
+    if (!user) return;
+
+    const success = updateUserSettings(user.id, { truckyId: newTruckyId.trim() || undefined });
+    if (success) {
+      setUser(prev => prev ? { ...prev, truckyId: newTruckyId.trim() || undefined } : null);
+      setIsTruckyIdDialogOpen(false);
     }
   };
 
@@ -519,8 +532,8 @@ export function SettingsPage() {
                     </div>
                   </div>
                   {user.steamUsername ? (
-                    <Button 
-                      variant='destructive' 
+                    <Button
+                      variant='destructive'
                       onClick={handleSteamDisconnect}
                       className='bg-destructive/10 text-destructive hover:bg-destructive/20 border-destructive/20'
                     >
@@ -528,7 +541,7 @@ export function SettingsPage() {
                       Disconnect
                     </Button>
                   ) : (
-                    <Button 
+                    <Button
                       onClick={handleSteamConnect}
                       className='bg-[#1B2838] text-white hover:bg-[#2A3F5F]'
                     >
@@ -536,6 +549,56 @@ export function SettingsPage() {
                       Connect Steam
                     </Button>
                   )}
+                </div>
+
+                {/* Trucky ID */}
+                <div className='flex items-center justify-between p-4 border border-border rounded-lg bg-accent/5'>
+                  <div className='flex items-center gap-3'>
+                    <TruckIcon className='h-8 w-8 text-[#FF6B35]' />
+                    <div>
+                      <h4 className='font-medium text-foreground'>Trucky ID</h4>
+                      {user.truckyId ? (
+                        <p className='text-sm font-bold text-white'>{user.truckyId}</p>
+                      ) : (
+                        <p className='text-sm text-muted-foreground'>Enter your Trucky ID for accurate job tracking</p>
+                      )}
+                    </div>
+                  </div>
+                  <Dialog open={isTruckyIdDialogOpen} onOpenChange={setIsTruckyIdDialogOpen}>
+                    <DialogTrigger asChild>
+                      <Button variant='outline' className='bg-background border-border'>
+                        <EditIcon className='mr-2 h-4 w-4' />
+                        {user.truckyId ? 'Edit' : 'Add'}
+                      </Button>
+                    </DialogTrigger>
+                    <DialogContent className='bg-card border-border'>
+                      <DialogHeader>
+                        <DialogTitle className='text-foreground'>Trucky ID</DialogTitle>
+                      </DialogHeader>
+                      <div className='space-y-4'>
+                        <div>
+                          <label className='text-sm font-medium text-foreground block mb-2'>Your Trucky ID</label>
+                          <Input
+                            value={newTruckyId}
+                            onChange={(e) => setNewTruckyId(e.target.value)}
+                            placeholder='Enter your Trucky driver ID'
+                            className='bg-background border-border'
+                          />
+                        </div>
+                        <div className='text-xs text-muted-foreground'>
+                          Enter your Trucky ID to accurately match your jobs from the Trucky API. This ensures your profile shows only your actual completed jobs.
+                        </div>
+                        <div className='flex space-x-2'>
+                          <Button onClick={handleTruckyIdUpdate} className='flex-1 bg-primary text-primary-foreground hover:bg-primary/90'>
+                            Save
+                          </Button>
+                          <Button onClick={() => setIsTruckyIdDialogOpen(false)} variant='outline' className='flex-1 bg-background border-border'>
+                            Cancel
+                          </Button>
+                        </div>
+                      </div>
+                    </DialogContent>
+                  </Dialog>
                 </div>
               </CardContent>
             </Card>

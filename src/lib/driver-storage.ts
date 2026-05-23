@@ -99,9 +99,12 @@ export interface UserEntry {
   steamId?: string;
   steamAvatar?: string;
   steamUsername?: string;
-   profileNumber?: number;
+  profileNumber?: number;
   rankColor?: string;
   coverImage?: string;
+  rankTitle?: string;
+  rankLevel?: number;
+  truckyId?: string;
 }
 
 const STORAGE_KEY = 'ethub_managed_drivers_v1';

@@ -1,3 +1,5 @@
+import { parseSteamId64 } from '@/lib/steam-ets2';
+
 export interface TruckyJob {
   id: number;
   source_city_name: string;
@@ -11,19 +13,19 @@ export interface TruckyJob {
   status: string;
   source_company_name: string;
   destination_company_name: string;
-  
+
   // Vehicle & Truck Info
   truck_name?: string;
   vehicle_brand_name?: string;
   vehicle_model_name?: string;
   vehicle_in_game_brand_id?: string;
   vehicle_in_game_id?: string;
-  
+
   // Trailer Info
   trailer_name?: string;
   trailer_body_type?: string;
   owned_trailer_id?: number;
-  
+
   // Dates & Times
   start_date?: string;
   started_at?: string;
@@ -33,7 +35,7 @@ export interface TruckyJob {
   canceled_at?: string;
   ended_at?: string;
   finished_at?: string;
-  
+
   // Stats
   top_speed?: number;
   max_speed?: number;
@@ -43,9 +45,10 @@ export interface TruckyJob {
   fuel_used?: number;
   revenue?: number;
   income?: number;
-  
+
   // Objects
   driver?: {
+    id?: number;
     name: string;
     avatar_url?: string;
     avatar?: string;
@@ -56,7 +59,7 @@ export interface TruckyJob {
   };
   vehicle?: Record<string, unknown>;
   truck?: Record<string, unknown>;
-  
+
   game?: string;
   map?: string;
   dlc?: string | { name?: string };
@@ -288,6 +291,76 @@ export function aggregateDriverRankingsFromJobs(
     map.set(name, existing);
   }
   return Array.from(map.values());
+}
+
+export interface TruckyUserMatchData {
+  displayName: string;
+  username: string;
+  steamUsername?: string;
+  steamId?: string;
+  steamId64?: string | null;
+  truckyId?: string;
+}
+
+function normalizeText(value?: string): string | null {
+  return value?.trim().toLowerCase() || null;
+}
+
+function normalizeIdentifier(value?: string): string | null {
+  return value?.replace(/[^a-z0-9]/gi, '').trim().toLowerCase() || null;
+}
+
+function normalizeSteamIdentifier(value?: string | null): string | null {
+  if (!value) return null;
+  const normalized = parseSteamId64(value);
+  if (normalized) return normalized;
+  const trimmed = value.trim();
+  if (/^\d{16,17}$/.test(trimmed)) return trimmed;
+  return null;
+}
+
+export function isTruckyJobForUser(job: TruckyJob, user: TruckyUserMatchData): boolean {
+  if (!job.driver) return false;
+
+  // First, try to match by Trucky ID if available (most accurate)
+  if (user.truckyId && job.driver.id) {
+    return String(job.driver.id) === user.truckyId;
+  }
+
+  // Fall back to name/steam matching if truckyId is not available
+  const driverName = normalizeText(job.driver.name);
+  const driverSteamName = normalizeText(job.driver.steam_profile?.steam_username);
+  const driverSteamId = normalizeSteamIdentifier(job.driver.steam_profile?.steam_id ?? null);
+
+  const userNames = new Set<string>([
+    normalizeText(user.displayName),
+    normalizeText(user.username),
+    normalizeText(user.steamUsername),
+  ].filter(Boolean) as string[]);
+
+  const userSteamId = normalizeSteamIdentifier(user.steamId ?? null) || normalizeSteamIdentifier(user.steamId64 ?? null);
+  const normalizedUserSteamName = normalizeText(user.steamUsername);
+
+  if (driverSteamId && userSteamId && driverSteamId === userSteamId) return true;
+  if (driverSteamName && normalizedUserSteamName && driverSteamName === normalizedUserSteamName) return true;
+  if (driverName && userNames.has(driverName)) return true;
+
+  const strippedDriverName = normalizeIdentifier(job.driver.name);
+  if (strippedDriverName) {
+    for (const candidate of [
+      normalizeIdentifier(user.displayName),
+      normalizeIdentifier(user.username),
+      normalizeIdentifier(user.steamUsername),
+    ]) {
+      if (candidate && strippedDriverName === candidate) return true;
+    }
+  }
+
+  return false;
+}
+
+export function countTruckyJobsForUser(allJobs: TruckyJob[], user: TruckyUserMatchData): number {
+  return dedupeTruckyJobsById(allJobs).filter((job) => isTruckyJobForUser(job, user)).length;
 }
 
 /** VTC-wide completed jobs count and summed distance (same rules as driver rankings). */
