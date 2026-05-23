@@ -35,6 +35,7 @@ import {
   RANKS,
   type UserEntry 
 } from '@/lib/driver-storage';
+import { getSteamPlayerSummary } from '@/lib/steam-ets2';
 import { generateDiscordOAuthUrl, generateSteamOAuthUrl } from '@/lib/discord-auth';
 
 export function SettingsPage() {
@@ -163,6 +164,30 @@ export function SettingsPage() {
     reader.readAsDataURL(file);
   };
 
+  const handleUseDiscordAvatar = () => {
+    if (!user || !user.discordAvatar) return;
+    const success = updateAvatar(user.id, user.discordAvatar);
+    if (success) {
+      setUser(prev => prev ? { ...prev, avatar: user.discordAvatar } : null);
+      setIsAvatarDialogOpen(false);
+    }
+  };
+
+  const handleUseSteamAvatar = async () => {
+    if (!user || !user.steamId) return;
+    setIsLoading(true);
+    try {
+      const profile = await getSteamPlayerSummary(user.steamId);
+      const steamAvatar = profile?.avatarfull || user.steamAvatar || user.avatar || '';
+      if (!steamAvatar) return;
+      const success = updateUserSettings(user.id, { steamAvatar, avatar: steamAvatar });
+      if (success) setUser(prev => prev ? { ...prev, steamAvatar, avatar: steamAvatar } : null);
+      setIsAvatarDialogOpen(false);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   const handleCoverUpdate = async () => {
     if (!user || !newCover.trim()) return;
     
@@ -246,6 +271,10 @@ export function SettingsPage() {
 
   const currentRank = getUserRank(user?.rankLevel);
   const nextRank = getNextRank(user?.rankLevel);
+  const displayAvatar = user?.avatar || user?.discordAvatar || user?.steamAvatar;
+
+  const displayRankTitle = user?.rankTitle || currentRank?.title || 'No Rank';
+  const displayRankIcon = currentRank?.icon || '';
 
   if (!user) {
     return (
@@ -321,9 +350,9 @@ export function SettingsPage() {
                   {/* Avatar Section */}
                   <div className='flex items-center gap-4 p-2 rounded-lg'>
                     <div className='relative'>
-                      {user.avatar ? (
+                      {displayAvatar ? (
                         <img 
-                          src={user.avatar} 
+                          src={displayAvatar} 
                           alt={user.displayName} 
                           className='w-20 h-20 rounded-full object-cover'
                         />
@@ -347,8 +376,27 @@ export function SettingsPage() {
                       <h3 className='text-xl font-bold text-white'>{user.displayName}</h3>
                       <p className='text-sm text-muted-foreground'>@{user.username}</p>
                       <Badge className='mt-2 bg-primary/10 text-primary border-primary/20 font-black uppercase tracking-widest'>
-                        {currentRank?.icon} {currentRank?.title || 'No Rank'}
+                        {displayRankIcon} {displayRankTitle}
                       </Badge>
+                    </div>
+                  </div>
+
+                  <div className='rounded-2xl overflow-hidden border border-border bg-slate-950/40'>
+                    {user.coverImage ? (
+                      <img src={user.coverImage} alt='banner preview' className='w-full h-40 object-cover' />
+                    ) : (
+                      <div className='flex h-40 items-center justify-center bg-slate-900 text-sm text-muted-foreground'>
+                        No profile banner uploaded yet.
+                      </div>
+                    )}
+                    <div className='flex items-center justify-between p-3 bg-background border-t border-border'>
+                      <div>
+                        <div className='text-sm font-medium text-foreground'>Profile Banner</div>
+                        <div className='text-xs text-muted-foreground'>Upload an image or enter a banner URL.</div>
+                      </div>
+                      <Button size='sm' onClick={() => setIsCoverDialogOpen(true)} className='bg-primary text-primary-foreground hover:bg-primary/90'>
+                        Update Banner
+                      </Button>
                     </div>
                   </div>
 
@@ -416,8 +464,8 @@ export function SettingsPage() {
                 <div className='flex items-center justify-between p-4 border border-border rounded-lg bg-accent/5'>
                   <div className='flex items-center gap-3'>
                     <div className='relative'>
-                      {user.avatar && user.discordUsername ? (
-                        <img src={user.avatar} className='h-8 w-8 rounded-full' />
+                      {user.discordAvatar && user.discordUsername ? (
+                        <img src={user.discordAvatar} className='h-8 w-8 rounded-full' />
                       ) : (
                         <MessageCircleIcon className='h-8 w-8 text-[#5865F2]' />
                       )}
@@ -455,8 +503,8 @@ export function SettingsPage() {
                 <div className='flex items-center justify-between p-4 border border-border rounded-lg bg-accent/5'>
                   <div className='flex items-center gap-3'>
                     <div className='relative'>
-                      {user.avatar && user.steamUsername ? (
-                        <img src={user.avatar} className='h-8 w-8 rounded-full' />
+                      {user.steamAvatar && user.steamUsername ? (
+                        <img src={user.steamAvatar} className='h-8 w-8 rounded-full' />
                       ) : (
                         <Gamepad2Icon className='h-8 w-8 text-[#1B2838] dark:text-white' />
                       )}
@@ -499,23 +547,66 @@ export function SettingsPage() {
                   <DialogTitle className='text-foreground'>Update Avatar</DialogTitle>
                 </DialogHeader>
                 <div className='space-y-4'>
-                  <div>
-                    <label className='text-sm font-medium text-foreground block mb-2'>Avatar URL</label>
-                    <Input
-                      value={newAvatar}
-                      onChange={(e) => setNewAvatar(e.target.value)}
-                      placeholder='Enter avatar image URL'
-                      className='bg-background border-border'
-                    />
+                  <div className='grid gap-2 sm:grid-cols-2'>
+                    <Button onClick={handleUseDiscordAvatar} disabled={!user?.discordAvatar} className='h-10'>
+                      Use Discord Avatar
+                    </Button>
+                    <Button onClick={handleUseSteamAvatar} disabled={!user?.steamId || isLoading} className='h-10'>
+                      {isLoading ? 'Fetching...' : 'Use Steam Avatar'}
+                    </Button>
+                    <div className='col-span-2'>
+                      <label className='text-sm font-medium text-foreground block mb-2'>Avatar URL</label>
+                      <Input
+                        value={newAvatar}
+                        onChange={(e) => setNewAvatar(e.target.value)}
+                        placeholder='Enter avatar image URL'
+                        className='bg-background border-border'
+                      />
+                    </div>
+                    <div className='col-span-2'>
+                      <input type='file' accept='image/*' onChange={handleAvatarFileUpload} className='w-full' />
+                    </div>
                   </div>
                   <div className='text-xs text-muted-foreground'>
-                    Enter a URL to your avatar image. Supported formats: JPG, PNG, GIF.
+                    Pick an avatar source: Discord, Steam, upload a file, or enter an image URL.
                   </div>
                   <div className='flex space-x-2'>
                     <Button onClick={handleAvatarUpdate} disabled={isLoading} className='flex-1 bg-primary text-primary-foreground hover:bg-primary/90'>
                       {isLoading ? 'Updating...' : 'Update Avatar'}
                     </Button>
                     <Button onClick={() => setIsAvatarDialogOpen(false)} variant='outline' className='flex-1 bg-background border-border'>
+                      Cancel
+                    </Button>
+                  </div>
+                </div>
+              </DialogContent>
+            </Dialog>
+
+            <Dialog open={isCoverDialogOpen} onOpenChange={setIsCoverDialogOpen}>
+              <DialogContent className='bg-card border-border'>
+                <DialogHeader>
+                  <DialogTitle className='text-foreground'>Update Banner</DialogTitle>
+                </DialogHeader>
+                <div className='space-y-4'>
+                  <div>
+                    <label className='text-sm font-medium text-foreground block mb-2'>Banner URL</label>
+                    <Input
+                      value={newCover}
+                      onChange={(e) => setNewCover(e.target.value)}
+                      placeholder='Enter banner image URL'
+                      className='bg-background border-border'
+                    />
+                  </div>
+                  <div>
+                    <label className='text-sm font-medium text-foreground block mb-2'>Upload Banner Image</label>
+                    <input type='file' accept='image/*' onChange={handleCoverFileUpload} className='w-full' />
+                  </div>
+                  <div className='text-xs text-muted-foreground'>Upload a custom profile banner or point to an image URL. The selected banner will appear on your profile page.</div>
+                  <div className='flex space-x-2'>
+                    <Button onClick={handleCoverUpdate} disabled={isLoading} className='flex-1 bg-primary text-primary-foreground hover:bg-primary/90'>
+                      {isLoading ? 'Updating...' : 'Save Banner'}
+                    </Button>
+                    <Button onClick={() => setIsCoverDialogOpen(false)} variant='outline' className='flex-1 bg-background border-border'>
                       Cancel
                     </Button>
                   </div>

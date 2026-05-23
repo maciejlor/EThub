@@ -58,6 +58,7 @@ import * as React from 'react';
  * Constants
  */
 import { APP_SIDEBAR } from '@/constants';
+import { getFilteredSidebar } from './RoleBasedSidebar';
 
 export const AppSidebar = () => {
   const { state, isMobile } = useSidebar();
@@ -70,6 +71,8 @@ export const AppSidebar = () => {
   const toggleGroup = (title: string) => {
     setOpenGroups(prev => ({ ...prev, [title]: !prev[title] }));
   };
+
+  const filteredSidebar = getFilteredSidebar();
 
   return (
     <Sidebar
@@ -98,7 +101,7 @@ export const AppSidebar = () => {
 
       {/* Sidebar Content */}
       <SidebarContent>
-        {APP_SIDEBAR.navMain.map((group) => (
+        {filteredSidebar.navMain.map((group) => (
           <SidebarGroup key={group.title}>
             <SidebarGroupLabel className='px-2 py-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground group-data-[collapsible=icon]:hidden'>
               {group.title}

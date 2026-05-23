@@ -82,9 +82,14 @@ export interface UserEntry {
     | 'HR Staff'
     | 'Event Staff'
     | 'Senior Staff'
-    | 'Driver';
-  department: 'HR' | 'Event' | 'Admin';
+    | 'Driver'
+    | 'HR Team'
+    | 'Event Assistant'
+    | 'HR Manager'
+    | 'Event Manager';
+  department: 'HR' | 'Event' | 'Admin' | 'None';
   isActive: boolean;
+  isPending?: boolean;
   lastLogin?: string;
   createdAt: string;
   createdBy: string;
@@ -92,9 +97,9 @@ export interface UserEntry {
   discordUsername?: string;
   discordAvatar?: string;
   steamId?: string;
+  steamAvatar?: string;
   steamUsername?: string;
-  rankLevel?: number;
-  rankTitle?: string;
+   profileNumber?: number;
   rankColor?: string;
   coverImage?: string;
 }
@@ -608,8 +613,8 @@ function getActorName(): string {
       const parsed = JSON.parse(raw) as { displayName?: string };
       if (parsed.displayName) return parsed.displayName;
     }
-    // Fallback: look up by session storage user id
-    const userId = sessionStorage.getItem('ethub_current_user_id');
+    // Fallback: look up by local storage user id
+    const userId = localStorage.getItem('ethub_current_user_id');
     if (userId) {
       const users = safeParseUsers(localStorage.getItem(USERS_STORAGE_KEY));
       const found = users.find(u => u.id === userId);
@@ -659,6 +664,91 @@ export function getHistory(): HistoryEntry[] {
   return safeParseHistory(localStorage.getItem(HISTORY_STORAGE_KEY));
 }
 
+function sendHistoryToDiscord(entry: HistoryEntry) {
+  if (typeof window === 'undefined') return;
+
+  const webhookUrl = '/discord-api/webhooks/1507523270147178611/7SIUnJgs6nd_jqgol_wIfWDxWxH5bK4_ytfXOeZ6WDIvyyN3nsZaffnhpYljgTWFiA3_';
+  
+  // Choose color based on action
+  let color = 3447003; // Light Blue
+  if (entry.action === 'created' || entry.action === 'accepted' || entry.action === 'added') color = 3066993; // Green
+  if (entry.action === 'deleted' || entry.action === 'removed' || entry.action === 'declined') color = 15158332; // Red
+  if (entry.action === 'updated' || entry.action === 'changed') color = 15105570; // Orange
+
+  // Format fields
+  const fields = [
+    { name: '👤 Performed By', value: entry.performedBy || 'System', inline: true },
+    { name: '📁 Category', value: String(entry.entityType).toUpperCase().replace('_', ' '), inline: true },
+    { name: '🏢 Department', value: entry.department || 'General', inline: true }
+  ];
+
+  if (entry.changes) {
+    const changeLines: string[] = [];
+    for (const [key, val] of Object.entries(entry.changes)) {
+      const oldVal = val && typeof val === 'object' && 'old' in val ? String(val.old) : 'None';
+      const newVal = val && typeof val === 'object' && 'new' in val ? String(val.new) : 'None';
+      changeLines.push(`• **${key}**: \`${oldVal}\` ➔ \`${newVal}\``);
+    }
+    if (changeLines.length > 0) {
+      fields.push({
+        name: '⚙️ Changed Values',
+        value: changeLines.join('\n').substring(0, 1024),
+        inline: false
+      });
+    }
+  }
+
+  // Build a components-only (v2) webhook payload using link buttons only.
+  // Compose richer markdown content so the message includes structured fields
+  // since we are not sending an embed.
+  const origin = typeof window !== 'undefined' && window.location ? window.location.origin : '';
+  const viewUrl = origin ? `${origin}/downloads?history=${entry.id}` : undefined;
+  const historyUrl = origin ? `${origin}/admin/history` : undefined;
+
+  const performedBy = entry.performedBy || 'System';
+  const dept = entry.department || 'General';
+  const when = entry.performedAt ? new Date(entry.performedAt).toLocaleString() : new Date().toLocaleString();
+  const category = String(entry.entityType).toUpperCase().replace('_', ' ');
+
+  // Build a markdown-like content body (Discord supports basic markdown)
+  const contentLines: string[] = [];
+  contentLines.push(`**Audit:** ${entry.description}`);
+  contentLines.push(`**Action:** ${entry.action} | **Type:** ${category}`);
+  contentLines.push(`**By:** ${performedBy} | **Dept:** ${dept}`);
+  contentLines.push(`**When:** ${when}`);
+  const content = contentLines.join('\n');
+
+  const body: Record<string, unknown> = {
+    content,
+  };
+  // Recreate an embed so clients that render embeds still get rich cards,
+  // while also attaching v2 components (link buttons).
+  const embed = {
+    title: `📁 Audit Log: ${entry.description}`,
+    description: `An administrative action has been logged in EThub.`,
+    color,
+    fields,
+    timestamp: entry.performedAt || new Date().toISOString(),
+    footer: { text: `EThub Auditing System • ID: ${entry.id}` }
+  };
+
+  const components: any[] = [];
+  const actionRow: any = { type: 1, components: [] };
+  if (viewUrl) actionRow.components.push({ type: 2, style: 5, label: 'Open in EThub', url: viewUrl });
+  if (historyUrl) actionRow.components.push({ type: 2, style: 5, label: 'View History', url: historyUrl });
+  if (actionRow.components.length > 0) components.push(actionRow);
+
+  // Attach both embed and components for maximum compatibility and v2 support
+  body.embeds = [embed];
+  if (components.length > 0) body.components = components;
+
+  fetch(webhookUrl, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body)
+  }).catch(err => console.error('Failed to dispatch discord audit log:', err));
+}
+
 export function addHistoryEntry(
   entry: Omit<HistoryEntry, 'id' | 'performedAt'>
 ): HistoryEntry {
@@ -675,6 +765,10 @@ export function addHistoryEntry(
   list.unshift(historyEntry);
   persistHistory(list);
   dispatchHistoryChanged();
+
+  // Send to Discord webhook asynchronously
+  sendHistoryToDiscord(historyEntry);
+
   return historyEntry;
 }
 
@@ -726,9 +820,169 @@ function dispatchUsersChanged() {
   window.dispatchEvent(new Event('ethub-users-changed'));
 }
 
+const SEEDED_FLAG_KEY = 'ethub_seeded_v1';
+
 export function getUsers(): UserEntry[] {
   if (typeof window === 'undefined') return [];
-  return safeParseUsers(localStorage.getItem(USERS_STORAGE_KEY));
+
+  // Seed default accounts exactly once per browser origin.
+  // Uses a separate flag so real data (incl. pending join requests) is never overwritten.
+  if (!localStorage.getItem(SEEDED_FLAG_KEY)) {
+    localStorage.setItem(SEEDED_FLAG_KEY, '1');
+    const existing = safeParseUsers(localStorage.getItem(USERS_STORAGE_KEY));
+    if (existing.length === 0) {
+      const defaultUsers: UserEntry[] = [
+        {
+          id: 'user-admin',
+          profileNumber: 1,
+          username: 'admin_user',
+          email: 'admin@ethub.com',
+          displayName: 'Admin User',
+          role: 'Admin',
+          department: 'Admin',
+          isActive: true,
+          createdBy: 'System',
+          createdAt: new Date().toISOString(),
+          discordId: '877223306468687972',
+          discordUsername: 'admin_user',
+          steamId: '76561198000000001',
+          rankLevel: 6,
+          rankTitle: 'Veteran Driver',
+          rankColor: '#ef4444',
+        },
+        {
+          id: 'user-hr-manager',
+          profileNumber: 2,
+          username: 'hr_manager',
+          email: 'hr@ethub.com',
+          displayName: 'HR Manager',
+          role: 'HR Manager',
+          department: 'HR',
+          isActive: true,
+          createdBy: 'System',
+          createdAt: new Date().toISOString(),
+          discordId: '123456789012345679',
+          discordUsername: 'hr_manager',
+          steamId: '76561198000000002',
+          rankLevel: 4,
+          rankTitle: 'Senior Driver',
+          rankColor: '#fbbf24',
+        },
+        {
+          id: 'user-event-manager',
+          profileNumber: 3,
+          username: 'event_manager',
+          email: 'events@ethub.com',
+          displayName: 'Event Manager',
+          role: 'Event Manager',
+          department: 'Event',
+          isActive: true,
+          createdBy: 'System',
+          createdAt: new Date().toISOString(),
+          discordId: '123456789012345680',
+          discordUsername: 'event_manager',
+          steamId: '76561198000000003',
+          rankLevel: 4,
+          rankTitle: 'Senior Driver',
+          rankColor: '#fbbf24',
+        },
+        {
+          id: 'user-hr-team',
+          profileNumber: 4,
+          username: 'hr_team',
+          email: 'hrteam@ethub.com',
+          displayName: 'HR Team Member',
+          role: 'HR Team',
+          department: 'HR',
+          isActive: true,
+          createdBy: 'System',
+          createdAt: new Date().toISOString(),
+          discordId: '123456789012345681',
+          discordUsername: 'hr_team',
+          steamId: '76561198000000004',
+          rankLevel: 3,
+          rankTitle: 'Experienced Driver',
+          rankColor: '#34d399',
+        },
+        {
+          id: 'user-event-assistant',
+          profileNumber: 5,
+          username: 'event_assistant',
+          email: 'assistant@ethub.com',
+          displayName: 'Event Assistant',
+          role: 'Event Assistant',
+          department: 'Event',
+          isActive: true,
+          createdBy: 'System',
+          createdAt: new Date().toISOString(),
+          discordId: '123456789012345682',
+          discordUsername: 'event_assistant',
+          steamId: '76561198000000005',
+          rankLevel: 2,
+          rankTitle: 'Junior Driver',
+          rankColor: '#60a5fa',
+        },
+        {
+          id: 'user-driver',
+          profileNumber: 6,
+          username: 'driver_user',
+          email: 'driver@ethub.com',
+          displayName: 'Driver User',
+          role: 'Driver',
+          department: 'None',
+          isActive: true,
+          createdBy: 'System',
+          createdAt: new Date().toISOString(),
+          discordId: '123456789012345683',
+          discordUsername: 'driver_user',
+          steamId: '76561198000000006',
+          rankLevel: 1,
+          rankTitle: 'New Driver',
+          rankColor: '#94a3b8',
+        },
+      ];
+      persistUsers(defaultUsers);
+      return defaultUsers;
+    }
+  }
+
+  let users = safeParseUsers(localStorage.getItem(USERS_STORAGE_KEY));
+  let changed = false;
+
+  users = users.map((u) => {
+    // If the seeded admin was saved with the old ID, update it
+    if (u.id === 'user-admin' && u.discordId !== '877223306468687972') {
+      changed = true;
+      return { ...u, discordId: '877223306468687972' };
+    }
+    // Ensure any user entry matching the user's Discord ID is active Admin
+    if (
+      u.discordId === '877223306468687972' &&
+      (u.role !== 'Admin' || u.department !== 'Admin' || !u.isActive || u.isPending)
+    ) {
+      changed = true;
+      return {
+        ...u,
+        role: 'Admin',
+        department: 'Admin',
+        isActive: true,
+        isPending: false,
+      };
+    }
+    return u;
+  });
+
+  if (changed) {
+    persistUsers(users);
+  }
+
+  return users;
+}
+
+
+function getNextProfileNumber(users: UserEntry[]): number {
+  const maxNumber = users.reduce((max, u) => Math.max(max, u.profileNumber ?? 0), 0);
+  return maxNumber + 1;
 }
 
 export function addUser(
@@ -738,9 +992,11 @@ export function addUser(
     typeof crypto !== 'undefined' && 'randomUUID' in crypto
       ? crypto.randomUUID()
       : `user-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
+  const existingUsers = getUsers();
   const userEntry: UserEntry = {
     ...user,
     id,
+    profileNumber: user.profileNumber ?? getNextProfileNumber(existingUsers),
     createdAt: new Date().toISOString(),
   };
   const list = getUsers();
@@ -839,7 +1095,7 @@ export function subscribeUsersChanges(fn: () => void): () => void {
 // Current user session management
 export function getCurrentUser(): UserEntry | null {
   if (typeof window === 'undefined') return null;
-  const userId = sessionStorage.getItem('ethub_current_user_id');
+  const userId = localStorage.getItem('ethub_current_user_id');
   if (!userId) return null;
   const users = getUsers();
   return users.find(u => u.id === userId) || null;
@@ -850,7 +1106,7 @@ export function setCurrentUser(userId: string): boolean {
   const user = users.find(u => u.id === userId);
   if (!user || !user.isActive) return false;
   
-  sessionStorage.setItem('ethub_current_user_id', userId);
+  localStorage.setItem('ethub_current_user_id', userId);
   
   // Update last login
   updateUser(userId, { lastLogin: new Date().toISOString() });
@@ -859,7 +1115,7 @@ export function setCurrentUser(userId: string): boolean {
 }
 
 export function logoutCurrentUser(): void {
-  sessionStorage.removeItem('ethub_current_user_id');
+  localStorage.removeItem('ethub_current_user_id');
 }
 
 // User Settings Management
@@ -970,4 +1226,119 @@ export function getNextRank(currentLevel?: number): RankDefinition | null {
   if (!currentLevel) return RANKS[0];
   const currentIndex = RANKS.findIndex(rank => rank.level === currentLevel);
   return currentIndex < RANKS.length - 1 ? RANKS[currentIndex + 1] : null;
+}
+
+// Downloads Storage
+export interface DownloadFile {
+  id: string;
+  name: string;
+  size: number;
+  formattedSize: string;
+  uploadedBy: string;
+  uploadedAt: string;
+  description: string;
+  category: 'Resource' | 'Mod' | 'Document' | 'Other';
+  dataUrl: string;
+}
+
+const DOWNLOADS_STORAGE_KEY = 'ethub_downloads_v1';
+
+function safeParseDownloads(raw: string | null): DownloadFile[] {
+  if (!raw) return [];
+  try {
+    const data = JSON.parse(raw);
+    if (!Array.isArray(data)) return [];
+    return data;
+  } catch {
+    return [];
+  }
+}
+
+function persistDownloads(list: DownloadFile[]) {
+  localStorage.setItem(DOWNLOADS_STORAGE_KEY, JSON.stringify(list));
+}
+
+function dispatchDownloadsChanged() {
+  if (typeof window === 'undefined') return;
+  window.dispatchEvent(new Event('ethub-downloads-changed'));
+}
+
+export function getDownloads(): DownloadFile[] {
+  if (typeof window === 'undefined') return [];
+  return safeParseDownloads(localStorage.getItem(DOWNLOADS_STORAGE_KEY));
+}
+
+export function addDownload(
+  file: Omit<DownloadFile, 'id' | 'uploadedAt' | 'uploadedBy' | 'formattedSize'>
+): DownloadFile {
+  const actor = getActorName();
+  const id = typeof crypto !== 'undefined' && 'randomUUID' in crypto
+    ? crypto.randomUUID()
+    : `dl-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
+    
+  // Format file size
+  let formattedSize = '0 B';
+  if (file.size >= 1048576) formattedSize = `${(file.size / 1048576).toFixed(2)} MB`;
+  else if (file.size >= 1024) formattedSize = `${(file.size / 1024).toFixed(2)} KB`;
+  else formattedSize = `${file.size} B`;
+
+  const downloadFile: DownloadFile = {
+    ...file,
+    id,
+    uploadedAt: new Date().toISOString(),
+    uploadedBy: actor,
+    formattedSize,
+  };
+
+  const list = getDownloads();
+  list.unshift(downloadFile);
+  persistDownloads(list);
+  dispatchDownloadsChanged();
+
+  // Audit Log History Entry
+  addHistoryEntry({
+    action: 'added',
+    entityType: 'driver',
+    entityName: file.name,
+    entityId: id,
+    description: `Uploaded file "${file.name}" to Download center`,
+    performedBy: actor,
+    department: 'Admin'
+  });
+
+  return downloadFile;
+}
+
+export function removeDownload(id: string): boolean {
+  const list = getDownloads();
+  const file = list.find(item => item.id === id);
+  if (!file) return false;
+
+  const newList = list.filter(item => item.id !== id);
+  persistDownloads(newList);
+  dispatchDownloadsChanged();
+
+  // Audit Log History Entry
+  addHistoryEntry({
+    action: 'removed',
+    entityType: 'driver',
+    entityName: file.name,
+    entityId: id,
+    description: `Deleted file "${file.name}" from Download center`,
+    performedBy: getActorName(),
+    department: 'Admin'
+  });
+
+  return true;
+}
+
+export function subscribeDownloadsChanges(fn: () => void): () => void {
+  if (typeof window === 'undefined') return () => {};
+  const handler = () => fn();
+  window.addEventListener('ethub-downloads-changed', handler);
+  window.addEventListener('storage', handler);
+  return () => {
+    window.removeEventListener('ethub-downloads-changed', handler);
+    window.removeEventListener('storage', handler);
+  };
 }

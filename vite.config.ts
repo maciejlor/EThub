@@ -1,3 +1,4 @@
+import fs from 'fs';
 import path from 'path';
 import tailwindcss from '@tailwindcss/vite';
 import react from '@vitejs/plugin-react';
@@ -5,11 +6,61 @@ import { defineConfig } from 'vite';
 
 // https://vite.dev/config/
 export default defineConfig({
-  plugins: [react(), tailwindcss()],
+  plugins: [
+    react(),
+    tailwindcss(),
+    {
+      name: 'local-db-sync-api',
+      configureServer(server) {
+        server.middlewares.use((req, res, next) => {
+          if (req.url && req.url.startsWith('/api/db-sync')) {
+            const dbFilePath = path.resolve(__dirname, './db.json');
+
+            if (req.method === 'GET') {
+              res.setHeader('Content-Type', 'application/json');
+              if (fs.existsSync(dbFilePath)) {
+                try {
+                  const data = fs.readFileSync(dbFilePath, 'utf-8');
+                  res.end(data);
+                } catch {
+                  res.end(JSON.stringify({}));
+                }
+              } else {
+                res.end(JSON.stringify({}));
+              }
+              return;
+            }
+
+            if (req.method === 'POST') {
+              let body = '';
+              req.on('data', (chunk) => {
+                body += chunk.toString();
+              });
+              req.on('end', () => {
+                try {
+                  fs.writeFileSync(dbFilePath, body, 'utf-8');
+                  res.setHeader('Content-Type', 'application/json');
+                  res.end(JSON.stringify({ success: true }));
+                } catch {
+                  res.statusCode = 500;
+                  res.end(JSON.stringify({ error: 'Failed to write DB' }));
+                }
+              });
+              return;
+            }
+          }
+          next();
+        });
+      },
+    },
+  ],
   resolve: {
     alias: {
       '@': path.resolve(__dirname, './src'),
     },
+  },
+  build: {
+    chunkSizeWarningLimit: 10240,
   },
   server: {
     proxy: {

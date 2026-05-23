@@ -57,7 +57,7 @@ export function JobDetailsPage() {
     return `${day}.${month}.${year}, ${hours}:${mins} (UTC)`;
   };
 
-  const formatTruckName = (j: TruckyJob) => {
+  const formatTruckName = (j: TruckyJob): string => {
     if (!j) return 'Standard Truck';
     const v = j.vehicle || j.truck;
     let b = j.vehicle_brand_name || v?.brand || v?.make || v?.brand_name || v?.name;
@@ -76,7 +76,7 @@ export function JobDetailsPage() {
       return combined.split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
     }
     if (j.truck_name) return j.truck_name.replace(/[._]/g, ' ').split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
-    return b || m || 'Standard Truck';
+    return String(b || m || 'Standard Truck');
   };
 
   const calculateDuration = (start?: string, end?: string) => {

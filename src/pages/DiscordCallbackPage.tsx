@@ -2,10 +2,12 @@ import { useEffect, useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { LoaderIcon, ShieldIcon, XCircleIcon } from 'lucide-react';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { LoaderIcon, ShieldIcon, XCircleIcon, ClockIcon, SendIcon, CheckCircleIcon, LinkIcon, UserIcon, TrashIcon } from 'lucide-react';
 import { DISCORD_CONFIG } from '@/lib/discord-auth';
-import { getUsers, setCurrentUser, addUser } from '@/lib/driver-storage';
+import { getUsers, setCurrentUser, addUser, updateUser } from '@/lib/driver-storage';
 import { BackgroundSlider } from '@/components/BackgroundSlider';
+import { initialSyncPromise } from '@/lib/sync';
 
 interface DiscordUser {
   id: string;
@@ -15,253 +17,436 @@ interface DiscordUser {
   email?: string;
 }
 
+type PageStatus =
+  | 'loading'
+  | 'checking'
+  | 'success'
+  | 'pending'           // User is in DB but pending admin approval
+  | 'not_registered'   // Discord ID not in DB at all
+  | 'request_sent'     // User just submitted their join request
+  | 'inactive'         // Account exists but set to inactive
+  | 'error';
+
 export function DiscordCallbackPage() {
   const navigate = useNavigate();
-  const [status, setStatus] = useState<'loading' | 'checking' | 'success' | 'error' | 'no_role'>('loading');
+  const [status, setStatus] = useState<PageStatus>('loading');
   const [message, setMessage] = useState('');
-  const [user, setUser] = useState<DiscordUser | null>(null);
+  const [discordUser, setDiscordUser] = useState<DiscordUser | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // For "link existing account" flow
+  const [showLinkAccount, setShowLinkAccount] = useState(false);
+  const [selectedAccountId, setSelectedAccountId] = useState('');
+  const [isLinking, setIsLinking] = useState(false);
+  const [linkError, setLinkError] = useState('');
+
+  const handleResetStorage = () => {
+    if (confirm('Are you sure you want to reset all storage and sessions? This will wipe all current users and reload the original default seeded staff.')) {
+      localStorage.clear();
+      window.location.href = '/login';
+    }
+  };
 
   const handleDiscordCallback = useCallback(async (code: string) => {
     try {
       setStatus('checking');
-      setMessage('Exchanging authorization code...');
+      setMessage('Exchanging authorization code…');
 
-      // In production, you MUST set DISCORD_CONFIG.CLIENT_SECRET in discord-auth.ts.
+      // ── MOCK BYPASS FOR QUICK SWITCHER TESTING ──────────────────────────
+      if (code.startsWith('mock_')) {
+        const userId = code.replace(/^mock_pending_/, '').replace(/^mock_login_/, '');
+        const matched = getUsers().find((u) => u.id === userId);
+        if (matched) {
+          const userData: DiscordUser = {
+            id: matched.discordId || '123456789',
+            username: matched.username,
+            discriminator: '0000',
+            avatar: matched.avatar || '',
+            email: matched.email || undefined,
+          };
+          setDiscordUser(userData);
+          if (code.startsWith('mock_pending_')) {
+            setStatus('pending');
+            setMessage('Your join request is still pending admin approval. Please check back later.');
+            return;
+          }
+          // Log in mock active user
+          setCurrentUser(matched.id);
+          localStorage.setItem('ethub_authenticated', 'true');
+          localStorage.setItem('ethub_discord_user', JSON.stringify(userData));
+          setStatus('success');
+          setMessage(`Welcome back, ${matched.displayName}! Redirecting to dashboard…`);
+          setTimeout(() => navigate('/'), 1200);
+          return;
+        }
+      }
+
       // Exchange code for access token
-      console.log('Exchanging code for token...');
-      
       const tokenResponse = await fetch('/discord-api/oauth2/token', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/x-www-form-urlencoded',
-        },
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
         body: new URLSearchParams({
           client_id: DISCORD_CONFIG.CLIENT_ID,
           client_secret: DISCORD_CONFIG.CLIENT_SECRET,
           grant_type: 'authorization_code',
-          code: code,
+          code,
           redirect_uri: DISCORD_CONFIG.REDIRECT_URI,
         }),
       });
 
-      console.log('Token response status:', tokenResponse.status);
-      
       if (!tokenResponse.ok) {
-        const errorText = await tokenResponse.text();
-        console.error('Token exchange failed:', errorText);
-        throw new Error(`Failed to exchange code for token: ${errorText}`);
+        const err = await tokenResponse.text();
+        throw new Error(`Token exchange failed: ${err}`);
       }
 
       const tokenData = await tokenResponse.json();
-      console.log('Token data received:', tokenData);
-      
-      if (!tokenData.access_token) {
-        throw new Error('No access token in response');
-      }
-      
-      const accessToken = tokenData.access_token;
+      if (!tokenData.access_token) throw new Error('No access token in response');
 
-      // Get user information
-      setMessage('Fetching user information...');
+      const accessToken: string = tokenData.access_token;
+
+      // Fetch Discord profile
+      setMessage('Fetching Discord profile…');
       const userResponse = await fetch('/discord-api/users/@me', {
-        headers: {
-          'Authorization': `Bearer ${accessToken}`,
-        },
+        headers: { Authorization: `Bearer ${accessToken}` },
       });
-
-      if (!userResponse.ok) {
-        throw new Error('Failed to fetch user information');
-      }
+      if (!userResponse.ok) throw new Error('Failed to fetch Discord user info');
 
       const userData: DiscordUser = await userResponse.json();
-      setUser(userData);
+      setDiscordUser(userData);
 
-      // Get user's guild member object for the specific server to get their roles
-      setMessage('Checking server roles...');
-      const memberResponse = await fetch(`/discord-api/users/@me/guilds/${DISCORD_CONFIG.SERVER_ID}/member`, {
-        headers: {
-          'Authorization': `Bearer ${accessToken}`,
-        },
-      });
+      // ── Gate: look up by Discord ID ─────────────────────────────────────
+      setMessage('Syncing database…');
+      await initialSyncPromise;
+      setMessage('Checking access…');
+      const allUsers = getUsers();
+      // Prefer active + approved accounts first — avoids getting stuck on pending
+      // when both a pending request AND an active account share the same Discord ID.
+      const matched =
+        allUsers.find((u) => u.discordId === userData.id && u.isActive && !u.isPending) ??
+        allUsers.find((u) => u.discordId === userData.id && u.isPending) ??
+        allUsers.find((u) => u.discordId === userData.id);
 
-      if (memberResponse.status === 404) {
-        setStatus('no_role');
-        setMessage(`You must join the EThub Discord server to access this system.`);
-        return;
-      }
+      if (matched) {
+        if (matched.isPending) {
+          setStatus('pending');
+          setMessage('Your join request is still pending admin approval. Please check back later.');
+          return;
+        }
 
-      if (!memberResponse.ok) {
-        throw new Error('Failed to fetch guild member information');
-      }
+        if (!matched.isActive) {
+          setStatus('inactive');
+          setMessage('Your account is inactive. Please contact an administrator.');
+          return;
+        }
 
-      const memberData = await memberResponse.json();
-      const userRoles: string[] = memberData.roles || [];
-      
-      console.log('User roles:', userRoles);
-      console.log('Required role ID:', DISCORD_CONFIG.REQUIRED_ROLE_ID);
-      
-      const hasRequiredRole = userRoles.includes(DISCORD_CONFIG.REQUIRED_ROLE_ID);
-      
-      if (!hasRequiredRole) {
-        setStatus('no_role');
-        setMessage(`You don't have the required role in EThub Discord server. Required role ID: ${DISCORD_CONFIG.REQUIRED_ROLE_ID}. Please contact an administrator.`);
-        return;
-      }
-
-      // Success - user has required role
-      setStatus('success');
-      setMessage('Authentication successful! Redirecting...');
-
-      // If an admin-created user matches this Discord ID, set it as current user.
-      // If not, automatically create a new user entry for them since they successfully logged in.
-      let matched = getUsers().find((u) => u.discordId === userData.id);
-      if (!matched) {
-        matched = addUser({
-          username: userData.username,
-          password: '', // Auto-generated/No password needed for Discord login
-          email: userData.email || '',
-          displayName: userData.username,
-          avatar: `https://cdn.discordapp.com/avatars/${userData.id}/${userData.avatar}.png`,
-          role: 'Driver',
-          department: 'Event', // Default
-          isActive: true,
-          createdBy: 'System (Auto-Join)',
-          discordId: userData.id,
+        // Active user — sync Discord info then log in
+        updateUser(matched.id, {
           discordUsername: userData.username,
-          discordAvatar: `https://cdn.discordapp.com/avatars/${userData.id}/${userData.avatar}.png`,
+          discordAvatar: userData.avatar
+            ? `https://cdn.discordapp.com/avatars/${userData.id}/${userData.avatar}.png`
+            : matched.discordAvatar,
         });
+
+        setCurrentUser(matched.id);
+        localStorage.setItem('ethub_authenticated', 'true');
+        localStorage.setItem('ethub_discord_user', JSON.stringify(userData));
+
+        setStatus('success');
+        setMessage(`Welcome back, ${matched.displayName}! Redirecting to dashboard…`);
+        setTimeout(() => navigate('/'), 1800);
+        return;
       }
-      setCurrentUser(matched.id);
 
-      // Store user session
-      localStorage.setItem('ethub_authenticated', 'true');
-      localStorage.setItem('ethub_discord_user', JSON.stringify(userData));
-      localStorage.setItem('ethub_user_role', 'discord_authenticated');
-
-      // Redirect to dashboard after delay
-      setTimeout(() => {
-        navigate('/');
-      }, 2000);
-
-    } catch (error) {
-      console.error('Discord OAuth error:', error);
+      // Not in DB → show options
+      setStatus('not_registered');
+      setMessage('');
+    } catch (err) {
+      console.error('Discord OAuth error:', err);
       setStatus('error');
       setMessage('Authentication failed. Please try again.');
     }
   }, [navigate]);
 
   useEffect(() => {
-    const urlParams = new URLSearchParams(window.location.search);
-    const code = urlParams.get('code');
-    const error = urlParams.get('error');
-    
+    const params = new URLSearchParams(window.location.search);
+    const code = params.get('code');
+    const error = params.get('error');
+
     if (error) {
       setStatus('error');
-      setMessage('Authorization denied. Please try again.');
+      setMessage('Authorization was denied. Please try again.');
       return;
     }
-
     if (!code) {
       setStatus('error');
-      setMessage('No authorization code received.');
+      setMessage('No authorization code received from Discord.');
       return;
     }
 
     handleDiscordCallback(code);
   }, [handleDiscordCallback]);
 
-  const getStatusIcon = () => {
-    switch (status) {
-      case 'loading':
-      case 'checking':
-        return <LoaderIcon className="h-8 w-8 animate-spin text-blue-500" />;
-      case 'success':
-        return <ShieldIcon className="h-8 w-8 text-green-500" />;
-      case 'no_role':
-        return <XCircleIcon className="h-8 w-8 text-yellow-500" />;
-      case 'error':
-        return <XCircleIcon className="h-8 w-8 text-red-500" />;
-      default:
-        return <LoaderIcon className="h-8 w-8 text-blue-500" />;
-    }
+  // ── Submit join request ───────────────────────────────────────────────────
+  const handleSubmitRequest = () => {
+    if (!discordUser) return;
+    setIsSubmitting(true);
+
+    addUser({
+      username: discordUser.username,
+      email: discordUser.email ?? '',
+      displayName: discordUser.username,
+      avatar: discordUser.avatar
+        ? `https://cdn.discordapp.com/avatars/${discordUser.id}/${discordUser.avatar}.png`
+        : '',
+      discordId: discordUser.id,
+      discordUsername: discordUser.username,
+      discordAvatar: discordUser.avatar
+        ? `https://cdn.discordapp.com/avatars/${discordUser.id}/${discordUser.avatar}.png`
+        : '',
+      role: 'Driver',
+      department: 'HR',
+      isActive: false,
+      isPending: true,
+      createdBy: 'System (Join Request)',
+    });
+
+    setIsSubmitting(false);
+    setStatus('request_sent');
+    setMessage('Your request has been submitted! An admin will review it shortly.');
   };
 
-  const getStatusColor = () => {
-    switch (status) {
-      case 'success':
-        return 'text-green-400 border-green-500/30 bg-green-500/10';
-      case 'no_role':
-        return 'text-yellow-400 border-yellow-500/30 bg-yellow-500/10';
-      case 'error':
-        return 'text-red-400 border-red-500/30 bg-red-500/10';
-      default:
-        return 'text-blue-400 border-blue-500/30 bg-blue-500/10';
+  // ── Link to existing account ──────────────────────────────────────────────
+  const activeUnlinkedUsers = getUsers().filter(
+    (u) => u.isActive && !u.isPending && (!u.discordId || u.discordId.startsWith('123456789'))
+  );
+
+  const handleLinkAccount = () => {
+    if (!discordUser || !selectedAccountId) return;
+    setIsLinking(true);
+    setLinkError('');
+
+    const success = updateUser(selectedAccountId, {
+      discordId: discordUser.id,
+      discordUsername: discordUser.username,
+      discordAvatar: discordUser.avatar
+        ? `https://cdn.discordapp.com/avatars/${discordUser.id}/${discordUser.avatar}.png`
+        : '',
+    });
+
+    if (success) {
+      setCurrentUser(selectedAccountId);
+      localStorage.setItem('ethub_authenticated', 'true');
+      localStorage.setItem('ethub_discord_user', JSON.stringify(discordUser));
+      setStatus('success');
+      const linkedUser = getUsers().find((u) => u.id === selectedAccountId);
+      setMessage(`Welcome, ${linkedUser?.displayName ?? 'User'}! Redirecting to dashboard…`);
+      setTimeout(() => navigate('/'), 1800);
+    } else {
+      setLinkError('Failed to link account. Please try again.');
     }
+    setIsLinking(false);
   };
+
+  // ── Helpers ───────────────────────────────────────────────────────────────
+  const avatarUrl = discordUser?.avatar
+    ? `https://cdn.discordapp.com/avatars/${discordUser.id}/${discordUser.avatar}.png`
+    : null;
+
+  const statusConfig: Record<PageStatus, { title: string; icon: React.ReactNode; border: string }> = {
+    loading:       { title: 'Connecting to Discord…', icon: <LoaderIcon className="h-8 w-8 animate-spin text-blue-400" />, border: 'border-blue-500/30 bg-blue-500/10 text-blue-300' },
+    checking:      { title: 'Verifying Access…',      icon: <LoaderIcon className="h-8 w-8 animate-spin text-blue-400" />, border: 'border-blue-500/30 bg-blue-500/10 text-blue-300' },
+    success:       { title: 'Welcome!',                icon: <CheckCircleIcon className="h-8 w-8 text-green-400" />,       border: 'border-green-500/30 bg-green-500/10 text-green-300' },
+    pending:       { title: 'Request Pending',         icon: <ClockIcon className="h-8 w-8 text-yellow-400" />,            border: 'border-yellow-500/30 bg-yellow-500/10 text-yellow-300' },
+    not_registered:{ title: 'Not Registered',          icon: <ShieldIcon className="h-8 w-8 text-orange-400" />,           border: 'border-orange-500/30 bg-orange-500/10 text-orange-300' },
+    request_sent:  { title: 'Request Submitted!',      icon: <CheckCircleIcon className="h-8 w-8 text-green-400" />,       border: 'border-green-500/30 bg-green-500/10 text-green-300' },
+    inactive:      { title: 'Account Inactive',        icon: <XCircleIcon className="h-8 w-8 text-red-400" />,             border: 'border-red-500/30 bg-red-500/10 text-red-300' },
+    error:         { title: 'Authentication Failed',   icon: <XCircleIcon className="h-8 w-8 text-red-400" />,             border: 'border-red-500/30 bg-red-500/10 text-red-300' },
+  };
+
+  const cfg = statusConfig[status];
 
   return (
     <div className="relative flex min-h-screen items-center justify-center bg-black p-4">
-      {/* Background Image Overlay */}
       <BackgroundSlider />
 
       <Card className="relative z-10 w-full max-w-md bg-[#0f0f0f] border-gray-800/50 text-white shadow-2xl">
-        <CardHeader className="text-center border-b border-gray-800">
-          <div className="flex justify-center mb-4">
-            {getStatusIcon()}
-          </div>
-          <CardTitle className="text-lg text-white">
-            {status === 'loading' && 'Connecting to Discord...'}
-            {status === 'checking' && 'Verifying Access...'}
-            {status === 'success' && 'Authentication Successful'}
-            {status === 'no_role' && 'Access Denied'}
-            {status === 'error' && 'Authentication Failed'}
-          </CardTitle>
+        <CardHeader className="text-center border-b border-gray-800 pb-5">
+          <div className="flex justify-center mb-4">{cfg.icon}</div>
+          <CardTitle className="text-lg text-white">{cfg.title}</CardTitle>
         </CardHeader>
+
         <CardContent className="space-y-4 pt-6">
-          <div className={`text-center text-sm ${getStatusColor()} p-4 rounded-lg border`}>
-            {message}
-          </div>
-          
-          {user && (
-            <div className="flex items-center justify-center space-x-3 p-3 bg-[#1a1a1a] rounded-lg border border-gray-800">
-              <img 
-                src={`https://cdn.discordapp.com/avatars/${user.id}/${user.avatar}.png`}
-                alt={user.username}
-                className="w-10 h-10 rounded-full"
-              />
-              <div className="text-left">
-                <p className="font-medium text-gray-200">{user.username}</p>
-                <p className="text-sm text-gray-400">{user.email || 'No email'}</p>
+          {/* Discord user info card */}
+          {discordUser && (
+            <div className="flex items-center gap-3 p-3 bg-[#1a1a1a] rounded-lg border border-gray-800">
+              {avatarUrl ? (
+                <img src={avatarUrl} alt={discordUser.username} className="w-10 h-10 rounded-full shrink-0" />
+              ) : (
+                <div className="w-10 h-10 rounded-full bg-[#5865F2]/20 flex items-center justify-center shrink-0">
+                  <ShieldIcon className="h-5 w-5 text-[#5865F2]" />
+                </div>
+              )}
+              <div className="min-w-0">
+                <p className="font-medium text-gray-200 truncate">{discordUser.username}</p>
+                <p className="text-xs text-gray-400 font-mono truncate">ID: {discordUser.id}</p>
               </div>
             </div>
           )}
 
-          {status === 'error' && (
-            <Button 
-              onClick={() => navigate('/login')}
-              variant="outline"
-              className="w-full bg-[#1a1a1a] border-gray-700 text-white hover:bg-gray-800 transition-colors"
-            >
-              Back to Login
-            </Button>
+          {/* Status message */}
+          {message && (
+            <div className={`text-sm text-center p-4 rounded-lg border ${cfg.border}`}>
+              {message}
+            </div>
           )}
 
-          {status === 'no_role' && (
-            <div className="space-y-4">
-              <p className="text-sm text-gray-400 text-center">
-                To gain access, please:
-              </p>
-              <div className="text-sm space-y-2 text-gray-300">
-                <p className="flex gap-2"><span>1.</span> Join the EThub Discord server</p>
-                <p className="flex gap-2"><span>2.</span> Contact an administrator for the required role</p>
-                <p className="flex gap-2"><span>3.</span> Try logging in again</p>
+          {/* NOT REGISTERED: two options */}
+          {status === 'not_registered' && !showLinkAccount && (
+            <div className="space-y-3">
+              <div className="text-sm text-gray-400 text-center leading-relaxed">
+                Your Discord account (<span className="text-white font-mono">{discordUser?.username}</span>) is not
+                registered in EThub.
               </div>
-              <Button 
-                onClick={() => navigate('/login')}
+
+              {/* Option 1: Submit join request */}
+              <Button
+                id="submit-join-request"
+                onClick={handleSubmitRequest}
+                disabled={isSubmitting}
+                className="w-full bg-[#5865F2] hover:bg-[#4752c4] text-white transition-colors"
+              >
+                {isSubmitting ? (
+                  <LoaderIcon className="h-4 w-4 mr-2 animate-spin" />
+                ) : (
+                  <SendIcon className="h-4 w-4 mr-2" />
+                )}
+                Submit Join Request
+              </Button>
+
+              {/* Divider */}
+              {activeUnlinkedUsers.length > 0 && (
+                <>
+                  <div className="flex items-center gap-2">
+                    <div className="flex-1 border-t border-gray-800" />
+                    <span className="text-[10px] text-gray-600 uppercase tracking-widest">or</span>
+                    <div className="flex-1 border-t border-gray-800" />
+                  </div>
+
+                  {/* Option 2: Link to existing account */}
+                  <Button
+                    id="link-existing-account"
+                    variant="outline"
+                    onClick={() => setShowLinkAccount(true)}
+                    className="w-full bg-[#1a1a1a] border-gray-700 text-gray-300 hover:bg-gray-800 hover:text-white"
+                  >
+                    <LinkIcon className="h-4 w-4 mr-2" />
+                    I already have an account
+                  </Button>
+                </>
+              )}
+
+              <Button
                 variant="outline"
-                className="w-full bg-[#1a1a1a] border-gray-700 text-white hover:bg-gray-800 transition-colors"
+                onClick={() => navigate('/login')}
+                className="w-full bg-transparent border-gray-800 text-gray-500 hover:bg-gray-900 hover:text-white text-xs"
               >
                 Back to Login
+              </Button>
+            </div>
+          )}
+
+          {/* LINK EXISTING ACCOUNT panel */}
+          {status === 'not_registered' && showLinkAccount && (
+            <div className="space-y-3">
+              <p className="text-sm text-gray-400 text-center">
+                Select your existing account to link this Discord profile to it.
+              </p>
+
+              <Select value={selectedAccountId} onValueChange={setSelectedAccountId}>
+                <SelectTrigger className="w-full bg-[#1a1a1a] border-gray-700 text-white">
+                  <SelectValue placeholder="Select your account…" />
+                </SelectTrigger>
+                <SelectContent className="bg-[#111] border-gray-800 text-white">
+                  {activeUnlinkedUsers.map((u) => (
+                    <SelectItem key={u.id} value={u.id} className="hover:bg-gray-800 focus:bg-gray-800 text-white focus:text-white">
+                      <div className="flex items-center gap-2">
+                        <div className="w-5 h-5 rounded-full bg-gray-800 flex items-center justify-center">
+                          <UserIcon className="h-3 w-3 text-gray-400" />
+                        </div>
+                        <span>{u.displayName}</span>
+                        <span className="text-gray-500 text-xs">— {u.role}</span>
+                      </div>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+
+              {linkError && (
+                <p className="text-xs text-red-400 text-center">{linkError}</p>
+              )}
+
+              <Button
+                id="confirm-link-account"
+                onClick={handleLinkAccount}
+                disabled={!selectedAccountId || isLinking}
+                className="w-full bg-white hover:bg-gray-200 text-black font-semibold"
+              >
+                {isLinking ? (
+                  <LoaderIcon className="h-4 w-4 mr-2 animate-spin text-black" />
+                ) : (
+                  <LinkIcon className="h-4 w-4 mr-2" />
+                )}
+                Link & Login
+              </Button>
+
+              <Button
+                variant="outline"
+                onClick={() => { setShowLinkAccount(false); setSelectedAccountId(''); setLinkError(''); }}
+                className="w-full bg-transparent border-gray-800 text-gray-500 hover:bg-gray-900 hover:text-white text-xs"
+              >
+                ← Back
+              </Button>
+            </div>
+          )}
+
+          {/* PENDING: already submitted */}
+          {(status === 'pending' || status === 'request_sent') && (
+            <div className="space-y-2 w-full">
+              <Button
+                variant="outline"
+                onClick={() => navigate('/login')}
+                className="w-full bg-[#1a1a1a] border-gray-700 text-white hover:bg-gray-800 text-sm"
+              >
+                Back to Login
+              </Button>
+              <Button
+                variant="destructive"
+                onClick={handleResetStorage}
+                className="w-full bg-red-950/20 border border-red-500/30 text-red-400 hover:bg-red-950/50 hover:text-red-300 text-xs flex items-center justify-center gap-1.5"
+              >
+                <TrashIcon className="h-3.5 w-3.5" />
+                Reset Sessions & Database
+              </Button>
+            </div>
+          )}
+
+          {/* ERROR / INACTIVE */}
+          {(status === 'error' || status === 'inactive') && (
+            <div className="space-y-2 w-full">
+              <Button
+                variant="outline"
+                onClick={() => navigate('/login')}
+                className="w-full bg-[#1a1a1a] border-gray-700 text-white hover:bg-gray-800 text-sm"
+              >
+                Back to Login
+              </Button>
+              <Button
+                variant="destructive"
+                onClick={handleResetStorage}
+                className="w-full bg-red-950/20 border border-red-500/30 text-red-400 hover:bg-red-950/50 hover:text-red-300 text-xs flex items-center justify-center gap-1.5"
+              >
+                <TrashIcon className="h-3.5 w-3.5" />
+                Reset Sessions & Database
               </Button>
             </div>
           )}

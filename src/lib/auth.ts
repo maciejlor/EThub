@@ -1,7 +1,17 @@
 import { getCurrentUser, type UserEntry } from './driver-storage';
 
-export type UserRole = 'Admin' | 'HR Manager' | 'Event Manager' | 'HR Staff' | 'Event Staff' | 'Senior Staff' | 'Driver';
-export type Department = 'HR' | 'Event' | 'Admin';
+export type UserRole =
+  | 'Admin'
+  | 'Overseer'
+  | 'HR Manager'
+  | 'Event Manager'
+  | 'HR Team'
+  | 'Event Assistant'
+  | 'Driver'
+  | 'HR Staff'
+  | 'Event Staff'
+  | 'Senior Staff';
+export type Department = 'HR' | 'Event' | 'Admin' | 'None';
 
 export interface Permission {
   resource: string;
@@ -11,6 +21,9 @@ export interface Permission {
 // Role-based permissions
 export const ROLE_PERMISSIONS: Record<UserRole, Permission[]> = {
   'Admin': [
+    { resource: '*', action: '*' }, // Full access to everything
+  ],
+  'Overseer': [
     { resource: '*', action: '*' }, // Full access to everything
   ],
   'HR Manager': [
@@ -43,7 +56,29 @@ export const ROLE_PERMISSIONS: Record<UserRole, Permission[]> = {
     { resource: 'loa-requests', action: 'create' }, // Can create LOA requests
     { resource: 'history', action: 'read' },
   ],
+  'HR Team': [
+    { resource: 'dashboard', action: 'read' },
+    { resource: 'members', action: 'read' },
+    { resource: 'download', action: 'read' },
+    { resource: 'jobs', action: 'read' },
+    { resource: 'events', action: 'read' },
+    { resource: 'ranking', action: 'read' },
+    { resource: 'faq', action: 'read' },
+    { resource: 'loa-requests', action: 'create' }, // Can create LOA requests
+    { resource: 'history', action: 'read' },
+  ],
   'HR Staff': [
+    { resource: 'dashboard', action: 'read' },
+    { resource: 'members', action: 'read' },
+    { resource: 'download', action: 'read' },
+    { resource: 'jobs', action: 'read' },
+    { resource: 'events', action: 'read' },
+    { resource: 'ranking', action: 'read' },
+    { resource: 'faq', action: 'read' },
+    { resource: 'loa-requests', action: 'create' }, // Can create LOA requests
+    { resource: 'history', action: 'read' },
+  ],
+  'Event Assistant': [
     { resource: 'dashboard', action: 'read' },
     { resource: 'members', action: 'read' },
     { resource: 'download', action: 'read' },
@@ -108,6 +143,7 @@ export const DEPARTMENT_ACCESS: Record<Department, string[]> = {
     '/admin/blacklist-staff',
     '/admin/history',
   ],
+  'None': [],
 };
 
 export function hasPermission(user: UserEntry | null, resource: string, action: string): boolean {
@@ -136,7 +172,32 @@ export function canAccessDepartment(user: UserEntry | null, path: string): boole
   
   // Check department-based access
   const departmentPaths = DEPARTMENT_ACCESS[user.department];
-  return departmentPaths.some(allowedPath => path.startsWith(allowedPath));
+  return departmentPaths.some((allowedPath: string) => path.startsWith(allowedPath));
+}
+
+export function canAccessRoute(user: UserEntry | null, path: string): boolean {
+  if (!user) return false;
+  
+  // Admin can access everything
+  if (user.role === 'Admin') return true;
+
+  // HR Department restricted routes
+  if (path.startsWith('/hr/')) {
+    return user.department === 'HR';
+  }
+
+  // Event Department restricted routes
+  if (path.startsWith('/event/')) {
+    return user.department === 'Event';
+  }
+
+  // Admin restricted routes
+  if (path.startsWith('/admin/')) {
+    return false;
+  }
+
+  // Other routes (Main, Game, Drivers sections) are accessible to Driver and above
+  return true;
 }
 
 export function getAccessibleRoutes(user: UserEntry | null): string[] {

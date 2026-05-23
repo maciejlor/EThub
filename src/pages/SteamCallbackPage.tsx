@@ -33,13 +33,14 @@ export function SteamCallbackPage() {
       const steamUsername = steamProfile?.personaname || steamId;
       const steamAvatar = steamProfile?.avatarfull || `https://avatars.akamai.steamstatic.com/fef49e7fa7e1997310d705b2a6158ff8dc1cdfeb_full.jpg`;
 
-      // Update user settings with Steam info
+      // Update user settings with Steam info (store steam avatar separately)
       updateUserSettings(currentUser.id, {
         steamId,
         steamUsername,
         username: steamUsername,
         displayName: steamUsername,
-        avatar: steamAvatar
+        steamAvatar: steamAvatar,
+        avatar: steamAvatar,
       });
 
       setStatus('success');
