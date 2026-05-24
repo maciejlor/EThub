@@ -6,11 +6,40 @@ import { AppSidebar } from '@/components/AppSidebar';
 import { Header } from '@/components/Header';
 import { Page } from '@/components/Page';
 import { Button } from '@/components/ui/button';
-import { Card, CardTitle } from '@/components/ui/card';
+import { Card } from '@/components/ui/card';
 import { fetchTruckersmpEvent, type TruckersmpEvent } from '@/lib/truckersmp';
-import { ClockIcon, MapPinIcon, GamepadIcon, GlobeIcon, PackageIcon, Share2Icon, ArrowLeftIcon, InfoIcon, UsersIcon, CheckCircle2Icon } from 'lucide-react';
+import { 
+  ArrowLeftIcon, MapPinIcon, GamepadIcon, 
+  GlobeIcon, CalendarIcon, ExternalLinkIcon
+} from 'lucide-react';
 
+const formatBannerTime = (isoString?: string) => {
+  if (!isoString) return 'TBD';
+  const d = new Date(isoString);
+  if (isNaN(d.getTime())) return 'TBD';
+  
+  const weekday = d.toLocaleString('en-US', { weekday: 'long', timeZone: 'UTC' });
+  const month = d.toLocaleString('en-US', { month: 'short', timeZone: 'UTC' }).toUpperCase();
+  const day = d.getUTCDate().toString();
+  const time = d.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false, timeZone: 'UTC' });
+  
+  return `${weekday}, ${month} ${day} · ${time} UTC`;
+};
 
+const formatDetailTime = (isoString?: string) => {
+  if (!isoString) return 'TBD';
+  const d = new Date(isoString);
+  if (isNaN(d.getTime())) return 'TBD';
+  return d.toLocaleString('en-US', {
+    month: 'long',
+    day: 'numeric',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: false,
+    timeZone: 'UTC'
+  });
+};
 
 export function CalendarEventPage() {
   const params = useParams();
@@ -35,205 +64,245 @@ export function CalendarEventPage() {
       <SidebarInset>
         <Header />
 
-        <main className='bg-background min-h-screen text-foreground p-6'>
-          <Page>
-            <div className='flex flex-col gap-8 max-w-5xl mx-auto'>
-              {/* Back Button & Actions */}
-              <div className='flex items-center justify-between'>
-                <Button asChild variant='ghost' className='text-muted-foreground hover:text-foreground gap-2 h-8 px-0'>
-                  <Link to='/calendar'>
-                    <ArrowLeftIcon className='size-4' />
-                    Back to Schedule
-                  </Link>
-                </Button>
-                
-                <div className='flex items-center gap-3'>
-                  <Button variant='outline' className='h-8 gap-2 uppercase text-[10px] font-bold tracking-widest'>
-                    <Share2Icon className='size-3' />
-                    Share
-                  </Button>
-                  <Button asChild className='h-8 gap-2 uppercase text-[10px] font-bold tracking-widest'>
-                    <a href={`https://truckersmp.com/events/${eventId}`} target='_blank' rel='noreferrer'>
-                      Open TMP
-                    </a>
-                  </Button>
+        <main className='bg-[#050505] min-h-screen text-white'>
+          {loading ? (
+            <Page>
+              <div className='flex items-center justify-center h-96 text-neutral-500 font-medium'>
+                <div className='animate-pulse text-lg'>Fetching event details...</div>
+              </div>
+            </Page>
+          ) : error ? (
+            <Page>
+              <div className='rounded-2xl border border-destructive/20 bg-destructive/10 p-8 text-center mt-6'>
+                <h3 className='text-destructive font-bold mb-2'>Error</h3>
+                <p className='text-neutral-400 text-sm'>{error}</p>
+              </div>
+            </Page>
+          ) : !eventData ? (
+            <Page>
+              <div className='text-center p-12 text-neutral-500 mt-6'>Event not found.</div>
+            </Page>
+          ) : (
+            <div className='flex flex-col w-full'>
+              
+              {/* Full-width Hero Banner Header */}
+              <div className='relative w-full overflow-hidden bg-black border-b border-neutral-900 min-h-[340px] flex flex-col justify-between'>
+                {/* Background image overlay */}
+                <div className='absolute inset-0 z-0'>
+                  <img
+                    src={eventData.banner || 'https://via.placeholder.com/1920x600'}
+                    alt=""
+                    className='w-full h-full object-cover opacity-45'
+                  />
+                  <div className='absolute inset-0 bg-gradient-to-t from-[#050505] via-[#050505]/50 to-black/20' />
+                </div>
+
+                {/* Content Container */}
+                <div className='relative z-10 max-w-7xl mx-auto w-full px-6 pt-12 pb-10 flex-1 flex flex-col justify-between'>
+                  {/* Back button */}
+                  <div>
+                    <Link 
+                      to='/calendar' 
+                      className='text-xs text-neutral-400 hover:text-white transition-colors flex items-center gap-1.5 w-fit font-bold uppercase tracking-wider'
+                    >
+                      <ArrowLeftIcon className='size-3.5' />
+                      Back to events
+                    </Link>
+                  </div>
+
+                  {/* Badges, Title, Info Row */}
+                  <div className='mt-8 space-y-4'>
+                    {/* Badges */}
+                    <div className='flex gap-2'>
+                      <span className='px-2.5 py-1 text-[10px] font-extrabold bg-[#5865F2]/20 border border-[#5865F2]/30 rounded-md text-white uppercase tracking-wider'>
+                        {eventData.game?.includes('truck') ? (eventData.game.includes('euro') ? 'ETS2' : 'ATS') : (eventData.game || 'ETS2')}
+                      </span>
+                      <span className='px-2.5 py-1 text-[10px] font-extrabold bg-neutral-900/80 border border-neutral-800 rounded-md text-neutral-400 tracking-wider'>
+                        {eventData.ups || 0} attending
+                      </span>
+                    </div>
+
+                    {/* Title */}
+                    <h1 className='text-3xl sm:text-4xl md:text-5xl font-black tracking-tight text-white leading-tight max-w-4xl'>
+                      {eventData.name}
+                    </h1>
+
+                    {/* Info row with icons */}
+                    <div className='flex flex-wrap items-center gap-x-6 gap-y-3 pt-2 text-xs text-neutral-300 font-semibold tracking-wide'>
+                      {/* Date & Time */}
+                      <div className='flex items-center gap-2'>
+                        <CalendarIcon className='size-4 text-neutral-500' />
+                        <span>{formatBannerTime(eventData.start_at)}</span>
+                      </div>
+
+                      {/* Server */}
+                      <div className='flex items-center gap-2'>
+                        <GlobeIcon className='size-4 text-neutral-500' />
+                        <span>{eventData.server?.name || 'To be determined'}</span>
+                      </div>
+
+                      {/* Route (City start -> city end) */}
+                      <div className='flex items-center gap-2'>
+                        <MapPinIcon className='size-4 text-neutral-500' />
+                        <span>
+                          {eventData.departure?.city || 'TBD'} → {(eventData.arrival?.city || eventData.arrive?.city) || 'TBD'}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
                 </div>
               </div>
 
-              {loading ? (
-                <div className='flex items-center justify-center h-64 text-muted-foreground font-medium'>
-                  <div className='animate-pulse'>Fetching event details...</div>
-                </div>
-              ) : error ? (
-                <div className='rounded-2xl border border-destructive/20 bg-destructive/10 p-8 text-center'>
-                  <h3 className='text-destructive font-bold mb-2'>Error</h3>
-                  <p className='text-muted-foreground text-sm'>{error}</p>
-                </div>
-              ) : !eventData ? (
-                <div className='text-center p-12 text-muted-foreground'>Event not found.</div>
-              ) : (
-                <div className='grid gap-8 lg:grid-cols-[1fr_360px]'>
-                  {/* Left Column: Banner & Info */}
-                  <div className='flex flex-col gap-8'>
-                    <div className='relative group'>
-                      <div className='absolute -inset-0.5 bg-gradient-to-r from-[#ff79c6] to-[#bd93f9] rounded-2xl blur opacity-20 group-hover:opacity-40 transition duration-1000'></div>
-                      <img
-                        src={eventData.banner || 'https://via.placeholder.com/1200x600?text=No+Banner'}
-                        alt={eventData.name}
-                        className='relative rounded-2xl aspect-[21/9] w-full object-cover border border-white/10'
-                      />
-                    </div>
-
-                    <div className='space-y-4'>
-                      <div className='flex items-center gap-2 text-primary font-bold text-[10px] uppercase tracking-[0.2em]'>
-                        <span className='size-1.5 rounded-full bg-current shadow-[0_0_8px_rgba(168,85,247,0.4)]' />
-                        {eventData.event_type?.name || 'Convoy'}
-                      </div>
-                      <h1 className='text-3xl font-black tracking-tight lg:text-4xl'>
-                        {eventData.name}
-                      </h1>
-                    </div>
-
-                    <div className='grid gap-4 sm:grid-cols-2'>
-                      <Card className='p-6 space-y-4 shadow-sm border-muted'>
-                        <div className='flex items-center gap-3'>
-                          <div className='size-8 rounded-xl bg-primary/10 flex items-center justify-center text-primary'>
-                            <ClockIcon className='size-4' />
-                          </div>
-                          <div>
-                            <div className='text-[10px] font-bold uppercase tracking-widest text-muted-foreground'>Time</div>
-                            <div className='text-sm font-bold'>
-                              {eventData.start_at ? new Date(eventData.start_at).toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit', hour12: false }) : 'TBD'} UTC
-                            </div>
-                          </div>
-                        </div>
-                        <div className='flex items-center gap-3'>
-                          <div className='size-8 rounded-xl bg-blue-500/10 flex items-center justify-center text-blue-500'>
-                            <MapPinIcon className='size-4' />
-                          </div>
-                          <div>
-                            <div className='text-[10px] font-bold uppercase tracking-widest text-muted-foreground'>Start Location</div>
-                            <div className='text-sm font-bold'>{eventData.departure?.city || 'TBD'} {eventData.departure?.location ? `(${eventData.departure.location})` : ''}</div>
-                          </div>
-                        </div>
-                        <div className='flex items-center gap-3'>
-                          <div className='size-8 rounded-xl bg-purple-500/10 flex items-center justify-center text-purple-500'>
-                            <GamepadIcon className='size-4' />
-                          </div>
-                          <div>
-                            <div className='text-[10px] font-bold uppercase tracking-widest text-muted-foreground'>Game</div>
-                            <div className='text-sm font-bold'>{eventData.game?.includes('truck') ? (eventData.game.includes('euro') ? 'ETS2' : 'ATS') : (eventData.game || 'ETS2')}</div>
-                          </div>
-                        </div>
-                      </Card>
-
-                      <Card className='p-6 space-y-4 shadow-sm border-muted'>
-                        <div className='flex items-center gap-3'>
-                          <div className='size-8 rounded-xl bg-amber-500/10 flex items-center justify-center text-amber-500'>
-                            <GlobeIcon className='size-4' />
-                          </div>
-                          <div>
-                            <div className='text-[10px] font-bold uppercase tracking-widest text-muted-foreground'>Server</div>
-                            <div className='text-sm font-bold'>{eventData.server?.name || 'TBD'}</div>
-                          </div>
-                        </div>
-                        <div className='flex items-center gap-3'>
-                          <div className='size-8 rounded-xl bg-rose-500/10 flex items-center justify-center text-rose-500'>
-                            <MapPinIcon className='size-4' />
-                          </div>
-                          <div>
-                            <div className='text-[10px] font-bold uppercase tracking-widest text-muted-foreground'>Destination</div>
-                            <div className='text-sm font-bold'>{(eventData.arrival?.city || eventData.arrive?.city) || 'TBD'} {(eventData.arrival?.location || eventData.arrive?.location) ? `(${(eventData.arrival?.location || eventData.arrive?.location)})` : ''}</div>
-                          </div>
-                        </div>
-                        <div className='flex items-center gap-3'>
-                          <div className='size-8 rounded-xl bg-cyan-500/10 flex items-center justify-center text-cyan-500'>
-                            <PackageIcon className='size-4' />
-                          </div>
-                          <div>
-                            <div className='text-[10px] font-bold uppercase tracking-widest text-muted-foreground'>DLC Required</div>
-                            <div className='text-sm font-bold'>{eventData.dlc?.name || 'None'}</div>
-                          </div>
-                        </div>
-                      </Card>
-                    </div>
-
-                    <Card className='p-8 shadow-sm border-muted'>
-                      <div className='flex items-center gap-2 font-bold mb-6'>
-                        <InfoIcon className='size-4 text-primary' />
-                        Description
-                      </div>
-                      <div className='text-sm leading-relaxed text-muted-foreground whitespace-pre-line'>
+              {/* Main Grid Content */}
+              <div className='max-w-7xl mx-auto w-full px-6 py-10'>
+                <div className='grid grid-cols-1 lg:grid-cols-3 gap-8'>
+                  
+                  {/* Left Column (Description & Route Timeline) */}
+                  <div className='lg:col-span-2 space-y-8'>
+                    {/* Description Card */}
+                    <Card className='p-6 md:p-8 rounded-2xl bg-neutral-900/20 border border-neutral-800 shadow-md'>
+                      <h2 className='text-xl font-semibold text-white mb-6 tracking-tight'>Description</h2>
+                      <div className='text-neutral-400 leading-relaxed text-sm whitespace-pre-line font-normal'>
                         {eventData.description || 'No description provided.'}
                       </div>
                     </Card>
-                  </div>
 
-                  {/* Right Column: Convoy Info */}
-                  <div className='flex flex-col gap-6'>
-                    <Card className='p-6 space-y-6 sticky top-6 shadow-sm border-muted'>
-                      <div>
-                        <CardTitle className='text-lg font-bold mb-1'>Event Participation</CardTitle>
-                        <p className='text-xs text-muted-foreground'>Official TruckersMP information</p>
-                      </div>
-
-                      <div className='space-y-4'>
-                        <div className='flex items-center justify-between p-3 rounded-xl bg-muted/50 border'>
-                          <div className='text-[10px] font-bold uppercase tracking-wider text-muted-foreground'>Attendance</div>
-                          <div className='text-sm font-black text-primary'>{eventData.ups || 0}</div>
-                        </div>
-                        <div className='p-3 rounded-xl bg-muted/50 border space-y-2'>
-                          <div className='text-[10px] font-bold uppercase tracking-wider text-muted-foreground'>Event Link</div>
-                          <a 
-                            href={`https://truckersmp.com/events/${eventId}`} 
-                            target='_blank' 
-                            rel='noreferrer'
-                            className='text-xs font-medium text-primary hover:underline block truncate'
-                          >
-                            truckersmp.com/events/{eventId}
-                          </a>
-                        </div>
-                      </div>
-
-                      <div className='pt-4 border-t'>
-                        <div className='flex items-center gap-2 mb-4'>
-                          <UsersIcon className='size-3 text-muted-foreground' />
-                          <span className='text-[10px] font-bold uppercase tracking-widest text-muted-foreground'>Event Team</span>
-                        </div>
-                        <div className='flex items-center gap-3'>
-                          <div className='size-10 rounded-xl bg-muted border flex items-center justify-center overflow-hidden'>
-                            {eventData.vtc?.logo ? (
-                              <img src={eventData.vtc.logo} className='size-full object-cover' alt='' />
-                            ) : (
-                              <UsersIcon className='size-5 text-muted-foreground/30' />
-                            )}
+                    {/* Route Timeline Card */}
+                    <Card className='p-6 md:p-8 rounded-2xl bg-neutral-900/20 border border-neutral-800 shadow-md relative overflow-hidden'>
+                      <h2 className='text-xl font-semibold text-white mb-8 tracking-tight'>Route</h2>
+                      
+                      <div className='relative'>
+                        {/* Timeline vertical bar */}
+                        <div className='absolute left-5 top-6 bottom-6 w-px bg-gradient-to-b from-primary to-teal-500' />
+                        
+                        {/* Departure Point */}
+                        <div className='relative flex items-start gap-4 mb-8'>
+                          <div className='w-10 h-10 rounded-full bg-primary flex items-center justify-center flex-shrink-0 text-white shadow-[0_0_10px_rgba(168,85,247,0.3)]'>
+                            <MapPinIcon className='size-5' />
                           </div>
                           <div>
-                            <div className='text-xs font-bold'>{eventData.vtc?.name || 'Community Event'}</div>
-                            <div className='text-[10px] text-muted-foreground'>Organizer</div>
+                            <div className='text-xs text-neutral-500 mb-1'>Departure</div>
+                            <div className='text-lg font-medium text-white'>{eventData.departure?.city || 'To be determined'}</div>
+                            {eventData.departure?.location && (
+                              <div className='text-sm text-neutral-400 mt-0.5'>{eventData.departure.location}</div>
+                            )}
                           </div>
                         </div>
-                      </div>
 
-                      <div className='pt-2'>
-                        <div className='flex items-center gap-2 mb-4'>
-                          <CheckCircle2Icon className='size-3 text-emerald-500' />
-                          <span className='text-[10px] font-bold uppercase tracking-widest text-muted-foreground'>Quick Actions</span>
-                        </div>
-                        <div className='grid grid-cols-2 gap-2'>
-                          <Button variant='outline' size='sm' className='h-8 text-[9px] font-bold uppercase'>Reminder</Button>
-                          <Button variant='outline' size='sm' className='h-8 text-[9px] font-bold uppercase'>Route</Button>
+                        {/* Arrival Point */}
+                        <div className='relative flex items-start gap-4'>
+                          <div className='w-10 h-10 rounded-full bg-teal-500 flex items-center justify-center flex-shrink-0 text-white shadow-[0_0_10px_rgba(20,184,166,0.3)]'>
+                            <MapPinIcon className='size-5' />
+                          </div>
+                          <div>
+                            <div className='text-xs text-neutral-500 mb-1'>Arrival</div>
+                            <div className='text-lg font-medium text-white'>
+                              {(eventData.arrival?.city || eventData.arrive?.city) || 'To be determined'}
+                            </div>
+                            {(eventData.arrival?.location || eventData.arrive?.location) && (
+                              <div className='text-sm text-neutral-400 mt-0.5'>
+                                {eventData.arrival?.location || eventData.arrive?.location}
+                              </div>
+                            )}
+                          </div>
                         </div>
                       </div>
                     </Card>
                   </div>
+
+                  {/* Right Column (Details Card & Action Buttons) */}
+                  <div className='space-y-6'>
+                    {/* Details List Card */}
+                    <Card className='p-6 rounded-2xl bg-neutral-900/20 border border-neutral-800 shadow-md space-y-5'>
+                      <h3 className='text-lg font-semibold text-white tracking-tight border-b border-neutral-800 pb-3'>Details</h3>
+                      
+                      <div className='space-y-4'>
+                        {/* Game */}
+                        <div className='flex items-center gap-3'>
+                          <div className='w-9 h-9 rounded-lg bg-neutral-900 flex items-center justify-center text-neutral-400 border border-neutral-800 shrink-0'>
+                            <GamepadIcon className='size-4' />
+                          </div>
+                          <div>
+                            <div className='text-xs text-neutral-500'>Game</div>
+                            <div className='text-sm text-white'>
+                              {eventData.game?.includes('truck') ? (eventData.game.includes('euro') ? 'ETS2' : 'ATS') : (eventData.game || 'ETS2')}
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Server */}
+                        <div className='flex items-center gap-3'>
+                          <div className='w-9 h-9 rounded-lg bg-neutral-900 flex items-center justify-center text-neutral-400 border border-neutral-800 shrink-0'>
+                            <GlobeIcon className='size-4' />
+                          </div>
+                          <div>
+                            <div className='text-xs text-neutral-500'>Server</div>
+                            <div className='text-sm text-white'>{eventData.server?.name || 'TBD'}</div>
+                          </div>
+                        </div>
+
+                        <div className='h-px bg-neutral-800' />
+
+                        {/* Meetup */}
+                        <div className='flex items-center gap-3'>
+                          <div className='w-9 h-9 rounded-lg bg-neutral-900 flex items-center justify-center text-neutral-400 border border-neutral-800 shrink-0'>
+                            <CalendarIcon className='size-4' />
+                          </div>
+                          <div>
+                            <div className='text-xs text-neutral-500'>Meetup</div>
+                            <div className='text-sm text-white font-medium'>
+                              {eventData.meetup_at ? formatDetailTime(eventData.meetup_at) : 'TBD'}
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Start */}
+                        <div className='flex items-center gap-3'>
+                          <div className='w-9 h-9 rounded-lg bg-[#0d0d0d] flex items-center justify-center text-neutral-400 border border-neutral-800 shrink-0'>
+                            <CalendarIcon className='size-4' />
+                          </div>
+                          <div>
+                            <div className='text-xs text-neutral-500'>Start</div>
+                            <div className='text-sm text-white font-medium'>
+                              {eventData.start_at ? formatDetailTime(eventData.start_at) : 'TBD'}
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </Card>
+
+                    {/* Sidebar Links Card */}
+                    <div className='space-y-3 pt-2'>
+                      <a
+                        href={`https://truckersmp.com/events/${eventId}`}
+                        target='_blank'
+                        rel='noopener noreferrer'
+                        className='w-full flex items-center justify-center gap-2 px-6 py-3 bg-white text-neutral-950 font-semibold rounded-lg hover:bg-neutral-100 transition-colors text-sm shadow-md'
+                      >
+                        View on TruckersMP
+                        <ExternalLinkIcon className='size-4' />
+                      </a>
+                      
+                      {eventData.url && (
+                        <a 
+                          href={eventData.url} 
+                          target='_blank' 
+                          rel='noopener noreferrer' 
+                          className='w-full flex items-center justify-center gap-2 px-6 py-3 text-neutral-300 border border-neutral-800 rounded-lg hover:bg-neutral-900 hover:border-neutral-700 transition-all text-sm font-semibold'
+                        >
+                          More Info
+                        </a>
+                      )}
+                    </div>
+
+                  </div>
                 </div>
-              )}
+              </div>
+
             </div>
-          </Page>
+          )}
         </main>
       </SidebarInset>
     </SidebarProvider>
   );
 }
-

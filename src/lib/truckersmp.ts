@@ -3,6 +3,7 @@ export interface TruckersmpEvent {
   name: string;
   game: string;
   start_at: string;
+  meetup_at?: string;
   banner?: string;
   server: {
     name: string;
@@ -146,11 +147,23 @@ export async function fetchTruckersmpEvent(id: number): Promise<TruckersmpEvent>
       if (!data.error && data.response) {
         const found = data.response;
         
-        // Safely parse start_at string to ensure it's treated as UTC across all browsers
+        // Safely parse start_at and meetup_at strings to ensure they're treated as UTC across all browsers
         // "YYYY-MM-DD HH:MM:SS" -> "YYYY-MM-DDTHH:MM:SSZ"
-        let safeStartAt = found.start_at || found.meetup_at || '';
+        let safeStartAt = found.start_at || '';
         if (safeStartAt && !safeStartAt.includes('T') && safeStartAt.includes(' ')) {
           safeStartAt = safeStartAt.replace(' ', 'T') + 'Z';
+        }
+
+        let safeMeetupAt = found.meetup_at || '';
+        if (safeMeetupAt && !safeMeetupAt.includes('T') && safeMeetupAt.includes(' ')) {
+          safeMeetupAt = safeMeetupAt.replace(' ', 'T') + 'Z';
+        }
+
+        // Fallback: If meetup_at is missing, set it to 1 hour before start_at
+        if (!safeMeetupAt && safeStartAt) {
+          const startDt = new Date(safeStartAt);
+          startDt.setUTCHours(startDt.getUTCHours() - 1);
+          safeMeetupAt = startDt.toISOString();
         }
 
         return {
@@ -158,6 +171,7 @@ export async function fetchTruckersmpEvent(id: number): Promise<TruckersmpEvent>
           name: found.name || 'Upcoming Convoy',
           game: found.game === 'ETS2' || found.game === 'ATS' ? found.game : (found.game?.includes('euro') ? 'ETS2' : 'ATS'),
           start_at: safeStartAt,
+          meetup_at: safeMeetupAt,
           banner: found.banner || '',
           server: { name: found.server?.name || 'Event Server' },
           departure: { city: found.departure?.city || 'To be determined', location: found.departure?.location || '' },

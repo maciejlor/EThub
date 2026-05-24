@@ -5,10 +5,24 @@ import { Header } from '@/components/Header';
 import { Page } from '@/components/Page';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { UserIcon, TruckIcon, MapPin, Package, Calendar, ChevronDown } from 'lucide-react';
+import { UserIcon, TruckIcon, MapPin, Package, Calendar, ChevronDown, ChevronLeft, ChevronRight } from 'lucide-react';
 import { getCurrentUser, type UserEntry } from '@/lib/driver-storage';
-import { fetchTruckyJobsPage, isTruckyJobForUser, type TruckyJob } from '@/lib/trucky';
+import { fetchTruckyCompanyJobsAll, isTruckyJobForUser, type TruckyJob } from '@/lib/trucky';
 import { useNavigate } from 'react-router-dom';
+import { useMemo } from 'react';
+
+const PAGE_WINDOW = 7;
+
+function visiblePageRange(current: number, total: number): number[] {
+  if (!Number.isFinite(current) || !Number.isFinite(total)) return [1];
+  const safeTotal = Math.max(1, Math.floor(total));
+  const safeCurrent = Math.min(Math.max(1, Math.floor(current)), safeTotal);
+  if (safeTotal <= PAGE_WINDOW) return Array.from({ length: safeTotal }, (_, i) => i + 1);
+  let start = Math.max(1, safeCurrent - Math.floor(PAGE_WINDOW / 2));
+  const end = Math.min(safeTotal, start + PAGE_WINDOW - 1);
+  start = Math.max(1, end - PAGE_WINDOW + 1);
+  return Array.from({ length: end - start + 1 }, (_, i) => start + i);
+}
 
 function formatDate(iso?: string) {
   if (!iso) return '—';
@@ -32,58 +46,77 @@ export function ProfilePage() {
   const navigate = useNavigate();
   const user = getCurrentUser();
   const profileAvatar = user?.avatar || user?.discordAvatar || user?.steamAvatar;
-  const [userJobs, setUserJobs] = useState<TruckyJob[]>([]);
+  const [allCompanyJobs, setAllCompanyJobs] = useState<TruckyJob[]>([]);
   const [jobsLoading, setJobsLoading] = useState(false);
   const [jobsError, setJobsError] = useState<string | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
-  const [totalJobs, setTotalJobs] = useState(0);
-  const [totalPages, setTotalPages] = useState(1);
-
-  const loadJobs = async (page: number) => {
-    if (!user) return;
-
-    try {
-      setJobsLoading(true);
-      setJobsError(null);
-      const result = await fetchTruckyJobsPage(44349, page, 5);
-
-      const filteredJobs = result.jobs.filter((job: TruckyJob) => isTruckyJobForUser(job, {
-        displayName: user.displayName,
-        username: user.username,
-        steamUsername: user.steamUsername,
-        steamId: user.steamId,
-        truckyId: user.truckyId,
-      }));
-
-      // Sort by date (newest first)
-      const sortedJobs = filteredJobs.sort((a, b) => {
-        const dateA = new Date(a.start_date || a.created_at);
-        const dateB = new Date(b.start_date || b.created_at);
-        return dateB.getTime() - dateA.getTime();
-      });
-
-      setUserJobs(sortedJobs);
-      setTotalJobs(result.total);
-      setTotalPages(result.lastPage);
-    } catch (error) {
-      console.error('Failed to load jobs:', error);
-      setJobsError('Failed to load jobs from Trucky');
-      setUserJobs([]);
-    } finally {
-      setJobsLoading(false);
-    }
-  };
 
   useEffect(() => {
+    let cancelled = false;
     if (!user) return;
-    setCurrentPage(1);
-    loadJobs(1);
+
+    (async () => {
+      try {
+        setJobsLoading(true);
+        setJobsError(null);
+        setCurrentPage(1);
+        const jobs = await fetchTruckyCompanyJobsAll(44349);
+        if (!cancelled) {
+          setAllCompanyJobs(jobs);
+        }
+      } catch (error) {
+        console.error('Failed to load jobs:', error);
+        if (!cancelled) {
+          setJobsError('Failed to load jobs from Trucky');
+          setAllCompanyJobs([]);
+        }
+      } finally {
+        if (!cancelled) {
+          setJobsLoading(false);
+        }
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
   }, [user?.id]);
+
+  const filteredUserJobs = useMemo(() => {
+    if (!user) return [];
+    const filtered = allCompanyJobs.filter((job: TruckyJob) => isTruckyJobForUser(job, {
+      displayName: user.displayName,
+      username: user.username,
+      steamUsername: user.steamUsername,
+      steamId: user.steamId,
+      truckyId: user.truckyId,
+    }));
+
+    // Sort by date (newest first)
+    return filtered.sort((a, b) => {
+      const dateA = new Date(a.start_date || a.created_at);
+      const dateB = new Date(b.start_date || b.created_at);
+      return dateB.getTime() - dateA.getTime();
+    });
+  }, [allCompanyJobs, user]);
+
+  const totalJobs = filteredUserJobs.length;
+  const itemsPerPage = 5;
+  const totalPages = Math.max(1, Math.ceil(totalJobs / itemsPerPage));
+
+  const paginatedUserJobs = useMemo(() => {
+    const start = (currentPage - 1) * itemsPerPage;
+    return filteredUserJobs.slice(start, start + itemsPerPage);
+  }, [filteredUserJobs, currentPage]);
+
+  const pageNumbers = useMemo(
+    () => visiblePageRange(currentPage, totalPages),
+    [currentPage, totalPages]
+  );
 
   const handlePageChange = (page: number) => {
     if (page < 1 || page > totalPages) return;
     setCurrentPage(page);
-    loadJobs(page);
   };
 
   if (!user) {
@@ -159,7 +192,13 @@ export function ProfilePage() {
                   </div>
                   <div className="p-4 bg-background border border-border rounded-lg">
                     <div className="text-xs text-muted-foreground">Last Login</div>
-                    <div className="text-lg font-bold">{formatDateTime(user.lastLogin)}</div>
+                    <div className="text-lg font-bold text-green-500 flex items-center gap-1.5">
+                      <span className="relative flex h-2 w-2 shrink-0">
+                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
+                        <span className="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span>
+                      </span>
+                      Active now
+                    </div>
                   </div>
                   <div className="p-4 bg-background border border-border rounded-lg">
                     <div className="text-xs text-muted-foreground">Profile Links</div>
@@ -184,28 +223,28 @@ export function ProfilePage() {
                     <div className="text-center py-8 text-red-500">{jobsError}</div>
                   ) : jobsLoading ? (
                     <div className="text-center py-8 text-muted-foreground">Loading jobs...</div>
-                  ) : userJobs.length === 0 ? (
+                  ) : paginatedUserJobs.length === 0 ? (
                     <div className="text-center py-8 text-muted-foreground">No jobs found for this user.</div>
                   ) : (
                     <>
                       <div className="text-sm text-muted-foreground mb-4">
-                        Showing {userJobs.length} of {totalJobs} total jobs (filtered for this user)
+                        Showing {paginatedUserJobs.length} of {totalJobs} total jobs (filtered for this user)
                       </div>
                       <div className="space-y-3">
-                        {userJobs.map((job) => {
+                        {paginatedUserJobs.map((job) => {
                           const status = job.status?.toLowerCase() || '';
                           let statusColor: "default" | "secondary" | "destructive" | "outline" = 'secondary';
                           let gradientClass = '';
 
                           if (status.includes('delivered') || status.includes('completed') || status.includes('finished') || status.includes('done')) {
                             statusColor = 'default';
-                            gradientClass = 'bg-gradient-to-r from-green-500/10 to-green-600/10 border-green-500/30';
+                            gradientClass = 'bg-gradient-to-l from-green-500/10 to-transparent hover:from-green-500/20 border-r-2 border-r-green-500';
                           } else if (status.includes('cancel') || status.includes('fail') || status.includes('abort')) {
                             statusColor = 'destructive';
-                            gradientClass = 'bg-gradient-to-r from-red-500/10 to-red-600/10 border-red-500/30';
+                            gradientClass = 'bg-gradient-to-l from-red-500/10 to-transparent hover:from-red-500/20 border-r-2 border-r-red-500';
                           } else if (status.includes('progress') || status.includes('active') || status.includes('pending') || status.includes('ongoing')) {
                             statusColor = 'outline';
-                            gradientClass = 'bg-gradient-to-r from-yellow-500/10 to-yellow-600/10 border-yellow-500/30';
+                            gradientClass = 'bg-gradient-to-l from-yellow-500/10 to-transparent hover:from-yellow-500/20 border-r-2 border-r-yellow-500';
                           }
 
                           return (
@@ -249,47 +288,78 @@ export function ProfilePage() {
                         })}
                       </div>
                       {totalPages > 1 && (
-                        <div className="mt-4 flex items-center justify-center gap-2">
-                          <Button
-                            onClick={() => handlePageChange(currentPage - 1)}
-                            disabled={currentPage === 1 || jobsLoading}
-                            variant="outline"
-                            size="sm"
-                          >
-                            Previous
-                          </Button>
-                          {Array.from({ length: Math.min(totalPages, 5) }, (_, i) => {
-                            let pageNum;
-                            if (totalPages <= 5) {
-                              pageNum = i + 1;
-                            } else if (currentPage <= 3) {
-                              pageNum = i + 1;
-                            } else if (currentPage >= totalPages - 2) {
-                              pageNum = totalPages - 4 + i;
-                            } else {
-                              pageNum = currentPage - 2 + i;
-                            }
-
-                            return (
-                              <Button
-                                key={pageNum}
-                                onClick={() => handlePageChange(pageNum)}
-                                disabled={jobsLoading}
-                                variant={currentPage === pageNum ? 'default' : 'outline'}
-                                size="sm"
-                              >
-                                {pageNum}
-                              </Button>
-                            );
-                          })}
-                          <Button
-                            onClick={() => handlePageChange(currentPage + 1)}
-                            disabled={currentPage === totalPages || jobsLoading}
-                            variant="outline"
-                            size="sm"
-                          >
-                            Next
-                          </Button>
+                        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between mt-6 pt-6 border-t border-muted/10">
+                          <p className="text-xs text-muted-foreground font-medium">
+                            Showing <span className="text-foreground">{(currentPage - 1) * itemsPerPage + 1}</span> to{' '}
+                            <span className="text-foreground">{Math.min(currentPage * itemsPerPage, totalJobs)}</span> of{' '}
+                            <span className="text-foreground">{totalJobs}</span> entries
+                          </p>
+                          <div className="flex flex-wrap items-center gap-2">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="h-8 px-2 rounded-lg border-muted/20 hover:bg-muted/50 transition-all text-xs font-bold flex items-center"
+                              onClick={() => setCurrentPage((prev) => Math.max(1, prev - 1))}
+                              disabled={currentPage === 1}
+                            >
+                              <ChevronLeft className="size-3.5 mr-1" />
+                              Previous
+                            </Button>
+                            <div className="flex flex-wrap items-center gap-1">
+                              {pageNumbers[0] > 1 && (
+                                <>
+                                  <button
+                                    type="button"
+                                    onClick={() => setCurrentPage(1)}
+                                    className="size-8 rounded-lg text-xs font-bold transition-all hover:bg-muted/50 text-muted-foreground"
+                                  >
+                                    1
+                                  </button>
+                                  {pageNumbers[0] > 2 && (
+                                    <span className="px-1 text-xs text-muted-foreground">…</span>
+                                  )}
+                                </>
+                              )}
+                              {pageNumbers.map((page) => (
+                                <button
+                                  key={page}
+                                  type="button"
+                                  onClick={() => setCurrentPage(page)}
+                                  className={`size-8 rounded-lg text-xs font-bold transition-all ${
+                                    currentPage === page
+                                      ? 'bg-primary text-primary-foreground shadow-lg shadow-primary/20'
+                                      : 'hover:bg-muted/50 text-muted-foreground'
+                                  }`}
+                                >
+                                  {page}
+                                </button>
+                              ))}
+                              {pageNumbers[pageNumbers.length - 1] < totalPages && (
+                                <>
+                                  {pageNumbers[pageNumbers.length - 1] < totalPages - 1 && (
+                                    <span className="px-1 text-xs text-muted-foreground">…</span>
+                                  )}
+                                  <button
+                                    type="button"
+                                    onClick={() => setCurrentPage(totalPages)}
+                                    className="size-8 rounded-lg text-xs font-bold transition-all hover:bg-muted/50 text-muted-foreground"
+                                  >
+                                    {totalPages}
+                                  </button>
+                                </>
+                              )}
+                            </div>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="h-8 px-2 rounded-lg border-muted/20 hover:bg-muted/50 transition-all text-xs font-bold flex items-center"
+                              onClick={() => setCurrentPage((prev) => Math.min(totalPages, prev + 1))}
+                              disabled={currentPage === totalPages}
+                            >
+                              Next
+                              <ChevronRight className="size-3.5 ml-1" />
+                            </Button>
+                          </div>
                         </div>
                       )}
                     </>

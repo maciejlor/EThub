@@ -103,12 +103,31 @@ export function DiscordCallbackPage() {
       if (!tokenData.access_token) throw new Error('No access token in response');
 
       const accessToken: string = tokenData.access_token;
+      handleDiscordCallbackWithToken(accessToken);
+    } catch (err) {
+      console.error('Discord OAuth error:', err);
+      setStatus('error');
+      setMessage('Authentication failed. Please try again.');
+    }
+  }, [navigate]);
 
-      // Fetch Discord profile
+  const handleDiscordCallbackWithToken = useCallback(async (accessToken: string) => {
+    try {
+      setStatus('checking');
       setMessage('Fetching Discord profile…');
-      const userResponse = await fetch('/discord-api/users/@me', {
-        headers: { Authorization: `Bearer ${accessToken}` },
-      });
+
+      // Fetch Discord profile - Try direct request first, then fallback to Vite proxy
+      let userResponse;
+      try {
+        userResponse = await fetch('https://discord.com/api/users/@me', {
+          headers: { Authorization: `Bearer ${accessToken}` },
+        });
+      } catch (e) {
+        userResponse = await fetch('/discord-api/users/@me', {
+          headers: { Authorization: `Bearer ${accessToken}` },
+        });
+      }
+
       if (!userResponse.ok) throw new Error('Failed to fetch Discord user info');
 
       const userData: DiscordUser = await userResponse.json();
@@ -161,7 +180,7 @@ export function DiscordCallbackPage() {
       setStatus('not_registered');
       setMessage('');
     } catch (err) {
-      console.error('Discord OAuth error:', err);
+      console.error('Discord OAuth profile fetch error:', err);
       setStatus('error');
       setMessage('Authentication failed. Please try again.');
     }
@@ -172,19 +191,30 @@ export function DiscordCallbackPage() {
     const code = params.get('code');
     const error = params.get('error');
 
-    if (error) {
+    // Parse implicit grant token if present in url hash fragment
+    const hashParams = new URLSearchParams(window.location.hash.substring(1));
+    const accessToken = hashParams.get('access_token');
+    const hashError = hashParams.get('error');
+
+    if (error || hashError) {
       setStatus('error');
       setMessage('Authorization was denied. Please try again.');
       return;
     }
+
+    if (accessToken) {
+      handleDiscordCallbackWithToken(accessToken);
+      return;
+    }
+
     if (!code) {
       setStatus('error');
-      setMessage('No authorization code received from Discord.');
+      setMessage('No authorization code or access token received from Discord.');
       return;
     }
 
     handleDiscordCallback(code);
-  }, [handleDiscordCallback]);
+  }, [handleDiscordCallback, handleDiscordCallbackWithToken]);
 
   // ── Submit join request ───────────────────────────────────────────────────
   const handleSubmitRequest = () => {

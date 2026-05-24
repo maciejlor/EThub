@@ -23,7 +23,9 @@ export function LoginPage() {
       const clientId = '1501649661214199869';
       const redirectUri = encodeURIComponent(window.location.origin + '/auth/discord/callback');
       const scope = encodeURIComponent('identify email guilds guilds.members.read');
-      const discordAuthUrl = `https://discord.com/api/oauth2/authorize?client_id=${clientId}&redirect_uri=${redirectUri}&response_type=code&scope=${scope}`;
+      const isLocal = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+      const responseType = isLocal ? 'code' : 'token';
+      const discordAuthUrl = `https://discord.com/api/oauth2/authorize?client_id=${clientId}&redirect_uri=${redirectUri}&response_type=${responseType}&scope=${scope}`;
       window.location.href = discordAuthUrl;
     } catch {
       setError('Discord login failed. Please try again.');

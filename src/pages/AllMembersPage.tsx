@@ -396,7 +396,17 @@ export function AllMembersPage() {
 
                               {/* Last Login */}
                               <td className="px-4 py-3 hidden xl:table-cell">
-                                <span className="text-xs text-muted-foreground">{formatDateTime(u.lastLogin)}</span>
+                                {currentUser && currentUser.id === u.id ? (
+                                  <span className="text-xs text-green-500 font-semibold flex items-center gap-1.5">
+                                    <span className="relative flex h-1.5 w-1.5 shrink-0">
+                                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
+                                      <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-green-500"></span>
+                                    </span>
+                                    Active now
+                                  </span>
+                                ) : (
+                                  <span className="text-xs text-muted-foreground">{formatDateTime(u.lastLogin)}</span>
+                                )}
                               </td>
 
                               {/* Member Since */}
