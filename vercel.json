@@ -1,0 +1,32 @@
+{
+  "rewrites": [
+    {
+      "source": "/tmp-api/:path*",
+      "destination": "https://api.truckersmp.com/:path*"
+    },
+    {
+      "source": "/truckersmp/:path*",
+      "destination": "https://truckersmp.com/:path*"
+    },
+    {
+      "source": "/trucky-api/:path*",
+      "destination": "https://e.truckyapp.com/:path*"
+    },
+    {
+      "source": "/trucky-global-api/:path*",
+      "destination": "https://api.truckyapp.com/:path*"
+    },
+    {
+      "source": "/steam-api/:path*",
+      "destination": "https://api.steampowered.com/:path*"
+    },
+    {
+      "source": "/discord-api/:path*",
+      "destination": "https://discord.com/api/:path*"
+    },
+    {
+      "source": "/((?!assets/).*)",
+      "destination": "/index.html"
+    }
+  ]
+}
