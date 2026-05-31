@@ -17,6 +17,7 @@ import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
 import type { TruckyJob } from '@/lib/trucky';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { useLanguage } from '@/components/LanguageProvider';
 
 interface Props {
   jobs: TruckyJob[];
@@ -27,6 +28,7 @@ const ITEMS_PER_PAGE = 5;
 export const DashboardTable = ({ jobs }: Props) => {
   const navigate = useNavigate();
   const [currentPage, setCurrentPage] = useState(1);
+  const { t } = useLanguage();
 
   const totalPages = Math.ceil(jobs.length / ITEMS_PER_PAGE);
   const currentJobs = jobs.slice(
@@ -38,8 +40,8 @@ export const DashboardTable = ({ jobs }: Props) => {
     <div className='bg-background rounded-2xl border px-6 py-6 shadow-sm mt-8'>
       <div className='flex items-center justify-between mb-6'>
         <div>
-          <h2 className='text-lg font-semibold'>Detail informations of jobs</h2>
-          <p className='text-sm text-muted-foreground'>Latest deliveries logged in Trucky.</p>
+          <h2 className='text-lg font-semibold'>{t('Detail informations of jobs')}</h2>
+          <p className='text-sm text-muted-foreground'>{t('Latest deliveries logged in Trucky.')}</p>
         </div>
       </div>
 
@@ -47,10 +49,10 @@ export const DashboardTable = ({ jobs }: Props) => {
         <TableHeader>
           <TableRow className='hover:bg-transparent border-b-muted/10'>
             <TableHead className='w-[40px] text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground/40'>#</TableHead>
-            <TableHead className='text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground/40'>Driver</TableHead>
-            <TableHead className='text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground/40'>Route</TableHead>
-            <TableHead className='text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground/40'>Cargo</TableHead>
-            <TableHead className='text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground/40 text-right'>Distance</TableHead>
+            <TableHead className='text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground/40'>{t('Driver')}</TableHead>
+            <TableHead className='text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground/40'>{t('Route')}</TableHead>
+            <TableHead className='text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground/40'>{t('Cargo')}</TableHead>
+            <TableHead className='text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground/40 text-right'>{t('Distance')}</TableHead>
           </TableRow>
         </TableHeader>
 
@@ -110,7 +112,7 @@ export const DashboardTable = ({ jobs }: Props) => {
           {currentJobs.length === 0 && (
             <TableRow>
               <TableCell colSpan={5} className='text-center py-10 text-muted-foreground'>
-                No recent jobs found.
+                {t('No recent jobs found.')}
               </TableCell>
             </TableRow>
           )}
@@ -121,7 +123,11 @@ export const DashboardTable = ({ jobs }: Props) => {
       {totalPages > 1 && (
         <div className='flex items-center justify-between mt-6 pt-6 border-t border-muted/10'>
           <p className='text-xs text-muted-foreground font-medium'>
-            Showing <span className='text-foreground'>{(currentPage - 1) * ITEMS_PER_PAGE + 1}</span> to <span className='text-foreground'>{Math.min(currentPage * ITEMS_PER_PAGE, jobs.length)}</span> of <span className='text-foreground'>{jobs.length}</span> entries
+            {t('Showing {start} to {end} of {total} entries', {
+              start: (currentPage - 1) * ITEMS_PER_PAGE + 1,
+              end: Math.min(currentPage * ITEMS_PER_PAGE, jobs.length),
+              total: jobs.length
+            })}
           </p>
           <div className='flex items-center gap-2'>
             <Button
@@ -132,18 +138,18 @@ export const DashboardTable = ({ jobs }: Props) => {
               disabled={currentPage === 1}
             >
               <ChevronLeft className='size-3.5 mr-1' />
-              Previous
+              {t('Previous')}
             </Button>
             <div className='flex items-center gap-1'>
               {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
                 <button
-                  key={page}
-                  onClick={() => setCurrentPage(page)}
-                  className={`size-8 rounded-lg text-xs font-bold transition-all ${
-                    currentPage === page
-                      ? 'bg-primary text-primary-foreground shadow-lg shadow-primary/20'
-                      : 'hover:bg-muted/50 text-muted-foreground'
-                  }`}
+                   key={page}
+                   onClick={() => setCurrentPage(page)}
+                   className={`size-8 rounded-lg text-xs font-bold transition-all ${
+                     currentPage === page
+                       ? 'bg-primary text-primary-foreground shadow-lg shadow-primary/20'
+                       : 'hover:bg-muted/50 text-muted-foreground'
+                   }`}
                 >
                   {page}
                 </button>
@@ -156,7 +162,7 @@ export const DashboardTable = ({ jobs }: Props) => {
               onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
               disabled={currentPage === totalPages}
             >
-              Next
+              {t('Next')}
               <ChevronRight className='size-3.5 ml-1' />
             </Button>
           </div>

@@ -460,7 +460,7 @@ export function CalendarEventPage() {
                       background: 'rgba(255,255,255,0.025)',
                       border: '1px solid rgba(255,255,255,0.07)',
                     }}>
-                      <h2 style={{ fontSize: '1rem', fontWeight: 700, color: '#fff', marginBottom: '1.25rem', letterSpacing: '-0.01em', textTransform: 'uppercase', letterSpacing: '0.06em', fontSize: '0.7rem', color: '#6b7280' }}>
+                      <h2 style={{ fontSize: '0.7rem', fontWeight: 700, color: '#6b7280', marginBottom: '1.25rem', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
                         Description
                       </h2>
                       <div style={{ color: '#9ca3af', fontSize: '0.875rem' }}>

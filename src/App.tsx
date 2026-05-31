@@ -7,6 +7,7 @@
  * Component
  */
 import { ThemeProvider } from '@/components/ThemeProvider';
+import { LanguageProvider } from '@/components/LanguageProvider';
 import { Navigate, Route, Routes, useLocation } from 'react-router-dom';
 import { DashboardPage } from '@/pages/Dashboard';
 import { CalendarPage } from '@/pages/Calendar';
@@ -71,54 +72,56 @@ export const App = () => {
 
   return (
     <ToastProvider>
-      <ThemeProvider>
-        <ToastContainer />
-        <Routes>
-        {/* Public */}
-        <Route path='/login' element={<LoginPage />} />
-        <Route path='/auth/discord/callback' element={<DiscordCallbackPage />} />
-        <Route path='/auth/steam/callback' element={<SteamCallbackPage />} />
+      <LanguageProvider>
+        <ThemeProvider>
+          <ToastContainer />
+          <Routes>
+          {/* Public */}
+          <Route path='/login' element={<LoginPage />} />
+          <Route path='/auth/discord/callback' element={<DiscordCallbackPage />} />
+          <Route path='/auth/steam/callback' element={<SteamCallbackPage />} />
 
-        {/* Protected — common */}
-        <Route path='/' element={<ProtectedRoute><DashboardPage /></ProtectedRoute>} />
-        <Route path='/jobs' element={<ProtectedRoute><JobsPage /></ProtectedRoute>} />
-        <Route path='/jobs/:id' element={<ProtectedRoute><JobDetailsPage /></ProtectedRoute>} />
-        <Route path='/calendar' element={<ProtectedRoute><CalendarPage /></ProtectedRoute>} />
-        <Route path='/calendar/:id' element={<ProtectedRoute><CalendarEventPage /></ProtectedRoute>} />
-        <Route path='/events' element={<Navigate to='/calendar' replace />} />
-        <Route path='/events/:id' element={<Navigate to='/calendar/:id' replace />} />
-        <Route path='/members' element={<ProtectedRoute><AllMembersPage /></ProtectedRoute>} />
-        <Route path='/download' element={<ProtectedRoute><DownloadPage /></ProtectedRoute>} />
-        <Route path='/ranking' element={<ProtectedRoute><RankingPage /></ProtectedRoute>} />
-        <Route path='/faq' element={<ProtectedRoute><FAQPage /></ProtectedRoute>} />
-        <Route path='/loa-requests' element={<ProtectedRoute><LoaRequestsPage /></ProtectedRoute>} />
+          {/* Protected — common */}
+          <Route path='/' element={<ProtectedRoute><DashboardPage /></ProtectedRoute>} />
+          <Route path='/jobs' element={<ProtectedRoute><JobsPage /></ProtectedRoute>} />
+          <Route path='/jobs/:id' element={<ProtectedRoute><JobDetailsPage /></ProtectedRoute>} />
+          <Route path='/calendar' element={<ProtectedRoute><CalendarPage /></ProtectedRoute>} />
+          <Route path='/calendar/:id' element={<ProtectedRoute><CalendarEventPage /></ProtectedRoute>} />
+          <Route path='/events' element={<Navigate to='/calendar' replace />} />
+          <Route path='/events/:id' element={<Navigate to='/calendar/:id' replace />} />
+          <Route path='/members' element={<ProtectedRoute><AllMembersPage /></ProtectedRoute>} />
+          <Route path='/download' element={<ProtectedRoute><DownloadPage /></ProtectedRoute>} />
+          <Route path='/ranking' element={<ProtectedRoute><RankingPage /></ProtectedRoute>} />
+          <Route path='/faq' element={<ProtectedRoute><FAQPage /></ProtectedRoute>} />
+          <Route path='/loa-requests' element={<ProtectedRoute><LoaRequestsPage /></ProtectedRoute>} />
 
-        {/* HR Department */}
-        <Route path='/hr/loa-management' element={<ProtectedRoute><LoaManagementPage /></ProtectedRoute>} />
-        <Route path='/hr/attendance-logs' element={<ProtectedRoute><ConvoyAttendancePage /></ProtectedRoute>} />
-        <Route path='/hr/blacklist-driver' element={<ProtectedRoute><BlacklistDriverPage /></ProtectedRoute>} />
-        <Route path='/hr/driver-manage' element={<ProtectedRoute><DriverManagePage /></ProtectedRoute>} />
-        <Route path='/hr/left-drivers' element={<ProtectedRoute><LeftDriversPage /></ProtectedRoute>} />
-        <Route path='/hr/applications' element={<ProtectedRoute><PlaceholderPage title='HR Applications' description='Review and process new driver applications.' /></ProtectedRoute>} />
+          {/* HR Department */}
+          <Route path='/hr/loa-management' element={<ProtectedRoute><LoaManagementPage /></ProtectedRoute>} />
+          <Route path='/hr/attendance-logs' element={<ProtectedRoute><ConvoyAttendancePage /></ProtectedRoute>} />
+          <Route path='/hr/blacklist-driver' element={<ProtectedRoute><BlacklistDriverPage /></ProtectedRoute>} />
+          <Route path='/hr/driver-manage' element={<ProtectedRoute><DriverManagePage /></ProtectedRoute>} />
+          <Route path='/hr/left-drivers' element={<ProtectedRoute><LeftDriversPage /></ProtectedRoute>} />
+          <Route path='/hr/applications' element={<ProtectedRoute><PlaceholderPage title='HR Applications' description='Review and process new driver applications.' /></ProtectedRoute>} />
 
-        {/* Event Department */}
-        <Route path='/event/calendar-manage' element={<ProtectedRoute><PlaceholderPage title='Event Calendar Manage' description='Manage the VTC event calendar.' /></ProtectedRoute>} />
-        <Route path='/event/invites' element={<ProtectedRoute><EventInvitesPage /></ProtectedRoute>} />
-        <Route path='/event/blacklist-vtcs' element={<ProtectedRoute><BlacklistVTCsPage /></ProtectedRoute>} />
+          {/* Event Department */}
+          <Route path='/event/calendar-manage' element={<ProtectedRoute><PlaceholderPage title='Event Calendar Manage' description='Manage the VTC event calendar.' /></ProtectedRoute>} />
+          <Route path='/event/invites' element={<ProtectedRoute><EventInvitesPage /></ProtectedRoute>} />
+          <Route path='/event/blacklist-vtcs' element={<ProtectedRoute><BlacklistVTCsPage /></ProtectedRoute>} />
 
-        {/* Admin */}
-        <Route path='/admin/members' element={<ProtectedRoute><AllMembersPage /></ProtectedRoute>} />
-        <Route path='/admin/blacklist-staff' element={<ProtectedRoute><BlacklistStaffPage /></ProtectedRoute>} />
-        <Route path='/admin/history' element={<ProtectedRoute><HistoryPage /></ProtectedRoute>} />
-        <Route path='/admin/history-logs' element={<ProtectedRoute><PlaceholderPage title='History' description='View audit logs and history.' /></ProtectedRoute>} />
+          {/* Admin */}
+          <Route path='/admin/members' element={<ProtectedRoute><AllMembersPage /></ProtectedRoute>} />
+          <Route path='/admin/blacklist-staff' element={<ProtectedRoute><BlacklistStaffPage /></ProtectedRoute>} />
+          <Route path='/admin/history' element={<ProtectedRoute><HistoryPage /></ProtectedRoute>} />
+          <Route path='/admin/history-logs' element={<ProtectedRoute><PlaceholderPage title='History' description='View audit logs and history.' /></ProtectedRoute>} />
 
-        <Route path='/settings' element={<ProtectedRoute><SettingsPage /></ProtectedRoute>} />
-        <Route path='/profile' element={<ProtectedRoute><ProfilePage /></ProtectedRoute>} />
-        <Route path='/profile/users/:id' element={<ProtectedRoute><ProfileUserPage /></ProtectedRoute>} />
+          <Route path='/settings' element={<ProtectedRoute><SettingsPage /></ProtectedRoute>} />
+          <Route path='/profile' element={<ProtectedRoute><ProfilePage /></ProtectedRoute>} />
+          <Route path='/profile/users/:id' element={<ProtectedRoute><ProfileUserPage /></ProtectedRoute>} />
 
-        <Route path='*' element={<Navigate to='/' replace />} />
-        </Routes>
-      </ThemeProvider>
+          <Route path='*' element={<Navigate to='/' replace />} />
+          </Routes>
+        </ThemeProvider>
+      </LanguageProvider>
     </ToastProvider>
   );
 };

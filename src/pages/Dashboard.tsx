@@ -18,8 +18,10 @@ import {
 } from '@/lib/driver-storage';
 import { StatCard } from '@/components/StatCard';
 import { UpcomingConvoyCard } from '@/components/UpcomingConvoyCard';
+import { useLanguage } from '@/components/LanguageProvider';
 
 export function DashboardPage() {
+  const { t } = useLanguage();
   const [vtcInfo, setVtcInfo] = useState<{ members_count: number } | null>(null);
   const [truckyInfo, setTruckyInfo] = useState<TruckyVtcInfo | null>(null);
   const [vtcEvents, setVtcEvents] = useState<UpcomingEvent[]>([]);
@@ -81,35 +83,35 @@ export function DashboardPage() {
 
         <main>
           <Page>
-            <PageHeader name={currentUser?.displayName || currentUser?.discordUsername || currentUser?.username || 'Member'} />
+            <PageHeader name={currentUser?.displayName || currentUser?.discordUsername || currentUser?.username || t('Member')} />
 
             {/* Stat Cards */}
             <div className='grid gap-6 mt-8 sm:grid-cols-2 lg:grid-cols-4'>
               <StatCard
-                title='Drivers Number'
+                title={t('Drivers Number')}
                 value={totalMembers}
-                subtitle='Total VTC Members'
+                subtitle={t('Total VTC Members')}
                 icon={UsersIcon}
                 loading={loading}
               />
               <StatCard
-                title='Total Jobs'
+                title={t('Total Jobs')}
                 value={completedTotals.jobs.toLocaleString()}
-                subtitle='All-time completed deliveries'
+                subtitle={t('All-time completed deliveries')}
                 icon={BriefcaseIcon}
                 loading={loading}
               />
               <StatCard
-                title='Total Distance'
+                title={t('Total Distance')}
                 value={`${completedTotals.distanceKm.toLocaleString()} km`}
-                subtitle='Distance on completed jobs'
+                subtitle={t('Distance on completed jobs')}
                 icon={MapIcon}
                 loading={loading}
               />
               <StatCard
-                title='Events This Month'
+                title={t('Events This Month')}
                 value={attendingThisMonth}
-                subtitle='VTC Events Attending'
+                subtitle={t('VTC Events Attending')}
                 icon={CalendarIcon}
                 loading={loading}
               />
@@ -117,9 +119,9 @@ export function DashboardPage() {
 
             <div className='grid gap-6 py-8 lg:grid-cols-[1fr_550px]'>
               <DashboardCard
-                title='Job Statistics'
-                description='Performance overview of distance and deliveries.'
-                buttonText='View performance'
+                title={t('Job Statistics')}
+                description={t('Performance overview of distance and deliveries.')}
+                buttonText={t('View performance')}
                 className='h-[600px]'
               >
                 <div className='relative h-full'>

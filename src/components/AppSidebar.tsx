@@ -59,9 +59,11 @@ import * as React from 'react';
  */
 import { APP_SIDEBAR } from '@/constants';
 import { getFilteredSidebar } from './RoleBasedSidebar';
+import { useLanguage } from '@/components/LanguageProvider';
 
 export const AppSidebar = () => {
   const { state, isMobile } = useSidebar();
+  const { t } = useLanguage();
   const [openGroups, setOpenGroups] = React.useState<Record<string, boolean>>({
     'Human Resources Department': true,
     'Event Department': true,
@@ -104,7 +106,7 @@ export const AppSidebar = () => {
         {filteredSidebar.navMain.map((group) => (
           <SidebarGroup key={group.title}>
             <SidebarGroupLabel className='px-2 py-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground group-data-[collapsible=icon]:hidden'>
-              {group.title}
+              {t(group.title)}
             </SidebarGroupLabel>
             <SidebarGroupContent>
               <SidebarMenu>
@@ -117,7 +119,7 @@ export const AppSidebar = () => {
                       <SidebarMenuItem>
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>
-                            <SidebarMenuButton tooltip={(group as any).shortTitle || group.title}>
+                            <SidebarMenuButton tooltip={t((group as any).shortTitle || group.title)}>
                               <GroupIcon />
                             </SidebarMenuButton>
                           </DropdownMenuTrigger>
@@ -127,7 +129,7 @@ export const AppSidebar = () => {
                             className='min-w-48'
                           >
                             <div className='px-2 py-1.5 text-xs font-bold uppercase tracking-wider text-muted-foreground/70'>
-                              {(group as any).shortTitle || group.title}
+                              {t((group as any).shortTitle || group.title)}
                             </div>
                             <DropdownMenuSeparator />
                             {group.items.map((subItem) => {
@@ -136,7 +138,7 @@ export const AppSidebar = () => {
                                 <DropdownMenuItem key={subItem.title} asChild>
                                   <Link to={subItem.url} className='flex items-center gap-2 cursor-pointer'>
                                     <Icon className='size-4' />
-                                    <span className='text-xs font-medium'>{subItem.title}</span>
+                                    <span className='text-xs font-medium'>{t(subItem.title)}</span>
                                     {subItem.isComingSoon && (
                                       <Badge variant='secondary' className='ml-auto text-[8px] h-4 px-1 leading-none uppercase font-bold tracking-tighter opacity-70'>
                                         Soon
@@ -159,7 +161,7 @@ export const AppSidebar = () => {
                         className='font-semibold text-sm'
                       >
                         <GroupIcon />
-                        <span>{group.title}</span>
+                        <span>{t(group.title)}</span>
                         <ChevronRightIcon 
                           className={cn(
                             'ml-auto size-4 transition-transform duration-200',
@@ -180,7 +182,7 @@ export const AppSidebar = () => {
                                 >
                                   <Link to={subItem.url}>
                                     <Icon className='size-4' />
-                                    <span>{subItem.title}</span>
+                                    <span>{t(subItem.title)}</span>
                                     {subItem.isComingSoon && (
                                       <Badge variant='secondary' className='ml-auto text-[8px] h-4 px-1 leading-none uppercase font-bold tracking-tighter opacity-70'>
                                         Soon
@@ -201,13 +203,13 @@ export const AppSidebar = () => {
                     return (
                       <SidebarMenuItem key={item.title}>
                         <SidebarMenuButton
-                          tooltip={item.title}
+                          tooltip={t(item.title)}
                           asChild
                           className='font-semibold text-sm'
                         >
                           <Link to={item.url}>
                             <Icon />
-                            <span>{item.title}</span>
+                            <span>{t(item.title)}</span>
                             {item.isComingSoon && (
                               <Badge variant='secondary' className='ml-auto text-[9px] h-4 px-1.5 leading-none uppercase font-bold tracking-tight opacity-70'>
                                 Soon
@@ -232,12 +234,12 @@ export const AppSidebar = () => {
               {APP_SIDEBAR.secondaryNav.map((item) => (
                 <SidebarMenuItem key={item.title}>
                   <SidebarMenuButton
-                    tooltip={item.title}
+                    tooltip={t(item.title)}
                     asChild
                   >
                     <Link to={item.url}>
                       <item.Icon />
-                      <span>{item.title}</span>
+                      <span>{t(item.title)}</span>
                     </Link>
                   </SidebarMenuButton>
                 </SidebarMenuItem>

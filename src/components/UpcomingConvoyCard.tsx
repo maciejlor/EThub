@@ -10,6 +10,7 @@ import {
 import { type UpcomingEvent, fetchTruckersmpEvent } from '@/lib/truckersmp';
 import { DashboardCard } from '@/components/DashboardCard';
 import defaultBanner from '@/assets/Eteventhub.png';
+import { useLanguage } from '@/components/LanguageProvider';
 
 interface TmpEventDetail {
   name: string;
@@ -23,6 +24,7 @@ interface TmpEventDetail {
 }
 
 export function UpcomingConvoyCard({ events = [] }: { events: UpcomingEvent[] }) {
+  const { t } = useLanguage();
   const [detail, setDetail] = useState<TmpEventDetail | null>(null);
   const [loading, setLoading] = useState(false);
 
@@ -57,7 +59,7 @@ export function UpcomingConvoyCard({ events = [] }: { events: UpcomingEvent[] })
             startAt: r.start_at || next.startDate || '',
             url: `https://truckersmp.com/events/${next.id}`,
             game: r.game || next.game || 'ETS2',
-            server: r.server?.name || next.server || 'To be determined',
+            server: r.server?.name || next.server || t('To be determined'),
             routeSource: departure?.city ? `${departure.city}${departure.location ? ` (${departure.location})` : ''}` : next.departureCity || 'TBD',
             routeDest: arrival?.city ? `${arrival.city}${arrival.location ? ` (${arrival.location})` : ''}` : next.arrivalCity || 'TBD',
           });
@@ -76,7 +78,7 @@ export function UpcomingConvoyCard({ events = [] }: { events: UpcomingEvent[] })
         <div className='flex flex-col items-center justify-center h-full text-muted-foreground/50'>
           <CalendarIcon className='size-16 mb-6 opacity-50' />
           <p className='text-xl font-bold tracking-tight'>
-            No upcoming convoys
+            {t('No upcoming convoys')}
           </p>
         </div>
       </DashboardCard>
@@ -111,11 +113,11 @@ export function UpcomingConvoyCard({ events = [] }: { events: UpcomingEvent[] })
 
   const displayDate = (parsedDate && !isNaN(parsedDate.getTime()))
     ? `${parsedDate.toLocaleString('en-GB', { day: 'numeric', month: 'short' })}, ${parsedDate.toLocaleString('en-GB', { hour: '2-digit', minute: '2-digit', timeZone: 'UTC', hour12: false })} UTC`
-    : (rawDateStr || 'To be determined');
+    : (rawDateStr || t('To be determined'));
 
   const gameTitle = (d?.game || next?.game) === 'ATS' 
-    ? 'American Truck Simulator' 
-    : 'Euro Truck Simulator 2';
+    ? t('American Truck Simulator') 
+    : t('Euro Truck Simulator 2');
 
   const banner = d?.banner || next?.bannerUrl || defaultBanner;
 
@@ -154,7 +156,7 @@ export function UpcomingConvoyCard({ events = [] }: { events: UpcomingEvent[] })
             <InfoRow icon={TrophyIcon} text={gameTitle} />
             
             {/* 5. Server */}
-            <InfoRow icon={LayersIcon} text={d?.server || next?.server || 'To be determined'} />
+            <InfoRow icon={LayersIcon} text={d?.server || next?.server || t('To be determined')} />
             
             {/* 6. Route */}
             <InfoRow 
@@ -170,7 +172,7 @@ export function UpcomingConvoyCard({ events = [] }: { events: UpcomingEvent[] })
               rel='noopener noreferrer'
               className='group/link inline-flex items-center gap-3 text-primary font-bold uppercase tracking-[0.2em] text-[10px] hover:text-primary/80 transition-all bg-primary/10 px-5 py-2.5 rounded-xl'
             >
-              View info
+              {t('View info')}
               <ArrowRightIcon className='size-3.5 transition-transform group-hover/link:translate-x-1' />
             </a>
           </div>
