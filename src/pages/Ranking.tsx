@@ -13,7 +13,14 @@ import {
 } from '@/lib/trucky';
 
 const RANKING_COMPANY_ID = 44349;
-import { TrophyIcon, RouteIcon, BriefcaseIcon, ChevronDownIcon } from 'lucide-react';
+import { TrophyIcon, RouteIcon, BriefcaseIcon, ChevronDownIcon, Check, CalendarIcon } from 'lucide-react';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import { Button } from '@/components/ui/button';
 
 type SortKey = 'jobs' | 'distance';
 
@@ -198,19 +205,33 @@ export function RankingPage() {
                 </div>
 
                 {/* Month selector */}
-                <div className='relative'>
-                  <select
-                    value={timeFilter}
-                    onChange={e => setTimeFilter(e.target.value)}
-                    className='appearance-none bg-muted/30 border border-muted/30 rounded-xl px-4 py-2 pr-8 text-xs font-bold text-foreground cursor-pointer hover:bg-muted/50 transition-all focus:outline-none focus:ring-2 focus:ring-primary/30'
-                  >
-                    <option value='all'>All Time</option>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button
+                      variant='outline'
+                      size='sm'
+                      className='h-8 px-3 rounded-lg border-muted/20 hover:bg-muted/50 transition-all text-xs font-bold gap-2 cursor-pointer flex items-center bg-transparent'
+                    >
+                      <CalendarIcon className='size-3.5 text-muted-foreground' />
+                      <span>{timeFilter === 'all' ? 'All Time' : monthLabel(timeFilter)}</span>
+                      <ChevronDownIcon className='size-3.5 text-muted-foreground ml-0.5' />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align='start' className='w-48 max-h-80 overflow-y-auto'>
+                    <DropdownMenuItem onClick={() => setTimeFilter('all')} className='cursor-pointer flex items-center'>
+                      <span className='mr-2'>🌎</span>
+                      <span>All Time</span>
+                      {timeFilter === 'all' && <Check className='size-4 text-primary ms-auto' />}
+                    </DropdownMenuItem>
                     {availableMonths.map(m => (
-                      <option key={m} value={m}>{monthLabel(m)}</option>
+                      <DropdownMenuItem key={m} onClick={() => setTimeFilter(m)} className='cursor-pointer flex items-center'>
+                        <span className='mr-2'>📅</span>
+                        <span>{monthLabel(m)}</span>
+                        {timeFilter === m && <Check className='size-4 text-primary ms-auto' />}
+                      </DropdownMenuItem>
                     ))}
-                  </select>
-                  <ChevronDownIcon className='absolute right-2.5 top-1/2 -translate-y-1/2 size-3.5 text-muted-foreground pointer-events-none' />
-                </div>
+                  </DropdownMenuContent>
+                </DropdownMenu>
               </div>
 
               {/* Table Header */}

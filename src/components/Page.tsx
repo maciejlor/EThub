@@ -52,18 +52,20 @@ export const PageHeader = ({ name = 'Sadee' }: { name?: string }) => {
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant='outline' className="flex items-center gap-2 cursor-pointer">
-                <Globe className="size-4" />
+                <span>{language === 'en' ? '🇺🇸' : '🇹🇷'}</span>
                 <span>{language === 'en' ? 'English' : 'Türkçe'}</span>
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align='end' className='w-40'>
-              <DropdownMenuItem onClick={() => setLanguage('en')} className="flex items-center justify-between cursor-pointer">
+              <DropdownMenuItem onClick={() => setLanguage('en')} className="cursor-pointer flex items-center">
+                <span className="text-base mr-2">🇺🇸</span>
                 <span>English</span>
-                {language === 'en' && <Check className='size-4 text-primary ml-auto' />}
+                {language === 'en' && <Check className='size-4 text-primary ms-auto' />}
               </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => setLanguage('tr')} className="flex items-center justify-between cursor-pointer">
+              <DropdownMenuItem onClick={() => setLanguage('tr')} className="cursor-pointer flex items-center">
+                <span className="text-base mr-2">🇹🇷</span>
                 <span>Türkçe</span>
-                {language === 'tr' && <Check className='size-4 text-primary ml-auto' />}
+                {language === 'tr' && <Check className='size-4 text-primary ms-auto' />}
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
