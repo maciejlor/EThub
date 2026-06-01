@@ -8,6 +8,8 @@ import { Button } from '@/components/ui/button';
 import { LoaderIcon, ShieldIcon, SparklesIcon, ChevronDownIcon, ChevronUpIcon } from 'lucide-react';
 import { BackgroundSlider } from '@/components/BackgroundSlider';
 import { getUsers, setCurrentUser } from '@/lib/driver-storage';
+import ethubLogo from '@/assets/ethub.png';
+import discordIcon from '@/assets/Discord.png';
 
 export function LoginPage() {
   const navigate = useNavigate();
@@ -23,9 +25,7 @@ export function LoginPage() {
       const clientId = '1501649661214199869';
       const redirectUri = encodeURIComponent(window.location.origin + '/auth/discord/callback');
       const scope = encodeURIComponent('identify email guilds guilds.members.read');
-      const isLocal = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
-      const responseType = isLocal ? 'code' : 'token';
-      const discordAuthUrl = `https://discord.com/api/oauth2/authorize?client_id=${clientId}&redirect_uri=${redirectUri}&response_type=${responseType}&scope=${scope}`;
+      const discordAuthUrl = `https://discord.com/api/oauth2/authorize?client_id=${clientId}&redirect_uri=${redirectUri}&response_type=code&scope=${scope}`;
       window.location.href = discordAuthUrl;
     } catch {
       setError('Discord login failed. Please try again.');
@@ -76,7 +76,7 @@ export function LoginPage() {
       {/* Logo Top Left */}
       <div className='absolute top-8 left-8 z-20'>
         <img
-          src="/src/assets/ethub.png"
+          src={ethubLogo}
           alt="EThub"
           className="h-8 w-auto"
         />
@@ -114,7 +114,7 @@ export function LoginPage() {
               <LoaderIcon className='mr-2 size-4 animate-spin text-gray-400' />
             ) : (
               <img
-                src="/src/assets/Discord.png"
+                src={discordIcon}
                 alt="Discord"
                 className="mr-3 h-5 w-5"
               />

@@ -1,13 +1,13 @@
 import { useState, useEffect } from 'react';
 
-const IMAGES = [
-  '/src/assets/background.png',
-  '/src/assets/bg2.png',
-  '/src/assets/bg3.png',
-  '/src/assets/bg4.png',
-  '/src/assets/bg5.png',
-  '/src/assets/bg6.png',
-];
+import bg1 from '@/assets/background.png';
+import bg2 from '@/assets/bg2.png';
+import bg3 from '@/assets/bg3.png';
+import bg4 from '@/assets/bg4.png';
+import bg5 from '@/assets/bg5.png';
+import bg6 from '@/assets/bg6.png';
+
+const IMAGES = [bg1, bg2, bg3, bg4, bg5, bg6];
 
 export function BackgroundSlider() {
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -34,7 +34,7 @@ export function BackgroundSlider() {
       <div className='absolute inset-0 z-0 overflow-hidden'>
         {IMAGES.map((src, index) => (
           <img
-            key={src}
+            key={index}
             src={src}
             alt={`Background ${index + 1}`}
             className={`absolute inset-0 h-full w-full object-cover transition-opacity duration-1000 ease-in-out ${
