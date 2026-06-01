@@ -113,7 +113,7 @@ export default defineConfig({
       '/discord-api': {
         target: 'https://discord.com/api',
         changeOrigin: true,
-        secure: true,
+        secure: false,
         rewrite: (p) => p.replace(/^\/discord-api/, ''),
       },
     },

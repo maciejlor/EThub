@@ -93,14 +93,20 @@ export async function fetchUpcomingEvents(vtcId: number): Promise<UpcomingEvent[
   }
 
   try {
+    console.log(`Fetching events for VTC ${vtcId}...`);
+    
     // Fetch both: events hosted BY the VTC, and events the VTC is attending
     const [hostedRes, attendingRes] = await Promise.allSettled([
       fetch(`/tmp-api/v2/vtc/${vtcId}/events`),
       fetch(`/tmp-api/v2/vtc/${vtcId}/events/attending`),
     ]);
 
+    console.log('Hosted events response:', hostedRes.status === 'fulfilled' ? hostedRes.value.ok : 'failed');
+    console.log('Attending events response:', attendingRes.status === 'fulfilled' ? attendingRes.value.ok : 'failed');
+
     if (hostedRes.status === 'fulfilled' && hostedRes.value.ok) {
       const data = await hostedRes.value.json();
+      console.log('Hosted events data:', data);
       if (!data.error && Array.isArray(data.response)) {
         (data.response as TruckersmpEvent[]).forEach(processEvent);
       }
@@ -108,12 +114,14 @@ export async function fetchUpcomingEvents(vtcId: number): Promise<UpcomingEvent[
 
     if (attendingRes.status === 'fulfilled' && attendingRes.value.ok) {
       const data = await attendingRes.value.json();
+      console.log('Attending events data:', data);
       if (!data.error && Array.isArray(data.response)) {
         (data.response as TruckersmpEvent[]).forEach(processEvent);
       }
     }
 
     const result = Array.from(eventsMap.values());
+    console.log('Total events fetched:', result.length);
 
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(result));
