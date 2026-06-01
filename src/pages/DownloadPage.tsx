@@ -37,6 +37,7 @@ import {
   type DownloadFile,
 } from '@/lib/driver-storage';
 import { useToast } from '@/lib/toast';
+import { useLanguage } from '@/components/LanguageProvider';
 
 const CATEGORY_COLORS = {
   Resource: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20',
@@ -53,6 +54,7 @@ const CATEGORY_ICONS = {
 };
 
 export function DownloadPage() {
+  const { t } = useLanguage();
   const currentUser = getCurrentUser();
   const isAdmin = currentUser?.role === 'Admin';
   const { success, error: toastError, warning: toastWarning } = useToast();
@@ -94,7 +96,7 @@ export function DownloadPage() {
 
     // Limit to 10MB
     if (selected.size > 10 * 1024 * 1024) {
-      setUploadError('File size exceeds the 10MB limit. Please upload a smaller file.');
+      setUploadError(t('File size exceeds the 10MB limit. Please upload a smaller file.'));
       setFile(null);
       if (fileInputRef.current) fileInputRef.current.value = '';
     } else {
@@ -102,8 +104,8 @@ export function DownloadPage() {
       const localStorageWarnThreshold = 4.5 * 1024 * 1024; // ~4.5MB
       if (selected.size > localStorageWarnThreshold) {
         toastWarning(
-          'Large File',
-          'Files larger than ~4.5 MB may not persist due to browser storage limits.'
+          t('Large File'),
+          t('Files larger than ~4.5 MB may not persist due to browser storage limits.')
         );
       }
       setUploadError(null);
@@ -122,8 +124,8 @@ export function DownloadPage() {
 
     const reader = new FileReader();
     reader.onerror = () => {
-      toastError('Upload Failed', 'Could not read the selected file. Please try a different file.');
-      setUploadError('Could not read the selected file.');
+      toastError(t('Upload Failed'), t('Could not read the selected file. Please try a different file.'));
+      setUploadError(t('Could not read the selected file.'));
       setFile(null);
       if (fileInputRef.current) fileInputRef.current.value = '';
     };
@@ -143,7 +145,7 @@ export function DownloadPage() {
         setCategory('Resource');
         setFile(null);
         setUploadError(null);
-        success('File Uploaded', `"${file.name}" was added to the registry.`);
+        success(t('File Uploaded'), t('"{name}" was added to the registry.', { name: file.name }));
 
         if (fileInputRef.current) fileInputRef.current.value = '';
       } catch (err: any) {
@@ -152,12 +154,12 @@ export function DownloadPage() {
         const isQuota = /quota|exceed/i.test(name) || /quota|exceed/i.test(message) || err?.code === 22;
         if (isQuota) {
           toastError(
-            'Upload Failed',
-            'File is too large to store in your browser. Try a smaller file or host it externally.'
+            t('Upload Failed'),
+            t('File is too large to store in your browser. Try a smaller file or host it externally.')
           );
-          setUploadError('File could not be saved due to browser storage limits.');
+          setUploadError(t('File could not be saved due to browser storage limits.'));
         } else {
-          toastError('Upload Failed', 'Could not read the selected file. Please try a different file.');
+          toastError(t('Upload Failed'), t('Could not read the selected file. Please try a different file.'));
         }
         setFile(null);
         if (fileInputRef.current) fileInputRef.current.value = '';
@@ -174,7 +176,7 @@ export function DownloadPage() {
   const confirmDelete = () => {
     if (!confirmTarget) return;
     removeDownload(confirmTarget.id);
-    success('File Deleted', `"${confirmTarget.name}" was removed from the registry.`);
+    success(t('File Deleted'), t('"{name}" was removed from the registry.', { name: confirmTarget.name }));
     setConfirmOpen(false);
     setConfirmTarget(null);
   };
@@ -203,10 +205,10 @@ export function DownloadPage() {
             {/* Header */}
             <div className="flex flex-col gap-2 mb-8">
               <h1 className="text-2xl font-bold text-white tracking-tight lg:text-3xl">
-                Downloads Center
+                {t('Downloads Center')}
               </h1>
               <p className="text-sm text-zinc-400">
-                Access VTC resources, client saves, skin mods, and profile configurations.
+                {t('Access VTC resources, client saves, skin mods, and profile configurations.')}
               </p>
             </div>
 
@@ -219,7 +221,7 @@ export function DownloadPage() {
                     <SearchIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-zinc-500" />
                     <Input
                       id="search-downloads"
-                      placeholder="Search files by name or category…"
+                      placeholder={t('Search files by name or category…')}
                       value={search}
                       onChange={(e) => setSearch(e.target.value)}
                       className="pl-9 bg-[#111111] border-zinc-800 text-white placeholder-zinc-500 focus:border-zinc-700"
@@ -227,14 +229,14 @@ export function DownloadPage() {
                   </div>
                   <Select value={selectedCategory} onValueChange={setSelectedCategory}>
                     <SelectTrigger className="w-full sm:w-44 bg-[#111111] border-zinc-800 text-white">
-                      <SelectValue placeholder="All Categories" />
+                      <SelectValue placeholder={t('All Categories')} />
                     </SelectTrigger>
                     <SelectContent className="bg-[#121212] border-zinc-800 text-white">
-                      <SelectItem value="all">All Categories</SelectItem>
-                      <SelectItem value="Resource">Resources</SelectItem>
-                      <SelectItem value="Mod">Mods</SelectItem>
-                      <SelectItem value="Document">Documents</SelectItem>
-                      <SelectItem value="Other">Others</SelectItem>
+                      <SelectItem value="all">{t('All Categories')}</SelectItem>
+                      <SelectItem value="Resource">{t('Resources')}</SelectItem>
+                      <SelectItem value="Mod">{t('Mods')}</SelectItem>
+                      <SelectItem value="Document">{t('Documents')}</SelectItem>
+                      <SelectItem value="Other">{t('Others')}</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -243,11 +245,11 @@ export function DownloadPage() {
                 {filteredDownloads.length === 0 ? (
                   <div className="flex flex-col items-center justify-center py-20 text-center rounded-2xl border border-dashed border-zinc-800 bg-[#0f0f0f]/40">
                     <FileIcon className="h-12 w-12 text-zinc-600 mb-4 opacity-40" />
-                    <h3 className="text-lg font-medium text-white mb-1">No files found</h3>
+                    <h3 className="text-lg font-medium text-white mb-1">{t('No files found')}</h3>
                     <p className="text-sm text-zinc-500">
                       {downloads.length === 0
-                        ? 'No files have been uploaded to the registry yet.'
-                        : 'No files match your search criteria.'}
+                        ? t('No files have been uploaded to the registry yet.')
+                        : t('No files match your search criteria.')}
                     </p>
                   </div>
                 ) : (
@@ -263,7 +265,7 @@ export function DownloadPage() {
                             <div className="flex items-start justify-between gap-3 mb-2">
                               <Badge className={`${CATEGORY_COLORS[dl.category]} text-xs font-semibold px-2 py-0.5 border`}>
                                 <IconComponent className="h-3.5 w-3.5 mr-1" />
-                                {dl.category}
+                                {t(dl.category === 'Other' ? 'Others' : dl.category === 'Mod' ? 'Mods' : dl.category === 'Document' ? 'Documents' : dl.category === 'Resource' ? 'Resources' : dl.category)}
                               </Badge>
                               <span className="text-[11px] font-mono text-zinc-500">
                                 {dl.formattedSize}
@@ -277,7 +279,7 @@ export function DownloadPage() {
                           <CardContent className="pt-0 pb-4 flex flex-col gap-3">
                             <div className="border-t border-zinc-800/60 my-1" />
                             <div className="flex justify-between items-center text-[10px] text-zinc-500">
-                              <span>Uploaded by: <strong className="text-zinc-400">{dl.uploadedBy}</strong></span>
+                              <span>{t('Uploaded by:')} <strong className="text-zinc-400">{dl.uploadedBy}</strong></span>
                               <span>{new Date(dl.uploadedAt).toLocaleDateString()}</span>
                             </div>
                             <div className="flex gap-2 mt-1">
@@ -286,7 +288,7 @@ export function DownloadPage() {
                                 className="flex-1 bg-white hover:bg-zinc-200 text-black text-xs font-bold transition-all"
                               >
                                 <DownloadIcon className="h-3.5 w-3.5 mr-1.5" />
-                                Download
+                                {t('Download')}
                               </Button>
                               {isAdmin && (
                                 <Button
@@ -313,17 +315,17 @@ export function DownloadPage() {
                     <CardHeader>
                       <CardTitle className="text-lg font-bold text-white flex items-center gap-2">
                         <UploadIcon className="h-5 w-5 text-emerald-400" />
-                        Upload Registry File
+                        {t('Upload Registry File')}
                       </CardTitle>
                       <CardDescription className="text-xs text-zinc-500">
-                        Add rule books, telemetry profiles, client saves or skins.
+                        {t('Add rule books, telemetry profiles, client saves or skins.')}
                       </CardDescription>
                     </CardHeader>
                     <CardContent>
                       <form onSubmit={handleUploadSubmit} className="space-y-4">
                         <div>
                           <label className="block text-xs font-semibold text-zinc-400 uppercase tracking-wider mb-2">
-                            Select File <span className="text-red-500">*</span>
+                            {t('Select File')} <span className="text-red-500">*</span>
                           </label>
                           <input
                             type="file"
@@ -340,7 +342,7 @@ export function DownloadPage() {
                           >
                             <UploadIcon className="mx-auto h-6 w-6 text-zinc-500 mb-2" />
                             <span className="text-xs font-medium text-zinc-300 block truncate">
-                              {file ? file.name : 'Click to select file'}
+                              {file ? file.name : t('Click to select file')}
                             </span>
                             {/* upload hints removed per request */}
                           </div>
@@ -355,7 +357,7 @@ export function DownloadPage() {
 
                         <div>
                           <label className="block text-xs font-semibold text-zinc-400 uppercase tracking-wider mb-2">
-                            Download Title
+                            {t('Download Title')}
                           </label>
                           <Input
                             placeholder="e.g. VTC Save profile"
@@ -368,7 +370,7 @@ export function DownloadPage() {
 
                         <div>
                           <label className="block text-xs font-semibold text-zinc-400 uppercase tracking-wider mb-2">
-                            Category
+                            {t('Category')}
                           </label>
                           <Select
                             value={category}
@@ -378,10 +380,10 @@ export function DownloadPage() {
                               <SelectValue />
                             </SelectTrigger>
                             <SelectContent className="bg-[#121212] border-zinc-800 text-white text-xs">
-                              <SelectItem value="Resource">Resource</SelectItem>
-                              <SelectItem value="Mod">Mod</SelectItem>
-                              <SelectItem value="Document">Document</SelectItem>
-                              <SelectItem value="Other">Other</SelectItem>
+                              <SelectItem value="Resource">{t('Resources')}</SelectItem>
+                              <SelectItem value="Mod">{t('Mods')}</SelectItem>
+                              <SelectItem value="Document">{t('Documents')}</SelectItem>
+                              <SelectItem value="Other">{t('Others')}</SelectItem>
                             </SelectContent>
                           </Select>
                         </div>
@@ -394,7 +396,7 @@ export function DownloadPage() {
                           className="w-full bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold py-2.5 rounded-lg transition-all"
                         >
                           <UploadIcon className="h-4 w-4 mr-2" />
-                          Upload & Sync File
+                          {t('Upload & Sync File')}
                         </Button>
                       </form>
                     </CardContent>
@@ -406,15 +408,15 @@ export function DownloadPage() {
                         <InfoIcon className="h-5 w-5 text-zinc-400" />
                       </div>
                       <CardTitle className="text-sm font-bold text-white">
-                        About Downloads
+                        {t('About Downloads')}
                       </CardTitle>
                     </CardHeader>
                     <CardContent className="text-xs text-zinc-400 leading-relaxed space-y-2">
                       <p>
-                        This downloads catalog is synchronized automatically across your active browser sessions.
+                        {t('This downloads catalog is synchronized automatically across your active browser sessions.')}
                       </p>
                       <p>
-                        Drivers and staff can download any file from the panel on the left, but only VTC Administrators are authorized to upload or delete assets.
+                        {t('Drivers and staff can download any file from the panel on the left, but only VTC Administrators are authorized to upload or delete assets.')}
                       </p>
                     </CardContent>
                   </Card>
@@ -427,14 +429,14 @@ export function DownloadPage() {
       <Dialog open={confirmOpen} onOpenChange={(open) => { if (!open) cancelDelete(); setConfirmOpen(open); }}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Are you sure?</DialogTitle>
+            <DialogTitle>{t('Are you sure?')}</DialogTitle>
             <DialogDescription>
-              Are you sure you want to delete "{confirmTarget?.name}"? This action cannot be undone.
+              {t('Are you sure you want to delete "{name}"? This action cannot be undone.', { name: confirmTarget?.name || '' })}
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
-            <Button variant="outline" onClick={cancelDelete}>Cancel</Button>
-            <Button variant="destructive" onClick={confirmDelete}>Delete</Button>
+            <Button variant="outline" onClick={cancelDelete}>{t('Cancel')}</Button>
+            <Button variant="destructive" onClick={confirmDelete}>{t('Delete')}</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

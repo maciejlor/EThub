@@ -1,3 +1,4 @@
+import { useLanguage } from '@/components/LanguageProvider';
 import { useEffect, useState, useMemo } from 'react';
 import { SidebarInset, SidebarProvider } from '@/components/ui/sidebar';
 import { AppSidebar } from '@/components/AppSidebar';
@@ -23,6 +24,7 @@ function visiblePageRange(current: number, total: number): number[] {
 }
 
 export function JobsPage() {
+  const { t } = useLanguage();
   const [jobs, setJobs] = useState<TruckyJob[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
@@ -84,9 +86,9 @@ export function JobsPage() {
             <div className='mt-8 p-6 md:p-8'>
               <div className='mb-8 flex items-start justify-between'>
                 <div>
-                  <h2 className='text-xl font-bold text-white tracking-tight leading-tight'>Detail informations of jobs</h2>
+                  <h2 className='text-xl font-bold text-white tracking-tight leading-tight'>{t('Detail informations of jobs')}</h2>
                   <p className='text-sm text-gray-400 mt-1'>
-                    Latest deliveries logged in Trucky.
+                    {t('Latest deliveries logged in Trucky.')}
                   </p>
                 </div>
               </div>
@@ -108,7 +110,7 @@ export function JobsPage() {
                 </div>
               ) : jobs.length === 0 ? (
                 <div className='rounded border border-gray-800/50 px-6 py-20 text-center text-gray-500 text-sm'>
-                  {loadError ? 'No job data loaded.' : 'No jobs found in the logs.'}
+                  {loadError ? t('No job data loaded.') : t('No jobs found in the logs.')}
                 </div>
               ) : (
                 <>
@@ -117,10 +119,10 @@ export function JobsPage() {
                       <thead className='bg-[#0a0a0a] text-xs uppercase text-gray-500 font-bold tracking-wider'>
                         <tr>
                           <th className='px-6 py-4'>#</th>
-                          <th className='px-6 py-4'>Driver</th>
-                          <th className='px-6 py-4'>Route</th>
-                          <th className='px-6 py-4'>Cargo</th>
-                          <th className='px-6 py-4 text-right'>Distance</th>
+                          <th className='px-6 py-4'>{t('Driver')}</th>
+                          <th className='px-6 py-4'>{t('Route')}</th>
+                          <th className='px-6 py-4'>{t('Cargo')}</th>
+                          <th className='px-6 py-4 text-right'>{t('Distance')}</th>
                         </tr>
                       </thead>
                       <tbody className='divide-y divide-gray-800/50'>
@@ -185,9 +187,7 @@ export function JobsPage() {
                   {lastPage > 1 && (
                     <div className='flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between mt-8 pt-8 border-t border-muted/10'>
                       <p className='text-xs text-muted-foreground font-medium'>
-                        Showing <span className='text-foreground'>{rangeStart}</span> to{' '}
-                        <span className='text-foreground'>{rangeEnd}</span> of{' '}
-                        <span className='text-foreground'>{totalCount}</span> entries
+                        {t('Showing {start} to {end} of {total} entries', { start: rangeStart, end: rangeEnd, total: totalCount })}
                       </p>
                       <div className='flex flex-wrap items-center gap-2'>
                         <Button
@@ -197,7 +197,7 @@ export function JobsPage() {
                           onClick={() => setCurrentPage((prev) => Math.max(1, prev - 1))}
                           disabled={currentPage === 1}
                         >
-                          Previous
+                          {t('Previous')}
                         </Button>
                         <div className='flex flex-wrap items-center gap-1'>
                           {pageNumbers[0] > 1 && (
@@ -250,7 +250,7 @@ export function JobsPage() {
                           onClick={() => setCurrentPage((prev) => Math.min(lastPage, prev + 1))}
                           disabled={currentPage === lastPage}
                         >
-                          Next
+                          {t('Next')}
                         </Button>
                       </div>
                     </div>

@@ -1,3 +1,4 @@
+import { useLanguage } from '@/components/LanguageProvider';
 import { useEffect, useMemo, useState } from 'react';
 import { SidebarInset, SidebarProvider } from '@/components/ui/sidebar';
 import { AppSidebar } from '@/components/AppSidebar';
@@ -19,6 +20,7 @@ function formatDay(isoOrYmd: string) {
 }
 
 export function LoaManagementPage() {
+  const { t } = useLanguage();
   const [list, setList] = useState<LoaRequest[]>(getLoaRequests());
 
   const refresh = () => setList(getLoaRequests());
@@ -38,10 +40,10 @@ export function LoaManagementPage() {
         <main>
           <Page>
             <div className='flex flex-col gap-1'>
-              <h1 className='text-xl font-semibold lg:text-2xl'>LOA management</h1>
+              <h1 className='text-xl font-semibold lg:text-2xl'>{t('LOA management')}</h1>
               <p className='text-sm text-muted-foreground'>
-                Approve or reject driver leave requests. New submissions appear here from{' '}
-                <span className='font-medium text-foreground'>LOA Requests</span>.
+                {t('Approve or reject driver leave requests. New submissions appear here from')}{' '}
+                <span className='font-medium text-foreground'>{t('LOA Requests')}</span>.
               </p>
             </div>
 
@@ -49,10 +51,10 @@ export function LoaManagementPage() {
               <section className='rounded-2xl border bg-background p-6 shadow-sm'>
                 <h2 className='text-lg font-semibold flex items-center gap-2 mb-4'>
                   <ClipboardListIcon className='size-5 text-amber-600' />
-                  Pending ({pending.length})
+                  {t('Pending ({count})', { count: pending.length })}
                 </h2>
                 {pending.length === 0 ? (
-                  <p className='text-sm text-muted-foreground'>No pending requests.</p>
+                  <p className='text-sm text-muted-foreground'>{t('No pending requests.')}</p>
                 ) : (
                   <ul className='grid gap-6 sm:grid-cols-2 xl:grid-cols-3'>
                     {pending.map((r) => (
@@ -63,7 +65,7 @@ export function LoaManagementPage() {
                           footer={
                             <div className='flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between'>
                               <p className='text-[11px] text-muted-foreground order-2 sm:order-1'>
-                                Submitted {new Date(r.submittedAt).toLocaleString()}
+                                {t('Submitted')} {new Date(r.submittedAt).toLocaleString()}
                               </p>
                               <div className='flex shrink-0 gap-2 order-1 sm:order-2 justify-end'>
                                 <Button
@@ -74,7 +76,7 @@ export function LoaManagementPage() {
                                   }}
                                 >
                                   <CheckIcon className='size-4' />
-                                  Accept
+                                  {t('Accept')}
                                 </Button>
                                 <Button
                                   size='sm'
@@ -85,7 +87,7 @@ export function LoaManagementPage() {
                                   }}
                                 >
                                   <XIcon className='size-4' />
-                                  Reject
+                                  {t('Reject')}
                                 </Button>
                               </div>
                             </div>
@@ -93,7 +95,7 @@ export function LoaManagementPage() {
                         >
                           <p>
                             <span className='text-muted-foreground text-[11px] font-semibold uppercase tracking-wide'>
-                              Dates
+                              {t('Dates')}
                             </span>
                             <span className='block font-semibold'>
                               {formatDay(r.startDate)} → {formatDay(r.endDate)}
@@ -108,9 +110,9 @@ export function LoaManagementPage() {
               </section>
 
               <section className='rounded-2xl border bg-background p-6 shadow-sm'>
-                <h2 className='text-lg font-semibold mb-4'>History</h2>
+                <h2 className='text-lg font-semibold mb-4'>{t('History')}</h2>
                 {processed.length === 0 ? (
-                  <p className='text-sm text-muted-foreground'>No approved or rejected requests yet.</p>
+                  <p className='text-sm text-muted-foreground'>{t('No approved or rejected requests yet.')}</p>
                 ) : (
                   <ul className='grid gap-6 sm:grid-cols-2 xl:grid-cols-3'>
                     {processed.map((r) => (
@@ -120,8 +122,8 @@ export function LoaManagementPage() {
                           headerTitle={r.requesterName}
                           footer={
                             <p className='text-[11px] text-muted-foreground'>
-                              Submitted {new Date(r.submittedAt).toLocaleString()}
-                              {r.reviewedAt && ` · Decided ${new Date(r.reviewedAt).toLocaleString()}`}
+                              {t('Submitted')} {new Date(r.submittedAt).toLocaleString()}
+                              {r.reviewedAt && ` · ${t('Decided')} ${new Date(r.reviewedAt).toLocaleString()}`}
                             </p>
                           }
                         >

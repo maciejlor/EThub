@@ -88,7 +88,7 @@ export const AppSidebar = () => {
             <SidebarMenuItem className="group/menu-item relative px-0.5 max-lg:p-2">
               <Link to="/" className="flex items-center gap-2">
                 <img 
-                  src="/src/assets/ethub.png" 
+                  src="/ethub.png"
                   alt="ET logo" 
                   className={cn(
                     "h-8 w-auto transition-all duration-300",

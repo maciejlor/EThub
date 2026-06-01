@@ -1,3 +1,4 @@
+import { useLanguage } from '@/components/LanguageProvider';
 import { useEffect, useMemo, useState, type FormEvent } from 'react';
 import { Link } from 'react-router-dom';
 import { SidebarInset, SidebarProvider } from '@/components/ui/sidebar';
@@ -23,6 +24,7 @@ function formatDay(isoOrYmd: string) {
 }
 
 export function LoaRequestsPage() {
+  const { t } = useLanguage();
   const profileName = APP_SIDEBAR.curProfile.name;
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
@@ -47,11 +49,11 @@ export function LoaRequestsPage() {
     setError(null);
     setSuccess(false);
     if (!startDate || !endDate || !reason.trim()) {
-      setError('Please fill in start date, end date, and a reason.');
+      setError(t('Please fill in start date, end date, and a reason.'));
       return;
     }
     if (new Date(endDate) < new Date(startDate)) {
-      setError('End date must be on or after the start date.');
+      setError(t('End date must be on or after the start date.'));
       return;
     }
     addLoaRequest({
@@ -74,11 +76,11 @@ export function LoaRequestsPage() {
         <main>
           <Page>
             <div className='flex flex-col gap-1'>
-              <h1 className='text-xl font-semibold lg:text-2xl'>LOA requests</h1>
+              <h1 className='text-xl font-semibold lg:text-2xl'>{t('LOA requests')}</h1>
               <p className='text-sm text-muted-foreground'>
-                Submit a leave of absence. HR reviews it on{' '}
+                {t('Submit a leave of absence. HR reviews it on')}{' '}
                 <Link to='/hr/loa-management' className='font-medium text-primary underline-offset-4 hover:underline'>
-                  LOA Management
+                  {t('LOA Management')}
                 </Link>
                 .
               </p>
@@ -91,7 +93,7 @@ export function LoaRequestsPage() {
               >
                 <h2 className='text-lg font-semibold flex items-center gap-2'>
                   <CalendarIcon className='size-5 text-primary' />
-                  New request
+                  {t('New request')}
                 </h2>
 
                 {error && (
@@ -101,13 +103,13 @@ export function LoaRequestsPage() {
                 )}
                 {success && (
                   <div className='rounded-lg border border-green-500/30 bg-green-500/10 px-3 py-2 text-sm text-foreground'>
-                    Request sent to LOA Management for approval.
+                    {t('Request sent to LOA Management for approval.')}
                   </div>
                 )}
 
                 <div className='space-y-2'>
                   <label htmlFor='loa-start' className='text-sm font-medium'>
-                    Date of start
+                    {t('Date of start')}
                   </label>
                   <Input
                     id='loa-start'
@@ -119,7 +121,7 @@ export function LoaRequestsPage() {
                 </div>
                 <div className='space-y-2'>
                   <label htmlFor='loa-end' className='text-sm font-medium'>
-                    Date of end
+                    {t('Date of end')}
                   </label>
                   <Input
                     id='loa-end'
@@ -131,11 +133,11 @@ export function LoaRequestsPage() {
                 </div>
                 <div className='space-y-2'>
                   <label htmlFor='loa-reason' className='text-sm font-medium'>
-                    Reasons
+                    {t('Reasons')}
                   </label>
                   <Textarea
                     id='loa-reason'
-                    placeholder='Explain why you need leave…'
+                    placeholder={t('Explain why you need leave…')}
                     value={reason}
                     onChange={(e) => setReason(e.target.value)}
                     rows={5}
@@ -145,28 +147,28 @@ export function LoaRequestsPage() {
 
                 <Button type='submit' className='w-full sm:w-auto'>
                   <SendIcon className='size-4' />
-                  Submit to LOA Management
+                  {t('Submit to LOA Management')}
                 </Button>
               </form>
 
               <div className='rounded-2xl border bg-background p-6 shadow-sm'>
                 <h2 className='text-lg font-semibold flex items-center gap-2 mb-4'>
                   <HistoryIcon className='size-5 text-primary' />
-                  Your LOA history
+                  {t('Your LOA history')}
                 </h2>
                 {myHistory.length === 0 ? (
-                  <p className='text-sm text-muted-foreground'>No requests yet.</p>
+                  <p className='text-sm text-muted-foreground'>{t('No requests yet.')}</p>
                 ) : (
                   <ul className='space-y-4'>
                     {myHistory.map((r) => (
                       <li key={r.id}>
-                        <LoaRequestCard
+                         <LoaRequestCard
                           status={r.status}
                           headerTitle={`${formatDay(r.startDate)} → ${formatDay(r.endDate)}`}
                           footer={
                             <p className='text-[11px] text-muted-foreground'>
-                              Submitted {new Date(r.submittedAt).toLocaleString()}
-                              {r.reviewedAt && ` · Reviewed ${new Date(r.reviewedAt).toLocaleString()}`}
+                              {t('Submitted')} {new Date(r.submittedAt).toLocaleString()}
+                              {r.reviewedAt && ` · ${t('Reviewed')} ${new Date(r.reviewedAt).toLocaleString()}`}
                             </p>
                           }
                         >

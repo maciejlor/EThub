@@ -19,7 +19,9 @@ import {
 /**
  * Assets
  */
-import { SearchIcon, Globe, Check } from 'lucide-react';
+import { Check } from 'lucide-react';
+import ukFlag from '@/assets/UK.png';
+import trFlag from '@/assets/TR.png';
 
 export const Page = ({ children }: React.PropsWithChildren) => {
   return <div className='px-4 py-8 md:p-8'>{children}</div>;
@@ -28,6 +30,9 @@ export const Page = ({ children }: React.PropsWithChildren) => {
 export const PageHeader = ({ name = 'Sadee' }: { name?: string }) => {
   const { language, setLanguage, t } = useLanguage();
 
+  const currentFlag = language === 'en' ? ukFlag : trFlag;
+  const currentLabel = language === 'en' ? 'English' : 'Türkçe';
+
   return (
     <div className='flex flex-col gap-4 lg:flex-row lg:justify-between'>
       <div>
@@ -35,35 +40,27 @@ export const PageHeader = ({ name = 'Sadee' }: { name?: string }) => {
         <p className='text-sm text-muted-foreground'>{t("Here's your Daily Dashboard Overview.")}</p>
       </div>
 
-      <div className='flex gap-3'>
-        <div className='flex max-lg:hidden'>
+      <div className='flex items-center gap-3'>
+        <div className='flex items-center max-lg:hidden'>
           <ThemeToggle />
-
-          <Button
-            variant='ghost'
-            size='icon'
-            aria-label='Search'
-          >
-            <SearchIcon />
-          </Button>
         </div>
 
         <div className='flex items-center gap-3'>
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant='outline' className="flex items-center gap-2 cursor-pointer">
-                <span>{language === 'en' ? '🇺🇸' : '🇹🇷'}</span>
-                <span>{language === 'en' ? 'English' : 'Türkçe'}</span>
+              <Button variant='outline' className="flex items-center gap-2 cursor-pointer px-3">
+                <img src={currentFlag} alt={currentLabel} className="w-5 h-4 object-cover rounded-sm" />
+                <span>{currentLabel}</span>
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align='end' className='w-40'>
-              <DropdownMenuItem onClick={() => setLanguage('en')} className="cursor-pointer flex items-center">
-                <span className="text-base mr-2">🇺🇸</span>
+              <DropdownMenuItem onClick={() => setLanguage('en')} className="cursor-pointer flex items-center gap-2">
+                <img src={ukFlag} alt="English" className="w-5 h-4 object-cover rounded-sm" />
                 <span>English</span>
                 {language === 'en' && <Check className='size-4 text-primary ms-auto' />}
               </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => setLanguage('tr')} className="cursor-pointer flex items-center">
-                <span className="text-base mr-2">🇹🇷</span>
+              <DropdownMenuItem onClick={() => setLanguage('tr')} className="cursor-pointer flex items-center gap-2">
+                <img src={trFlag} alt="Türkçe" className="w-5 h-4 object-cover rounded-sm" />
                 <span>Türkçe</span>
                 {language === 'tr' && <Check className='size-4 text-primary ms-auto' />}
               </DropdownMenuItem>

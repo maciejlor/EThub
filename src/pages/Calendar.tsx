@@ -1,3 +1,4 @@
+import { useLanguage } from '@/components/LanguageProvider';
 import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { SidebarInset, SidebarProvider } from '@/components/ui/sidebar';
@@ -48,6 +49,7 @@ const EVENT_GRADIENTS = [
 ];
 
 export function CalendarPage() {
+  const { t } = useLanguage();
   const today = useMemo(() => new Date(), []);
   const [cursor, setCursor] = useState(() => startOfMonth(new Date()));
 
@@ -132,12 +134,12 @@ export function CalendarPage() {
             <div className='flex flex-col gap-6'>
               {/* Top Header */}
               <div className='flex flex-col gap-4 lg:flex-row lg:justify-between lg:items-center'>
-                <h1 className='text-xl font-semibold lg:text-2xl'>Calendar</h1>
+                <h1 className='text-xl font-semibold lg:text-2xl'>{t('Calendar')}</h1>
 
                 <div className='flex flex-wrap items-center gap-3'>
                   {/* View Toggles */}
                   <div className='flex items-center gap-2'>
-                    <Button variant='outline' size='sm' className='h-9 rounded-md px-4' onClick={() => setCursor(startOfMonth(new Date()))}>Today</Button>
+                    <Button variant='outline' size='sm' className='h-9 rounded-md px-4' onClick={() => setCursor(startOfMonth(new Date()))}>{t('Today')}</Button>
                     <div className='flex items-center bg-muted/50 rounded-md p-1 border'>
                       <Button variant='ghost' size='icon' className='size-7 rounded-sm hover:bg-background transition-colors' onClick={() => setCursor(d => addMonths(d, -1))}>
                         <ChevronLeftIcon className='size-4 text-muted-foreground' />
@@ -152,7 +154,7 @@ export function CalendarPage() {
                   <div className='relative group hidden sm:block'>
                     <SearchIcon className='absolute left-3.5 top-1/2 -translate-y-1/2 size-4 text-muted-foreground group-focus-within:text-primary transition-colors' />
                     <Input 
-                      placeholder='Search events...' 
+                      placeholder={t('Search events...')} 
                       className='bg-background border-input rounded-md pl-10 h-9 w-64 focus-visible:ring-1 focus-visible:ring-primary/50 text-sm'
                     />
                   </div>
@@ -171,7 +173,7 @@ export function CalendarPage() {
                     <div className='grid grid-cols-7 mb-6'>
                       {weekDays.map((day) => (
                         <div key={day} className='text-center text-[11px] font-semibold text-muted-foreground/50 tracking-widest uppercase'>
-                          {day}
+                          {t(day)}
                         </div>
                       ))}
                     </div>
@@ -222,14 +224,14 @@ export function CalendarPage() {
                                 >
                                   <div className='relative z-10'>
                                     <div className='text-[10px] font-semibold text-primary-foreground/90 bg-primary/80 px-2 py-0.5 rounded-md w-fit mb-1'>
-                                       Convoy
+                                       {t('Convoy')}
                                     </div>
                                     <div className='text-[11px] font-semibold text-foreground line-clamp-2 leading-[1.3] mb-2'>
                                       {event.name}
                                     </div>
                                     <div className='flex items-center justify-between mt-auto'>
                                       <div className='text-[9px] font-bold tracking-wider text-muted-foreground bg-muted/50 px-2 py-0.5 rounded-lg border'>
-                                        {event.startDate ? `${new Date(event.startDate).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', timeZone: 'UTC', hour12: false })} UTC` : 'All Day'}
+                                        {event.startDate ? `${new Date(event.startDate).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', timeZone: 'UTC', hour12: false })} UTC` : t('All Day')}
                                       </div>
                                       <div className='flex -space-x-1.5'>
                                         <div className='size-5 rounded-full bg-background border flex items-center justify-center shadow-sm'>
@@ -244,7 +246,7 @@ export function CalendarPage() {
                               {dayEvents.length > 2 && (
                                 <div className='mt-auto text-center'>
                                   <span className='text-[10px] font-semibold text-muted-foreground bg-muted/30 px-3 py-1.5 rounded-xl border border-muted/50 hover:bg-muted/50 hover:text-foreground transition-colors cursor-pointer inline-block shadow-sm'>
-                                    +{dayEvents.length - 2} more
+                                    {t('+{count} more', { count: dayEvents.length - 2 })}
                                   </span>
                                 </div>
                               )}

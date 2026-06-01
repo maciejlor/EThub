@@ -1,3 +1,4 @@
+import { useLanguage } from '@/components/LanguageProvider';
 import { useEffect, useMemo, useState } from 'react';
 import { SidebarInset, SidebarProvider } from '@/components/ui/sidebar';
 import { AppSidebar } from '@/components/AppSidebar';
@@ -41,6 +42,7 @@ const RANK_VALUE_COLOR = [
 ];
 
 export function RankingPage() {
+  const { t } = useLanguage();
   const [sort, setSort] = useState<SortKey>('jobs');
   const [timeFilter, setTimeFilter] = useState<string>('all');
   const [allJobs, setAllJobs] = useState<TruckyJob[] | null>(null);
@@ -114,10 +116,9 @@ export function RankingPage() {
           <Page>
 
             <div className='flex flex-col gap-1'>
-              <h1 className='text-xl font-semibold lg:text-2xl'>Driver rankings</h1>
+              <h1 className='text-xl font-semibold lg:text-2xl'>{t('Driver rankings')}</h1>
               <p className='text-sm text-muted-foreground'>
-                Each job is counted once. Distance is the sum of km on completed jobs only (not the same as
-                counting all job rows or cancelled runs). Cancelled or unfinished jobs are excluded.
+                {t('Each job is counted once. Distance is the sum of km on completed jobs only (not the same as counting all job rows or cancelled runs). Cancelled or unfinished jobs are excluded.')}
               </p>
             </div>
 
@@ -126,43 +127,43 @@ export function RankingPage() {
                 role='alert'
                 className='mt-4 rounded-xl border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm text-destructive'
               >
-                {loadError}
+                {t(loadError)}
               </div>
             )}
 
             <div className='grid gap-6 mt-8 sm:grid-cols-2 lg:grid-cols-4'>
               <StatCard
-                title='Top driver (jobs)'
+                title={t('Top driver (jobs)')}
                 value={topDriverByJobs?.name ?? '—'}
-                subtitle={loading ? undefined : `${topDriverByJobs?.jobs ?? 0} completed deliveries`}
+                subtitle={loading ? undefined : `${topDriverByJobs?.jobs ?? 0} ${t('completed deliveries')}`}
                 icon={BriefcaseIcon}
                 loading={loading}
               />
               <StatCard
-                title='Top driver (distance)'
+                title={t('Top driver (distance)')}
                 value={topDriverByDist?.name ?? '—'}
-                subtitle={loading ? undefined : `${(topDriverByDist?.distance ?? 0).toLocaleString()} km on completed jobs`}
+                subtitle={loading ? undefined : `${(topDriverByDist?.distance ?? 0).toLocaleString()} ${t('km on completed jobs')}`}
                 icon={RouteIcon}
                 loading={loading}
               />
               <StatCard
-                title='Period jobs'
+                title={t('Period jobs')}
                 value={loading ? 0 : totalJobs.toLocaleString()}
                 subtitle={
                   timeFilter === 'all'
-                    ? 'Completed deliveries (all time)'
-                    : `${monthLabel(timeFilter)} · completed only`
+                    ? t('Completed deliveries (all time)')
+                    : `${monthLabel(timeFilter)} · ${t('completed only')}`
                 }
                 icon={BriefcaseIcon}
                 loading={loading}
               />
               <StatCard
-                title='Period distance'
+                title={t('Period distance')}
                 value={loading ? '0 km' : `${totalDist.toLocaleString()} km`}
                 subtitle={
                   timeFilter === 'all'
-                    ? 'Distance on completed jobs'
-                    : `${monthLabel(timeFilter)} · completed only`
+                    ? t('Distance on completed jobs')
+                    : `${monthLabel(timeFilter)} · ${t('completed only')}`
                 }
                 icon={RouteIcon}
                 loading={loading}
@@ -171,8 +172,8 @@ export function RankingPage() {
 
             <div className='py-8'>
             <DashboardCard
-              title='Leaderboard'
-              description='Top 50 drivers by completed jobs or distance. Month filter applies instantly — each job counted once (duplicates from the API are removed).'
+              title={t('Leaderboard')}
+              description={t('Top 50 drivers by completed jobs or distance. Month filter applies instantly — each job counted once (duplicates from the API are removed).')}
               hideFooter
               hideMenu
             >
@@ -189,7 +190,7 @@ export function RankingPage() {
                     }`}
                   >
                     <BriefcaseIcon className='size-3' />
-                    Jobs
+                    {t('Jobs')}
                   </button>
                   <button
                     onClick={() => setSort('distance')}
@@ -200,7 +201,7 @@ export function RankingPage() {
                     }`}
                   >
                     <RouteIcon className='size-3' />
-                    Distance
+                    {t('Distance')}
                   </button>
                 </div>
 
@@ -213,14 +214,14 @@ export function RankingPage() {
                       className='h-8 px-3 rounded-lg border-muted/20 hover:bg-muted/50 transition-all text-xs font-bold gap-2 cursor-pointer flex items-center bg-transparent'
                     >
                       <CalendarIcon className='size-3.5 text-muted-foreground' />
-                      <span>{timeFilter === 'all' ? 'All Time' : monthLabel(timeFilter)}</span>
+                      <span>{timeFilter === 'all' ? t('All Time') : monthLabel(timeFilter)}</span>
                       <ChevronDownIcon className='size-3.5 text-muted-foreground ml-0.5' />
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align='start' className='w-48 max-h-80 overflow-y-auto'>
                     <DropdownMenuItem onClick={() => setTimeFilter('all')} className='cursor-pointer flex items-center'>
                       <span className='mr-2'>🌎</span>
-                      <span>All Time</span>
+                      <span>{t('All Time')}</span>
                       {timeFilter === 'all' && <Check className='size-4 text-primary ms-auto' />}
                     </DropdownMenuItem>
                     {availableMonths.map(m => (
@@ -238,9 +239,9 @@ export function RankingPage() {
               <div className='grid grid-cols-[40px_40px_1fr_90px_90px] gap-3 px-3 mb-2'>
                 <div />
                 <div />
-                <div className='text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground/40'>Driver</div>
-                <div className='text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground/40 text-right'>Jobs</div>
-                <div className='text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground/40 text-right'>Distance</div>
+                <div className='text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground/40'>{t('Driver')}</div>
+                <div className='text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground/40 text-right'>{t('Jobs')}</div>
+                <div className='text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground/40 text-right'>{t('Distance')}</div>
               </div>
 
               {/* Rows */}
@@ -252,7 +253,7 @@ export function RankingPage() {
                 </div>
               ) : sorted.length === 0 ? (
                 <div className='py-20 text-center text-sm text-muted-foreground'>
-                  No job data for this period.
+                  {t('No job data for this period.')}
                 </div>
               ) : (
                 <div className='space-y-2'>
@@ -297,7 +298,7 @@ export function RankingPage() {
                           <span className={`text-sm font-black tracking-tight ${sort === 'jobs' ? valColor : 'text-muted-foreground/70'}`}>
                             {driver.jobs}
                           </span>
-                          {sort === 'jobs' && <span className='text-[10px] font-bold text-muted-foreground/40 ml-1'>job{driver.jobs !== 1 ? 's' : ''}</span>}
+                          {sort === 'jobs' && <span className='text-[10px] font-bold text-muted-foreground/40 ml-1'>{driver.jobs !== 1 ? t('event(s)') : t('Convoy')}</span>}
                         </div>
 
                         {/* Distance */}

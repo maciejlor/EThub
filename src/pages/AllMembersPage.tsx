@@ -1,3 +1,4 @@
+import { useLanguage } from '@/components/LanguageProvider';
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { SidebarInset, SidebarProvider } from '@/components/ui/sidebar';
@@ -94,6 +95,7 @@ function EmptyState({ icon: Icon, title, sub }: { icon: React.ElementType; title
 // Page
 // ─────────────────────────────────────────────────────────────────────────────
 export function AllMembersPage() {
+  const { t } = useLanguage();
   const [users, setUsers] = useState<UserEntry[]>(getUsers());
   const [activeTab, setActiveTab] = useState<'members' | 'requests'>('members');
 
@@ -179,7 +181,7 @@ export function AllMembersPage() {
   };
 
   const handleDelete = (id: string) => {
-    if (confirm('Are you sure you want to remove this user?')) removeUser(id);
+    if (confirm(t('Are you sure you want to remove this user?'))) removeUser(id);
   };
 
   const handleAccept = () => {
@@ -194,7 +196,7 @@ export function AllMembersPage() {
   };
 
   const handleDecline = (id: string) => {
-    if (confirm('Are you sure you want to decline and remove this join request?')) removeUser(id);
+    if (confirm(t('Are you sure you want to decline and remove this join request?'))) removeUser(id);
   };
 
   // ── Render ───────────────────────────────────────────────────────────────
@@ -208,9 +210,9 @@ export function AllMembersPage() {
             {/* ── Page Header ── */}
             <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between mb-8">
               <div>
-                <h1 className="text-xl font-semibold lg:text-2xl text-foreground">All Members</h1>
+                <h1 className="text-xl font-semibold lg:text-2xl text-foreground">{t('All Members')}</h1>
                 <p className="text-sm text-muted-foreground mt-0.5">
-                  Manage user accounts, roles, and join requests.
+                  {t('Manage user accounts, roles, and join requests.')}
                 </p>
               </div>
               {isAdmin && (
@@ -220,7 +222,7 @@ export function AllMembersPage() {
                   className="bg-primary text-primary-foreground hover:bg-primary/90 shrink-0"
                 >
                   <PlusIcon className="mr-2 h-4 w-4" />
-                  Add User
+                  {t('Add User')}
                 </Button>
               )}
             </div>
@@ -238,7 +240,7 @@ export function AllMembersPage() {
                   }`}
                 >
                   <UsersIcon className="inline h-4 w-4 mr-2" />
-                  All Members
+                  {t('All Members')}
                   <span className="ml-2 text-xs bg-primary/15 text-primary px-1.5 py-0.5 rounded-full">
                     {activeMembers.length}
                   </span>
@@ -253,7 +255,7 @@ export function AllMembersPage() {
                   }`}
                 >
                   <ClockIcon className="inline h-4 w-4 mr-2" />
-                  Join Requests
+                  {t('Join Requests')}
                   {pendingRequests.length > 0 && (
                     <span className="ml-2 text-xs bg-yellow-500/20 text-yellow-400 px-1.5 py-0.5 rounded-full">
                       {pendingRequests.length}
@@ -274,7 +276,7 @@ export function AllMembersPage() {
                     <SearchIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                     <Input
                       id="member-search"
-                      placeholder="Search by name, Discord ID, Steam ID…"
+                      placeholder={t('Search by name, Discord ID, Steam ID…')}
                       value={search}
                       onChange={(e) => setSearch(e.target.value)}
                       className="pl-9 bg-background border-border"
@@ -282,10 +284,10 @@ export function AllMembersPage() {
                   </div>
                   <Select value={roleFilter} onValueChange={setRoleFilter}>
                     <SelectTrigger id="role-filter" className="w-44 bg-background border-border">
-                      <SelectValue placeholder="All Roles" />
+                      <SelectValue placeholder={t('All Roles')} />
                     </SelectTrigger>
                     <SelectContent className="bg-card border-border">
-                      <SelectItem value="all">All Roles</SelectItem>
+                      <SelectItem value="all">{t('All Roles')}</SelectItem>
                       {ALL_ROLES.map((r) => (
                         <SelectItem key={r} value={r}>{r}</SelectItem>
                       ))}
@@ -297,7 +299,7 @@ export function AllMembersPage() {
                       onClick={() => { setSearch(''); setRoleFilter('all'); }}
                       className="bg-background border-border"
                     >
-                      Clear
+                      {t('Clear')}
                     </Button>
                   )}
                 </div>
@@ -306,8 +308,8 @@ export function AllMembersPage() {
                 {filteredMembers.length === 0 ? (
                   <EmptyState
                     icon={UserCheckIcon}
-                    title="No members found"
-                    sub={activeMembers.length === 0 ? 'No users created yet. Click "Add User" to get started.' : 'No users match your current filters.'}
+                    title={t('No members found')}
+                    sub={activeMembers.length === 0 ? t('No users created yet. Click "Add User" to get started.') : t('No users match your current filters.')}
                   />
                 ) : (
                   <div className="rounded-xl border border-border overflow-hidden">
@@ -315,13 +317,13 @@ export function AllMembersPage() {
                       <table className="w-full text-sm">
                         <thead>
                           <tr className="bg-muted/50 border-b border-border">
-                            <th className="text-left px-4 py-3 font-medium text-muted-foreground">Member</th>
-                            <th className="text-left px-4 py-3 font-medium text-muted-foreground">Rank</th>
-                            <th className="text-left px-4 py-3 font-medium text-muted-foreground hidden md:table-cell">Discord</th>
-                            <th className="text-left px-4 py-3 font-medium text-muted-foreground hidden lg:table-cell">Steam</th>
-                            <th className="text-left px-4 py-3 font-medium text-muted-foreground hidden xl:table-cell">Last Login</th>
-                            <th className="text-left px-4 py-3 font-medium text-muted-foreground hidden xl:table-cell">Member Since</th>
-                            <th className="text-right px-4 py-3 font-medium text-muted-foreground">Profile</th>
+                            <th className="text-left px-4 py-3 font-medium text-muted-foreground">{t('Member')}</th>
+                            <th className="text-left px-4 py-3 font-medium text-muted-foreground">{t('Rank')}</th>
+                            <th className="text-left px-4 py-3 font-medium text-muted-foreground hidden md:table-cell">{t('Discord')}</th>
+                            <th className="text-left px-4 py-3 font-medium text-muted-foreground hidden lg:table-cell">{t('Steam')}</th>
+                            <th className="text-left px-4 py-3 font-medium text-muted-foreground hidden xl:table-cell">{t('Last Login')}</th>
+                            <th className="text-left px-4 py-3 font-medium text-muted-foreground hidden xl:table-cell">{t('Member Since')}</th>
+                            <th className="text-right px-4 py-3 font-medium text-muted-foreground">{t('Profile')}</th>
                           </tr>
                         </thead>
                         <tbody>
@@ -370,7 +372,7 @@ export function AllMembersPage() {
                                     rel="noreferrer"
                                     className="text-primary hover:underline text-sm"
                                   >
-                                    Click me
+                                    {t('Click me')}
                                   </a>
                                 ) : (
                                   <span className="font-mono text-xs text-muted-foreground">—</span>
@@ -387,7 +389,7 @@ export function AllMembersPage() {
                                     className="text-primary hover:underline text-sm"
                                     title={`Open Steam profile: ${u.steamId}`}
                                   >
-                                    Click me
+                                    {t('Click me')}
                                   </a>
                                 ) : (
                                   <span className="font-mono text-xs text-muted-foreground">—</span>
@@ -402,7 +404,7 @@ export function AllMembersPage() {
                                       <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
                                       <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-green-500"></span>
                                     </span>
-                                    Active now
+                                    {t('Active now')}
                                   </span>
                                 ) : (
                                   <span className="text-xs text-muted-foreground">{formatDateTime(u.lastLogin)}</span>
@@ -427,7 +429,7 @@ export function AllMembersPage() {
                                     className="h-8 px-3 bg-background border-border"
                                   >
                                     <EyeIcon className="h-3 w-3 mr-1" />
-                                    View
+                                    {t('View')}
                                   </Button>
                                   {isAdmin && (
                                     <>

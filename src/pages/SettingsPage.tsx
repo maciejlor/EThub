@@ -1,4 +1,6 @@
 import { useState } from 'react';
+import { useLanguage } from '@/components/LanguageProvider';
+import { RoleBadge } from '@/components/RoleBadge';
 import { useNavigate } from 'react-router-dom';
 import { SidebarInset, SidebarProvider } from '@/components/ui/sidebar';
 import { AppSidebar } from '@/components/AppSidebar';
@@ -40,6 +42,7 @@ import { getSteamPlayerSummary } from '@/lib/steam-ets2';
 import { generateDiscordOAuthUrl, generateSteamOAuthUrl } from '@/lib/discord-auth';
 
 export function SettingsPage() {
+  const { t } = useLanguage();
   const navigate = useNavigate();
   const [user, setUser] = useState<UserEntry | null>(() => {
     let currentUser = getCurrentUser();
@@ -288,6 +291,7 @@ export function SettingsPage() {
 
   const displayRankTitle = user?.rankTitle || currentRank?.title || 'No Rank';
   const displayRankIcon = currentRank?.icon || '';
+  const rankColor = user?.rankColor || currentRank?.color;
 
   if (!user) {
     return (
@@ -387,10 +391,24 @@ export function SettingsPage() {
                     </div>
                     <div className='flex-1'>
                       <h3 className='text-xl font-bold text-white'>{user.displayName}</h3>
-                      <p className='text-sm text-muted-foreground'>@{user.username}</p>
-                      <Badge className='mt-2 bg-primary/10 text-primary border-primary/20 font-black uppercase tracking-widest'>
-                        {displayRankIcon} {displayRankTitle}
-                      </Badge>
+                      <div className='mt-2 flex items-center gap-2 flex-wrap'>
+                        {currentRank && (
+                          <div
+                            className='inline-flex items-center gap-1 px-1.5 py-px rounded-full text-[9px] font-semibold border tracking-wider uppercase'
+                            style={{
+                              color: rankColor,
+                              backgroundColor: `${rankColor}18`,
+                              borderColor: `${rankColor}40`,
+                            }}
+                          >
+                            {displayRankIcon && <span>{displayRankIcon}</span>}
+                            <span>{displayRankTitle}</span>
+                          </div>
+                        )}
+                        {user.role && user.role !== 'Driver' && (
+                          <RoleBadge role={user.role} />
+                        )}
+                      </div>
                     </div>
                   </div>
 
@@ -419,7 +437,7 @@ export function SettingsPage() {
                   <div className='flex items-center justify-between'>
                     <div>
                       <h4 className='font-medium text-foreground'>Username</h4>
-                      <p className='text-sm font-bold text-white'>@{user.username}</p>
+                      <p className='text-sm font-bold text-white'>{user.displayName || user.username}</p>
                     </div>
                     <Dialog open={isUsernameDialogOpen} onOpenChange={setIsUsernameDialogOpen}>
                       <DialogTrigger asChild>
