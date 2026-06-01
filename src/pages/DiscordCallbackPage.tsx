@@ -98,6 +98,7 @@ export function DiscordCallbackPage() {
 
       if (!tokenResponse.ok) {
         const err = await tokenResponse.text();
+        console.error('Token exchange failed:', err);
         throw new Error(`Token exchange failed: ${err}`);
       }
 
@@ -109,7 +110,7 @@ export function DiscordCallbackPage() {
     } catch (err) {
       console.error('Discord OAuth error:', err);
       setStatus('error');
-      setMessage('Authentication failed. Please try again.');
+      setMessage('Authentication failed. Please check the console for details.');
     }
   }, [navigate]);
 
@@ -130,7 +131,10 @@ export function DiscordCallbackPage() {
         });
       }
 
-      if (!userResponse.ok) throw new Error('Failed to fetch Discord user info');
+      if (!userResponse.ok) {
+        console.error('Failed to fetch Discord user info:', userResponse.status);
+        throw new Error('Failed to fetch Discord user info');
+      }
 
       const userData: DiscordUser = await userResponse.json();
       setDiscordUser(userData);
@@ -453,14 +457,6 @@ export function DiscordCallbackPage() {
               >
                 Back to Login
               </Button>
-              <Button
-                variant="destructive"
-                onClick={handleResetStorage}
-                className="w-full bg-red-950/20 border border-red-500/30 text-red-400 hover:bg-red-950/50 hover:text-red-300 text-xs flex items-center justify-center gap-1.5"
-              >
-                <TrashIcon className="h-3.5 w-3.5" />
-                Reset Sessions & Database
-              </Button>
             </div>
           )}
 
@@ -473,14 +469,6 @@ export function DiscordCallbackPage() {
                 className="w-full bg-[#1a1a1a] border-gray-700 text-white hover:bg-gray-800 text-sm"
               >
                 Back to Login
-              </Button>
-              <Button
-                variant="destructive"
-                onClick={handleResetStorage}
-                className="w-full bg-red-950/20 border border-red-500/30 text-red-400 hover:bg-red-950/50 hover:text-red-300 text-xs flex items-center justify-center gap-1.5"
-              >
-                <TrashIcon className="h-3.5 w-3.5" />
-                Reset Sessions & Database
               </Button>
             </div>
           )}
