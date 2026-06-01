@@ -82,8 +82,7 @@ export function DiscordCallbackPage() {
       }
 
       // Exchange code for access token
-      const isLocal = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
-      const tokenUrl = isLocal ? '/discord-api/oauth2/token' : '/api/discord-token';
+      const tokenUrl = '/discord-api/oauth2/token';
       const tokenResponse = await fetch(tokenUrl, {
         method: 'POST',
         headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
