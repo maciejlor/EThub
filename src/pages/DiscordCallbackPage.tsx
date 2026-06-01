@@ -82,7 +82,9 @@ export function DiscordCallbackPage() {
       }
 
       // Exchange code for access token
-      const tokenResponse = await fetch('/discord-api/oauth2/token', {
+      const isLocal = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+      const tokenUrl = isLocal ? '/discord-api/oauth2/token' : '/api/discord-token';
+      const tokenResponse = await fetch(tokenUrl, {
         method: 'POST',
         headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
         body: new URLSearchParams({
@@ -169,6 +171,7 @@ export function DiscordCallbackPage() {
         setCurrentUser(matched.id);
         localStorage.setItem('ethub_authenticated', 'true');
         localStorage.setItem('ethub_discord_user', JSON.stringify(userData));
+        localStorage.setItem('ethub_discord_access_token', accessToken);
 
         setStatus('success');
         setMessage(`Welcome back, ${matched.displayName}! Redirecting to dashboard…`);
@@ -267,6 +270,7 @@ export function DiscordCallbackPage() {
       setCurrentUser(selectedAccountId);
       localStorage.setItem('ethub_authenticated', 'true');
       localStorage.setItem('ethub_discord_user', JSON.stringify(discordUser));
+      // Note: We don't have access token in link account flow, so we can't store it
       setStatus('success');
       const linkedUser = getUsers().find((u) => u.id === selectedAccountId);
       setMessage(`Welcome, ${linkedUser?.displayName ?? 'User'}! Redirecting to dashboard…`);

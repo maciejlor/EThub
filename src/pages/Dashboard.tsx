@@ -14,11 +14,13 @@ import {
   getCurrentUser, 
   getUsers, 
   setCurrentUser,
+  updateUser,
   type UserEntry 
 } from '@/lib/driver-storage';
 import { StatCard } from '@/components/StatCard';
 import { UpcomingConvoyCard } from '@/components/UpcomingConvoyCard';
 import { useLanguage } from '@/components/LanguageProvider';
+import { refreshDiscordUserInfo, isDiscordAuthenticated } from '@/lib/discord-auth';
 
 export function DashboardPage() {
   const { t } = useLanguage();
@@ -35,6 +37,28 @@ export function DashboardPage() {
     const user = getCurrentUser();
     if (user) {
       setLocalUser(user);
+
+      // Refresh Discord username if authenticated via Discord (works for all users, not just admins)
+      if (isDiscordAuthenticated()) {
+        refreshDiscordUserInfo().then((discordUser) => {
+          if (discordUser && user.discordId === discordUser.id) {
+            // Update user entry if Discord username changed
+            if (user.discordUsername !== discordUser.username) {
+              updateUser(user.id, {
+                discordUsername: discordUser.username,
+                discordAvatar: discordUser.avatar
+                  ? `https://cdn.discordapp.com/avatars/${discordUser.id}/${discordUser.avatar}.png`
+                  : user.discordAvatar,
+              });
+              // Reload user to get updated data
+              const updatedUser = getCurrentUser();
+              if (updatedUser) {
+                setLocalUser(updatedUser);
+              }
+            }
+          }
+        });
+      }
     }
   }, []);
 
@@ -83,7 +107,7 @@ export function DashboardPage() {
 
         <main>
           <Page>
-            <PageHeader name={currentUser?.displayName || currentUser?.discordUsername || currentUser?.username || t('Member')} />
+            <PageHeader name={isDiscordAuthenticated() ? (currentUser?.discordUsername || currentUser?.displayName || currentUser?.username || t('Member')) : (currentUser?.displayName || currentUser?.username || t('Member'))} />
 
             {/* Stat Cards */}
             <div className='grid gap-6 mt-8 sm:grid-cols-2 lg:grid-cols-4'>

@@ -138,11 +138,14 @@ export async function checkTruckersMPVTCMembership(discordUserId: string): Promi
 /**
  * Store Discord user session in localStorage
  */
-export function storeDiscordSession(user: DiscordUser): void {
+export function storeDiscordSession(user: DiscordUser, accessToken?: string): void {
   localStorage.setItem('ethub_authenticated', 'true');
   localStorage.setItem('ethub_discord_user', JSON.stringify(user));
   localStorage.setItem('ethub_auth_method', 'discord');
   localStorage.setItem('ethub_login_time', Date.now().toString());
+  if (accessToken) {
+    localStorage.setItem('ethub_discord_access_token', accessToken);
+  }
 }
 
 /**
@@ -153,6 +156,7 @@ export function clearDiscordSession(): void {
   localStorage.removeItem('ethub_discord_user');
   localStorage.removeItem('ethub_auth_method');
   localStorage.removeItem('ethub_login_time');
+  localStorage.removeItem('ethub_discord_access_token');
 }
 
 /**
@@ -169,6 +173,39 @@ export function isDiscordAuthenticated(): boolean {
 export function getStoredDiscordUser(): DiscordUser | null {
   const stored = localStorage.getItem('ethub_discord_user');
   return stored ? JSON.parse(stored) : null;
+}
+
+/**
+ * Refresh Discord user info from Discord API
+ * This updates the stored Discord user data with current info from Discord
+ */
+export async function refreshDiscordUserInfo(): Promise<DiscordUser | null> {
+  const accessToken = localStorage.getItem('ethub_discord_access_token');
+  if (!accessToken) {
+    console.log('No Discord access token found, cannot refresh user info');
+    return null;
+  }
+
+  try {
+    const userResponse = await fetch('https://discord.com/api/users/@me', {
+      headers: { Authorization: `Bearer ${accessToken}` },
+    });
+
+    if (!userResponse.ok) {
+      console.error('Failed to refresh Discord user info:', userResponse.status);
+      return null;
+    }
+
+    const userData: DiscordUser = await userResponse.json();
+    
+    // Update the stored Discord user
+    localStorage.setItem('ethub_discord_user', JSON.stringify(userData));
+    
+    return userData;
+  } catch (error) {
+    console.error('Error refreshing Discord user info:', error);
+    return null;
+  }
 }
 
 /**
