@@ -892,6 +892,23 @@ export function getUsers(): UserEntry[] {
   return users;
 }
 
+/**
+ * Clear all users from localStorage and reset seeding
+ * This will remove all template accounts and allow re-seeding with only admin
+ */
+export function clearAllUsers(): void {
+  if (typeof window === 'undefined') return;
+  localStorage.removeItem(USERS_STORAGE_KEY);
+  localStorage.removeItem(SEEDED_FLAG_KEY);
+  localStorage.removeItem('ethub_current_user');
+  localStorage.removeItem('ethub_current_user_id');
+  localStorage.removeItem('ethub_authenticated');
+  localStorage.removeItem('ethub_discord_user');
+  localStorage.removeItem('ethub_discord_access_token');
+  localStorage.removeItem('ethub_auth_method');
+  localStorage.removeItem('ethub_login_time');
+}
+
 
 function getNextProfileNumber(users: UserEntry[]): number {
   const maxNumber = users.reduce((max, u) => Math.max(max, u.profileNumber ?? 0), 0);
