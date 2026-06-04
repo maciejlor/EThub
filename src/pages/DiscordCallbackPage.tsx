@@ -135,15 +135,37 @@ export function DiscordCallbackPage() {
       setMessage('Syncing database…');
       await initialSyncPromise;
       setMessage('Checking access…');
+      
       const allUsers = getUsers();
-      // Prefer active + approved accounts first — avoids getting stuck on pending
-      // when both a pending request AND an active account share the same Discord ID.
-      const matched =
-        allUsers.find((u) => u.discordId === userData.id && u.isActive && !u.isPending) ??
-        allUsers.find((u) => u.discordId === userData.id && u.isPending) ??
-        allUsers.find((u) => u.discordId === userData.id);
+      console.log(`[Auth] Attempting login for Discord ID: ${userData.id} (${userData.username})`);
+      
+      // 1. Find all users with this Discord ID
+      let matches = allUsers.filter(u => u.discordId === userData.id);
+      
+      // ── FALLBACK: Search by Username if no Discord ID match found ──────
+      if (matches.length === 0) {
+        console.log(`[Auth] No ID match. Searching fallback by username: ${userData.username}`);
+        const nameMatch = allUsers.find(u => 
+          u.isActive && !u.isPending && 
+          (u.username?.toLowerCase() === userData.username.toLowerCase() || 
+           u.displayName?.toLowerCase() === userData.username.toLowerCase())
+        );
+        if (nameMatch) {
+          console.log(`[Auth] Found username match! Auto-linking Discord ID to account: ${nameMatch.id}`);
+          matches = [nameMatch];
+        }
+      }
+
+      console.log(`[Auth] Found ${matches.length} matching accounts in database.`);
+
+      // 2. Select the best match (Prefer Active > Pending)
+      const matched = matches.find(u => u.isActive && !u.isPending) ?? 
+                      matches.find(u => u.isPending) ?? 
+                      matches[0];
 
       if (matched) {
+        console.log(`[Auth] Matched User: ID=${matched.id}, Name=${matched.displayName}, Role=${matched.role}, Active=${matched.isActive}, Pending=${matched.isPending}`);
+
         if (matched.isPending) {
           setStatus('pending');
           setMessage('Your join request is still pending admin approval. Please check back later.');
@@ -176,6 +198,7 @@ export function DiscordCallbackPage() {
       }
 
       // Not in DB → show options
+      console.log('[Auth] No account found with this Discord ID.');
       setStatus('not_registered');
       setMessage('');
     } catch (err) {
