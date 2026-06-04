@@ -147,7 +147,20 @@ export async function fetchUpcomingEvents(vtcId: number): Promise<UpcomingEvent[
 
 
 const eventCache = new Map<number, { data: TruckersmpEvent; timestamp: number }>();
-const CACHE_TTL = 1000 * 60 * 15; // 15 minutes
+const CACHE_TTL = 1000 * 60 * 60; // Increase to 1 hour for better performance
+
+/**
+ * Prefetches multiple events in the background to populate the cache.
+ */
+export function prefetchEvents(ids: number[]) {
+  ids.forEach(id => {
+    // Only fetch if not already in cache or expired
+    const cached = eventCache.get(id);
+    if (!cached || (Date.now() - cached.timestamp > CACHE_TTL)) {
+      fetchTruckersmpEvent(id).catch(() => {}); // Fire and forget
+    }
+  });
+}
 
 export async function fetchTruckersmpEvent(id: number): Promise<TruckersmpEvent> {
   // Check cache first

@@ -12,7 +12,7 @@ import {
   ChevronLeftIcon, ChevronRightIcon, SearchIcon, UsersIcon
 } from 'lucide-react';
 import type { TruckersmpAttendingEvent } from '@/lib/truckersmp';
-import { fetchVtcAttendingEvents } from '@/lib/truckersmp';
+import { fetchVtcAttendingEvents, prefetchEvents } from '@/lib/truckersmp';
 import { Card } from '@/components/ui/card';
 
 type ConvoyEvent = TruckersmpAttendingEvent & {
@@ -77,9 +77,14 @@ export function CalendarPage() {
     fetchVtcAttendingEvents(74784)
       .then((data) => {
         if (cancelled) return;
-        if (!data || data.length === 0) {
-          console.warn('No events returned from API');
-        }
+        
+        // Prefetch next 8 upcoming events in background to make them instant
+        const upcomingIds = data
+          .filter(e => new Date(e.startDate).getTime() > Date.now())
+          .slice(0, 8)
+          .map(e => e.id);
+        prefetchEvents(upcomingIds);
+
         const coloredData = data.map((e, i) => ({
           ...e,
           gradient: EVENT_GRADIENTS[i % EVENT_GRADIENTS.length]
@@ -250,6 +255,7 @@ export function CalendarPage() {
                                 <Link 
                                   key={event.id}
                                   to={`/calendar/${event.id}`}
+                                  state={{ event }}
                                   className={cn(
                                     'p-2.5 rounded-xl flex flex-col gap-1.5 transition-all hover:scale-[1.03] hover:shadow-md relative overflow-hidden border border-primary/10 group/event',
                                     'bg-gradient-to-br from-primary/10 to-primary/5 hover:from-primary/20 hover:to-primary/10'
