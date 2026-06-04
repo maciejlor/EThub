@@ -93,31 +93,44 @@ export async function fetchUpcomingEvents(vtcId: number): Promise<UpcomingEvent[
   }
 
   try {
-    console.log(`Fetching events for VTC ${vtcId}...`);
+    const hostedUrl = `/tmp-api/v2/vtc/${vtcId}/events`;
+    const attendingUrl = `/tmp-api/v2/vtc/${vtcId}/events/attending`;
+    
+    console.log(`[TMP] Fetching hosted events from: ${hostedUrl}`);
+    console.log(`[TMP] Fetching attending events from: ${attendingUrl}`);
 
     // Fetch both: events hosted BY the VTC, and events the VTC is attending
     const [hostedRes, attendingRes] = await Promise.allSettled([
-      fetch(`/tmp-api/v2/vtc/${vtcId}/events`),
-      fetch(`/tmp-api/v2/vtc/${vtcId}/events/attending`),
+      fetch(hostedUrl),
+      fetch(attendingUrl),
     ]);
 
-    console.log('Hosted events response:', hostedRes.status === 'fulfilled' ? hostedRes.value.ok : 'failed');
-    console.log('Attending events response:', attendingRes.status === 'fulfilled' ? attendingRes.value.ok : 'failed');
-
-    if (hostedRes.status === 'fulfilled' && hostedRes.value.ok) {
-      const data = await hostedRes.value.json();
-      console.log('Hosted events data:', data);
-      if (!data.error && Array.isArray(data.response)) {
-        (data.response as TruckersmpEvent[]).forEach(processEvent);
+    if (hostedRes.status === 'fulfilled') {
+      console.log(`[TMP] Hosted events response: ${hostedRes.value.status} ${hostedRes.value.statusText}`);
+      if (hostedRes.value.ok) {
+        const data = await hostedRes.value.json();
+        if (!data.error && Array.isArray(data.response)) {
+          (data.response as TruckersmpEvent[]).forEach(processEvent);
+        }
+      } else {
+        console.error(`[TMP] Failed to fetch hosted events: ${hostedRes.value.status}`);
       }
+    } else {
+      console.error(`[TMP] Hosted events fetch REJECTED:`, hostedRes.reason);
     }
 
-    if (attendingRes.status === 'fulfilled' && attendingRes.value.ok) {
-      const data = await attendingRes.value.json();
-      console.log('Attending events data:', data);
-      if (!data.error && Array.isArray(data.response)) {
-        (data.response as TruckersmpEvent[]).forEach(processEvent);
+    if (attendingRes.status === 'fulfilled') {
+      console.log(`[TMP] Attending events response: ${attendingRes.value.status} ${attendingRes.value.statusText}`);
+      if (attendingRes.value.ok) {
+        const data = await attendingRes.value.json();
+        if (!data.error && Array.isArray(data.response)) {
+          (data.response as TruckersmpEvent[]).forEach(processEvent);
+        }
+      } else {
+        console.error(`[TMP] Failed to fetch attending events: ${attendingRes.value.status}`);
       }
+    } else {
+      console.error(`[TMP] Attending events fetch REJECTED:`, attendingRes.reason);
     }
 
     const result = Array.from(eventsMap.values());

@@ -216,11 +216,11 @@ export function DiscordCallbackPage() {
   }, [handleDiscordCallback, handleDiscordCallbackWithToken]);
 
   // ── Submit join request ───────────────────────────────────────────────────
-  const handleSubmitRequest = () => {
+  const handleSubmitRequest = async () => {
     if (!discordUser) return;
     setIsSubmitting(true);
 
-    addUser({
+    const newUser = {
       username: discordUser.username,
       email: discordUser.email ?? '',
       displayName: discordUser.username,
@@ -232,12 +232,38 @@ export function DiscordCallbackPage() {
       discordAvatar: discordUser.avatar
         ? `https://cdn.discordapp.com/avatars/${discordUser.id}/${discordUser.avatar}.png`
         : '',
-      role: 'Driver',
-      department: 'HR',
+      role: 'Driver' as any,
+      department: 'HR' as any,
       isActive: false,
       isPending: true,
       createdBy: 'System (Join Request)',
-    });
+    };
+
+    addUser(newUser);
+
+    // Send notification to Discord Webhook
+    try {
+      const webhookUrl = '/discord-api/webhooks/1507523270147178611/7SIUnJgs6nd_jqgol_wIfWDxWxH5bK4_ytfXOeZ6WDIvyyN3nsZaffnhpYljgTWFiA3_';
+      await fetch(webhookUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          content: `📥 **New Join Request!**\n**User:** ${discordUser.username}\n**Discord ID:** ${discordUser.id}\n**Action:** Please log in to EThub to review this request.`,
+          embeds: [{
+            title: 'New Applicant',
+            color: 3447003,
+            thumbnail: { url: newUser.avatar },
+            fields: [
+              { name: 'Username', value: discordUser.username, inline: true },
+              { name: 'Discord ID', value: discordUser.id, inline: true }
+            ],
+            timestamp: new Date().toISOString()
+          }]
+        })
+      });
+    } catch (e) {
+      console.error('Failed to send Discord join notification:', e);
+    }
 
     setIsSubmitting(false);
     setStatus('request_sent');

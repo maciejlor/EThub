@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Link, useParams } from 'react-router-dom';
+import { Link, useParams, useLocation } from 'react-router-dom';
 
 import { SidebarInset, SidebarProvider } from '@/components/ui/sidebar';
 import { AppSidebar } from '@/components/AppSidebar';
@@ -230,17 +230,43 @@ function parseInline(text: string): React.ReactNode[] {
 
 export function CalendarEventPage() {
   const params  = useParams();
+  const location = useLocation();
   const eventId = useMemo(() => Number(params.id), [params.id]);
 
-  const [eventData, setEventData] = useState<TruckersmpEvent | null>(null);
-  const [loading,   setLoading]   = useState(true);
+  const [eventData, setEventData] = useState<TruckersmpEvent | null>(() => {
+    // Optimistic UI: Use basic data passed from the calendar list
+    const initial = location.state?.event;
+    if (initial) {
+      return {
+        id: initial.id,
+        name: initial.name,
+        game: initial.game,
+        start_at: initial.startDate,
+        banner: initial.bannerUrl,
+        server: { name: initial.server || 'Server TBD' },
+        departure: { city: initial.departureCity || 'TBD', location: '' },
+        arrival: { city: initial.arrivalCity || 'TBD', location: '' },
+        arrive: { city: initial.arrivalCity || 'TBD', location: '' },
+      } as any;
+    }
+    return null;
+  });
+
+  const [loading,   setLoading]   = useState(!eventData);
   const [error,     setError]     = useState<string | null>(null);
 
   useEffect(() => {
     if (!Number.isFinite(eventId)) return;
+    
+    // Always fetch full details (especially for the description)
     fetchTruckersmpEvent(eventId)
-      .then(setEventData)
-      .catch(e => setError(e.message))
+      .then(data => {
+        setEventData(data);
+        setError(null);
+      })
+      .catch(e => {
+        if (!eventData) setError(e.message);
+      })
       .finally(() => setLoading(false));
   }, [eventId]);
 
