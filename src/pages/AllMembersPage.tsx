@@ -26,6 +26,7 @@ import {
   SearchIcon,
 } from 'lucide-react';
 import { getUsers, addUser, updateUser, removeUser, subscribeUsersChanges, getCurrentUser, type UserEntry } from '@/lib/driver-storage';
+import { isFirebaseConfigured } from '@/lib/firebase';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Constants
@@ -101,6 +102,7 @@ export function AllMembersPage() {
 
   const currentUser = getCurrentUser();
   const isAdmin = currentUser?.role === 'Admin';
+  const isSyncActive = isFirebaseConfigured();
 
   // Dialogs
   const [isAddOpen, setIsAddOpen] = useState(false);
@@ -465,32 +467,27 @@ export function AllMembersPage() {
               </>
             )}
 
-            import { isFirebaseConfigured } from '@/lib/firebase';
-
-            // ... (existing imports)
-
-            // Inside AllMembersPage component, before the requests tab rendering:
-              const isSyncActive = isFirebaseConfigured();
-
-            // ... (find the requests tab rendering)
-                         {activeTab === 'requests' && (
-                           <>
-                             {!isSyncActive && (
-                               <div className="mb-6 rounded-xl border border-yellow-500/20 bg-yellow-500/10 p-4 text-sm text-yellow-200/80 flex flex-col gap-2 shadow-sm">
-                                 <div className="flex items-center gap-2 font-bold text-yellow-400">
-                                   <ShieldIcon className="h-4 w-4" />
-                                   Central Database Not Configured
-                                 </div>
-                                 <p>
-                                   Because <strong>Firebase</strong> is not yet connected in your <code>.env</code> file, data is currently stored only in your local browser. 
-                                   Join requests submitted by other users will not appear here until a central database is configured.
-                                 </p>
-                                 <p className="text-xs opacity-70">
-                                   Check the <strong>Audit Logs</strong> in your Discord channel for immediate notifications of new join requests.
-                                 </p>
-                               </div>
-                             )}
-                             {pendingRequests.length === 0 ? (
+            {/* ══════════════════════════════════════════════════════════ */}
+            {/* TAB: JOIN REQUESTS                                         */}
+            {/* ══════════════════════════════════════════════════════════ */}
+            {activeTab === 'requests' && (
+              <>
+                {!isSyncActive && (
+                  <div className="mb-6 rounded-xl border border-yellow-500/20 bg-yellow-500/10 p-4 text-sm text-yellow-200/80 flex flex-col gap-2 shadow-sm">
+                    <div className="flex items-center gap-2 font-bold text-yellow-400">
+                      <ShieldIcon className="h-4 w-4" />
+                      Central Database Not Configured
+                    </div>
+                    <p>
+                      Because <strong>Firebase</strong> is not yet connected in your <code>.env</code> file, data is currently stored only in your local browser. 
+                      Join requests submitted by other users will not appear here until a central database is configured.
+                    </p>
+                    <p className="text-xs opacity-70">
+                      Check the <strong>Audit Logs</strong> in your Discord channel for immediate notifications of new join requests.
+                    </p>
+                  </div>
+                )}
+                {pendingRequests.length === 0 ? (
                   <EmptyState
                     icon={ClockIcon}
                     title="No pending requests"
