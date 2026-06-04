@@ -285,6 +285,36 @@ export function SettingsPage() {
     }
   };
 
+  const handleResetApp = () => {
+    if (confirm('Are you sure you want to reset your local session and cache? You will be logged out, but the central database will NOT be affected.')) {
+      // Keys to preserve (central database sync data)
+      const preserve = new Set([
+        'ethub_users_v1',
+        'ethub_managed_drivers_v1',
+        'ethub_left_drivers_v1',
+        'ethub_event_invites_v1',
+        'ethub_blacklist_drivers_v1',
+        'ethub_blacklist_vtcs_v1',
+        'ethub_blacklist_staff_v1',
+        'ethub_history_v1',
+        'ethub_loa_requests_v1',
+        'ethub_downloads_v1',
+        'ethub_seeded_v1'
+      ]);
+
+      // Temporary local storage entries
+      const keys = Object.keys(localStorage);
+      keys.forEach(key => {
+        if (!preserve.has(key)) {
+          localStorage.removeItem(key);
+        }
+      });
+
+      // Redirect to login and reload
+      window.location.href = '/login';
+    }
+  };
+
   const currentRank = getUserRank(user?.rankLevel);
   const nextRank = getNextRank(user?.rankLevel);
   const displayAvatar = user?.avatar || user?.discordAvatar || user?.steamAvatar;
@@ -617,6 +647,33 @@ export function SettingsPage() {
                       </div>
                     </DialogContent>
                   </Dialog>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Danger Zone */}
+            <Card className='bg-card border-destructive/20 mt-6 border'>
+              <CardHeader>
+                <CardTitle className='text-lg flex items-center gap-2 text-destructive'>
+                  <StarIcon className='h-5 w-5' />
+                  Danger Zone
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className='flex items-center justify-between'>
+                  <div>
+                    <h4 className='font-medium text-foreground'>Reset Application</h4>
+                    <p className='text-sm text-muted-foreground'>
+                      Clear your local session and cache. This fixes most login issues and refreshes all data from the database.
+                    </p>
+                  </div>
+                  <Button 
+                    variant='destructive' 
+                    onClick={handleResetApp}
+                    className='bg-destructive text-white hover:bg-destructive/90'
+                  >
+                    Reset & Logout
+                  </Button>
                 </div>
               </CardContent>
             </Card>
