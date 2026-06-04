@@ -184,6 +184,10 @@ async function syncLocalChangeToFirestore(key: string, localJson: string) {
     const localItems = JSON.parse(localJson || '[]') as any[];
     const cachedItems = firestoreCache[key] || [];
     
+    // INSTANT CACHE UPDATE: Pretend server already has this data
+    // This prevents onSnapshot from reverting the local change while the push is in flight
+    firestoreCache[key] = localItems;
+
     const cachedMap = new Map<string, any>(cachedItems.map(item => [item.id, item]));
     const localMap = new Map<string, any>(localItems.map(item => [item.id, item]));
     
@@ -218,11 +222,11 @@ async function syncLocalChangeToFirestore(key: string, localJson: string) {
       batch.delete(doc(db, colName, id));
     }
     await batch.commit();
-    
-    // Update cache immediately to prevent feedback loop
-    firestoreCache[key] = localItems;
-  } catch (err) {
+  } catch (err: any) {
     console.error(`[Sync] Error syncing local change for ${key} to Firestore:`, err);
+    if (err.code === 'permission-denied') {
+      console.error('[Sync] 🚨 DATABASE PERMISSION DENIED! Please ensure your Firebase Rules allow writes.');
+    }
   }
 }
 

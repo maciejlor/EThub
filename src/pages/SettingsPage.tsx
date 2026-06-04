@@ -332,6 +332,9 @@ export function SettingsPage() {
         return;
       }
 
+      // Local reference for type narrowing
+      const firestore = db;
+
       const collectionsToClear = [
         COLLECTIONS.managedDrivers,
         COLLECTIONS.leftDrivers,
@@ -346,20 +349,20 @@ export function SettingsPage() {
 
       // 1. Wipe other collections
       for (const colName of collectionsToClear) {
-        const snap = await getDocs(collection(db, colName));
-        const batch = writeBatch(db);
-        snap.docs.forEach(d => batch.delete(doc(db, colName, d.id)));
+        const snap = await getDocs(collection(firestore, colName));
+        const batch = writeBatch(firestore);
+        snap.docs.forEach(d => batch.delete(doc(firestore, colName, d.id)));
         await batch.commit();
       }
 
       // 2. Wipe users except Macik
-      const userSnap = await getDocs(collection(db, COLLECTIONS.users));
-      const userBatch = writeBatch(db);
+      const userSnap = await getDocs(collection(firestore, COLLECTIONS.users));
+      const userBatch = writeBatch(firestore);
       userSnap.docs.forEach(d => {
         const data = d.data();
         const name = (data.displayName || data.username || '').toLowerCase();
         if (!name.includes('macik') && !name.includes('maciek')) {
-          userBatch.delete(doc(db, COLLECTIONS.users, d.id));
+          userBatch.delete(doc(firestore, COLLECTIONS.users, d.id));
         }
       });
       await userBatch.commit();
