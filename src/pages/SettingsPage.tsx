@@ -35,15 +35,19 @@ import {
   setCurrentUser,
   getUsers,
   addUser,
+  removeUser,
   RANKS,
   type UserEntry 
 } from '@/lib/driver-storage';
 import { getSteamPlayerSummary } from '@/lib/steam-ets2';
 import { generateDiscordOAuthUrl, generateSteamOAuthUrl } from '@/lib/discord-auth';
+import { db, isFirebaseConfigured, COLLECTIONS } from '@/lib/firebase';
+import { collection, getDocs, doc, writeBatch } from 'firebase/firestore';
 
 export function SettingsPage() {
   const { t } = useLanguage();
   const navigate = useNavigate();
+  const [isWiping, setIsWiping] = useState(false);
   const [user, setUser] = useState<UserEntry | null>(() => {
     let currentUser = getCurrentUser();
     
@@ -312,6 +316,61 @@ export function SettingsPage() {
 
       // Redirect to login and reload
       window.location.href = '/login';
+    }
+  };
+
+  const isAdmin = user?.role === 'Admin';
+
+  const handleWipeDatabase = async () => {
+    if (!isAdmin) return;
+    if (!confirm('🚨 WARNING: This will permanently delete ALL members, join requests, blacklist entries, and history from the central Firebase database. Only YOU (Macik) will remain. Are you absolutely sure?')) return;
+    
+    setIsWiping(true);
+    try {
+      if (!isFirebaseConfigured() || !db) {
+        alert('Firebase is not configured.');
+        return;
+      }
+
+      const collectionsToClear = [
+        COLLECTIONS.managedDrivers,
+        COLLECTIONS.leftDrivers,
+        COLLECTIONS.eventInvites,
+        COLLECTIONS.blacklistDrivers,
+        COLLECTIONS.blacklistVtcs,
+        COLLECTIONS.blacklistStaff,
+        COLLECTIONS.history,
+        COLLECTIONS.loaRequests,
+        COLLECTIONS.downloads
+      ];
+
+      // 1. Wipe other collections
+      for (const colName of collectionsToClear) {
+        const snap = await getDocs(collection(db, colName));
+        const batch = writeBatch(db);
+        snap.docs.forEach(d => batch.delete(doc(db, colName, d.id)));
+        await batch.commit();
+      }
+
+      // 2. Wipe users except Macik
+      const userSnap = await getDocs(collection(db, COLLECTIONS.users));
+      const userBatch = writeBatch(db);
+      userSnap.docs.forEach(d => {
+        const data = d.data();
+        const name = (data.displayName || data.username || '').toLowerCase();
+        if (!name.includes('macik') && !name.includes('maciek')) {
+          userBatch.delete(doc(db, COLLECTIONS.users, d.id));
+        }
+      });
+      await userBatch.commit();
+
+      alert('Database wipe complete! Refreshing application...');
+      window.location.reload();
+    } catch (err) {
+      console.error('Wipe failed:', err);
+      alert('Failed to wipe database. Check console for details.');
+    } finally {
+      setIsWiping(false);
     }
   };
 
@@ -667,13 +726,25 @@ export function SettingsPage() {
                       Clear your local session and cache. This fixes most login issues and refreshes all data from the database.
                     </p>
                   </div>
-                  <Button 
-                    variant='destructive' 
-                    onClick={handleResetApp}
-                    className='bg-destructive text-white hover:bg-destructive/90'
-                  >
-                    Reset & Logout
-                  </Button>
+                  <div className='flex gap-2'>
+                    {isAdmin && (
+                      <Button 
+                        variant='destructive' 
+                        onClick={handleWipeDatabase}
+                        disabled={isWiping}
+                        className='bg-red-900/50 text-red-200 border-red-800 hover:bg-red-800'
+                      >
+                        {isWiping ? 'Wiping...' : 'Wipe Central DB'}
+                      </Button>
+                    )}
+                    <Button 
+                      variant='destructive' 
+                      onClick={handleResetApp}
+                      className='bg-destructive text-white hover:bg-destructive/90'
+                    >
+                      Reset & Logout
+                    </Button>
+                  </div>
                 </div>
               </CardContent>
             </Card>
