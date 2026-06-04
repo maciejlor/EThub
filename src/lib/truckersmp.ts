@@ -94,7 +94,7 @@ export async function fetchUpcomingEvents(vtcId: number): Promise<UpcomingEvent[
 
   try {
     console.log(`Fetching events for VTC ${vtcId}...`);
-    
+
     // Fetch both: events hosted BY the VTC, and events the VTC is attending
     const [hostedRes, attendingRes] = await Promise.allSettled([
       fetch(`/tmp-api/v2/vtc/${vtcId}/events`),
@@ -146,15 +146,24 @@ export async function fetchUpcomingEvents(vtcId: number): Promise<UpcomingEvent[
 }
 
 
+const eventCache = new Map<number, { data: TruckersmpEvent; timestamp: number }>();
+const CACHE_TTL = 1000 * 60 * 15; // 15 minutes
+
 export async function fetchTruckersmpEvent(id: number): Promise<TruckersmpEvent> {
-  // Try Official TruckersMP API via Vite Proxy
+  // Check cache first
+  const cached = eventCache.get(id);
+  if (cached && (Date.now() - cached.timestamp < CACHE_TTL)) {
+    return cached.data;
+  }
+
+  // Try Official TruckersMP API directly
   try {
     const res = await fetch(`/tmp-api/v2/events/${id}`);
     if (res.ok) {
       const data = await res.json();
       if (!data.error && data.response) {
         const found = data.response;
-        
+
         // Safely parse start_at and meetup_at strings to ensure they're treated as UTC across all browsers
         // "YYYY-MM-DD HH:MM:SS" -> "YYYY-MM-DDTHH:MM:SSZ"
         let safeStartAt = found.start_at || '';
@@ -174,7 +183,7 @@ export async function fetchTruckersmpEvent(id: number): Promise<TruckersmpEvent>
           safeMeetupAt = startDt.toISOString();
         }
 
-        return {
+        const result: TruckersmpEvent = {
           id: Number(found.id),
           name: found.name || 'Upcoming Convoy',
           game: found.game === 'ETS2' || found.game === 'ATS' ? found.game : (found.game?.includes('euro') ? 'ETS2' : 'ATS'),
@@ -190,6 +199,11 @@ export async function fetchTruckersmpEvent(id: number): Promise<TruckersmpEvent>
           ups: found.attendances?.confirmed || 0,
           description: found.description || ''
         };
+
+        // Update cache
+        eventCache.set(id, { data: result, timestamp: Date.now() });
+
+        return result;
       }
     }
   } catch (e) {

@@ -54,27 +54,43 @@ export function CalendarPage() {
   const [cursor, setCursor] = useState(() => startOfMonth(new Date()));
 
   const [events, setEvents] = useState<ConvoyEvent[]>([]);
-  const [, setLoading] = useState(true);
-  const [, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     let cancelled = false;
 
-    // Clear stale cache so past events load fresh
-    try { localStorage.removeItem('ethub_cached_events_v1'); } catch { /**/ }
+    // Try to load from cache immediately for better UX
+    try {
+      const cached = localStorage.getItem('ethub_cached_events_v2');
+      if (cached) {
+        const data = JSON.parse(cached);
+        const coloredData = data.map((e: any, i: number) => ({
+          ...e,
+          gradient: EVENT_GRADIENTS[i % EVENT_GRADIENTS.length]
+        }));
+        setEvents(coloredData);
+        setLoading(false);
+      }
+    } catch { /**/ }
 
     fetchVtcAttendingEvents(74784)
       .then((data) => {
         if (cancelled) return;
+        if (!data || data.length === 0) {
+          console.warn('No events returned from API');
+        }
         const coloredData = data.map((e, i) => ({
           ...e,
           gradient: EVENT_GRADIENTS[i % EVENT_GRADIENTS.length]
         }));
         setEvents(coloredData);
+        setError(null);
       })
       .catch((e) => {
         if (cancelled) return;
-        setError(e instanceof Error ? e.message : 'Failed to load events');
+        console.error('Calendar fetch error:', e);
+        setError(e instanceof Error ? e.message : 'Failed to load events. Please check your connection.');
       })
       .finally(() => {
         if (cancelled) return;
@@ -160,6 +176,23 @@ export function CalendarPage() {
                   </div>
                 </div>
               </div>
+
+              {/* Error State */}
+              {error && (
+                <div className='rounded-xl border border-destructive/20 bg-destructive/10 p-4 text-sm text-destructive flex items-center gap-3'>
+                  <div className='size-2 rounded-full bg-destructive animate-pulse' />
+                  {error}
+                  <Button variant='outline' size='sm' className='ml-auto h-7 text-xs' onClick={() => window.location.reload()}>{t('Retry')}</Button>
+                </div>
+              )}
+
+              {/* Loading State */}
+              {loading && events.length === 0 && (
+                <div className='flex flex-col items-center justify-center py-20 text-muted-foreground gap-4'>
+                  <div className='size-10 border-4 border-primary/20 border-t-primary rounded-full animate-spin' />
+                  <p className='text-sm font-medium animate-pulse'>{t('Fetching events from TruckersMP...')}</p>
+                </div>
+              )}
 
               {/* Full Width Calendar Grid */}
               <div className='grid grid-cols-1 gap-6'>

@@ -43,7 +43,7 @@ export interface DiscordAuthResult {
  * Exchange Discord authorization code for access token
  */
 export async function exchangeCodeForToken(code: string): Promise<string> {
-  const response = await fetch('https://discord.com/api/oauth2/token', {
+  const response = await fetch('/discord-api/oauth2/token', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/x-www-form-urlencoded',
@@ -69,7 +69,7 @@ export async function exchangeCodeForToken(code: string): Promise<string> {
  * Get Discord user information using access token
  */
 export async function getDiscordUser(accessToken: string): Promise<DiscordUser> {
-  const response = await fetch('https://discord.com/api/users/@me', {
+  const response = await fetch('/discord-api/users/@me', {
     headers: {
       'Authorization': `Bearer ${accessToken}`,
     },
@@ -86,7 +86,7 @@ export async function getDiscordUser(accessToken: string): Promise<DiscordUser> 
  * Get user's Discord guilds (servers)
  */
 export async function getUserGuilds(accessToken: string): Promise<DiscordGuild[]> {
-  const response = await fetch('https://discord.com/api/users/@me/guilds', {
+  const response = await fetch('/discord-api/users/@me/guilds', {
     headers: {
       'Authorization': `Bearer ${accessToken}`,
     },
@@ -98,6 +98,7 @@ export async function getUserGuilds(accessToken: string): Promise<DiscordGuild[]
 
   return await response.json();
 }
+
 
 /**
  * Check if user has required role in the specified Discord server
@@ -187,7 +188,7 @@ export async function refreshDiscordUserInfo(): Promise<DiscordUser | null> {
   }
 
   try {
-    const userResponse = await fetch('https://discord.com/api/users/@me', {
+    const userResponse = await fetch('/discord-api/users/@me', {
       headers: { Authorization: `Bearer ${accessToken}` },
     });
 

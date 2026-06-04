@@ -262,11 +262,30 @@ export function CalendarEventPage() {
 
         <main style={{ background: '#050505', minHeight: '100vh', color: '#fff' }}>
           {loading ? (
-            <Page>
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '24rem', color: '#6b7280', fontWeight: 500 }}>
-                <div style={{ animation: 'pulse 2s infinite', fontSize: '1.125rem' }}>Fetching event details…</div>
+            <div style={{ width: '100%', display: 'flex', flexDirection: 'column' }}>
+              {/* Hero Skeleton */}
+              <div style={{ height: '380px', background: 'rgba(255,255,255,0.03)', position: 'relative', overflow: 'hidden' }}>
+                <div style={{ position: 'absolute', bottom: '40px', left: '0', right: '0', maxWidth: '80rem', margin: '0 auto', padding: '0 1.5rem', width: '100%' }}>
+                  <div className="animate-pulse" style={{ height: '14px', width: '100px', background: 'rgba(255,255,255,0.05)', borderRadius: '4px', marginBottom: '1.5rem' }} />
+                  <div className="animate-pulse" style={{ height: '48px', width: '70%', background: 'rgba(255,255,255,0.05)', borderRadius: '8px', marginBottom: '1.5rem' }} />
+                  <div className="animate-pulse" style={{ height: '32px', width: '200px', background: 'rgba(255,255,255,0.05)', borderRadius: '999px' }} />
+                </div>
               </div>
-            </Page>
+              
+              {/* Content Skeleton */}
+              <div style={{ maxWidth: '80rem', margin: '0 auto', width: '100%', padding: '2.5rem 1.5rem' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, minmax(0,1fr))', gap: '2rem' }}>
+                  <div style={{ gridColumn: 'span 2', display: 'flex', flexDirection: 'column', gap: '2rem' }}>
+                    <Card className="animate-pulse" style={{ height: '300px', background: 'rgba(255,255,255,0.01)', border: '1px solid rgba(255,255,255,0.05)' }} />
+                    <Card className="animate-pulse" style={{ height: '200px', background: 'rgba(255,255,255,0.01)', border: '1px solid rgba(255,255,255,0.05)' }} />
+                  </div>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+                    <Card className="animate-pulse" style={{ height: '250px', background: 'rgba(255,255,255,0.01)', border: '1px solid rgba(255,255,255,0.05)' }} />
+                    <div className="animate-pulse" style={{ height: '44px', width: '100%', background: 'rgba(255,255,255,0.05)', borderRadius: '10px' }} />
+                  </div>
+                </div>
+              </div>
+            </div>
           ) : error ? (
             <Page>
               <div style={{ borderRadius: '1rem', border: '1px solid rgba(239,68,68,0.2)', background: 'rgba(239,68,68,0.1)', padding: '2rem', textAlign: 'center', marginTop: '1.5rem' }}>

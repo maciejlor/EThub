@@ -110,6 +110,7 @@ export const App = () => {
 
           {/* Admin */}
           <Route path='/admin/members' element={<ProtectedRoute><AllMembersPage /></ProtectedRoute>} />
+          <Route path='/admin/allmembers' element={<Navigate to='/admin/members' replace />} />
           <Route path='/admin/blacklist-staff' element={<ProtectedRoute><BlacklistStaffPage /></ProtectedRoute>} />
           <Route path='/admin/history' element={<ProtectedRoute><HistoryPage /></ProtectedRoute>} />
           <Route path='/admin/history-logs' element={<ProtectedRoute><PlaceholderPage title='History' description='View audit logs and history.' /></ProtectedRoute>} />

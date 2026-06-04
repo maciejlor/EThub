@@ -118,17 +118,10 @@ export function DiscordCallbackPage() {
       setStatus('checking');
       setMessage('Fetching Discord profile…');
 
-      // Fetch Discord profile - Try direct request first, then fallback to Vite proxy
-      let userResponse;
-      try {
-        userResponse = await fetch('https://discord.com/api/users/@me', {
-          headers: { Authorization: `Bearer ${accessToken}` },
-        });
-      } catch (e) {
-        userResponse = await fetch('/discord-api/users/@me', {
-          headers: { Authorization: `Bearer ${accessToken}` },
-        });
-      }
+      // Fetch Discord profile - Try direct request
+      const userResponse = await fetch('/discord-api/users/@me', {
+        headers: { Authorization: `Bearer ${accessToken}` },
+      });
 
       if (!userResponse.ok) {
         console.error('Failed to fetch Discord user info:', userResponse.status);
