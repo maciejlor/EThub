@@ -44,7 +44,7 @@ function mutedOrDash(text: string, mono?: boolean) {
 
 function formatEts2LastPlayed(entry: ManagedDriverEntry) {
   if (entry.ets2LastPlayedUnix != null && entry.ets2LastPlayedUnix > 0) {
-    return new Date(entry.ets2LastPlayedUnix * 1000).toLocaleString(undefined, {
+    return new Date(entry.ets2LastPlayedUnix * 1000).toLocaleString('en-US', {
       dateStyle: 'medium',
       timeStyle: 'short',
     });

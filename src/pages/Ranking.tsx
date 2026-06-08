@@ -44,7 +44,7 @@ const RANK_VALUE_COLOR = [
 ];
 
 export function RankingPage() {
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
   const [sort, setSort] = useState<SortKey>('jobs');
   const [timeFilter, setTimeFilter] = useState<string>(() => {
     const d = new Date();
@@ -101,8 +101,9 @@ export function RankingPage() {
 
   function monthLabel(val: string) {
     const [year, month] = val.split('-');
+    const locale = language === 'tr' ? 'tr-TR' : 'en-US';
     return new Date(Number(year), Number(month) - 1, 1)
-      .toLocaleString(undefined, { month: 'long', year: 'numeric' });
+      .toLocaleString(locale, { month: 'long', year: 'numeric' });
   }
 
   const topDriverByJobs = useMemo(() =>

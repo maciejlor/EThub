@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
+import { useLanguage } from '@/components/LanguageProvider';
 
 import { SidebarInset, SidebarProvider } from '@/components/ui/sidebar';
 import { AppSidebar } from '@/components/AppSidebar';
@@ -32,6 +33,8 @@ function toDayKey(d: Date) {
 }
 
 export function EventsPage() {
+  const { language } = useLanguage();
+  const locale = language === 'tr' ? 'tr-TR' : 'en-US';
   const today = useMemo(() => new Date(), []);
   const [cursor, setCursor] = useState(() => startOfMonth(new Date()));
   const [selected, setSelected] = useState<Date>(() => new Date());
@@ -63,8 +66,8 @@ export function EventsPage() {
   }, []);
 
   const monthLabel = useMemo(() => {
-    return cursor.toLocaleString(undefined, { month: 'long', year: 'numeric' });
-  }, [cursor]);
+    return cursor.toLocaleString(locale, { month: 'long', year: 'numeric' });
+  }, [cursor, locale]);
 
   const cells = useMemo(() => {
     const first = startOfMonth(cursor);
@@ -232,7 +235,7 @@ export function EventsPage() {
                       <div>
                         <h2 className='font-semibold'>Selected day</h2>
                         <p className='text-sm text-muted-foreground'>
-                          {selected.toLocaleDateString(undefined, {
+                          {selected.toLocaleDateString(locale, {
                             weekday: 'long',
                             year: 'numeric',
                             month: 'long',
@@ -257,7 +260,7 @@ export function EventsPage() {
                           >
                             <div className='text-sm font-medium'>{e.name}</div>
                             <div className='mt-1 text-xs text-muted-foreground'>
-                              {new Date(e.startDate).toLocaleString()}
+                              {new Date(e.startDate).toLocaleString(locale)}
                             </div>
                           </Link>
                         ))
@@ -287,7 +290,7 @@ export function EventsPage() {
                             <div className='min-w-0'>
                               <div className='truncate text-sm font-medium'>{e.name}</div>
                               <div className='mt-1 text-xs text-muted-foreground'>
-                                {new Date(e.startDate).toLocaleString()}
+                                {new Date(e.startDate).toLocaleString(locale)}
                               </div>
                             </div>
                           </Link>

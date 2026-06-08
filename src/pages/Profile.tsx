@@ -10,6 +10,7 @@ import { getCurrentUser, type UserEntry } from '@/lib/driver-storage';
 import { fetchTruckyCompanyJobsAll, isTruckyJobForUser, type TruckyJob } from '@/lib/trucky';
 import { useNavigate } from 'react-router-dom';
 import { useMemo } from 'react';
+import { useLanguage } from '@/components/LanguageProvider';
 
 const PAGE_WINDOW = 7;
 
@@ -24,16 +25,16 @@ function visiblePageRange(current: number, total: number): number[] {
   return Array.from({ length: end - start + 1 }, (_, i) => start + i);
 }
 
-function formatDate(iso?: string) {
+function formatDate(iso?: string, locale: string = 'en-US') {
   if (!iso) return '—';
   const d = new Date(iso);
-  return d.toLocaleDateString(undefined, { day: '2-digit', month: 'short', year: 'numeric' });
+  return d.toLocaleDateString(locale, { day: '2-digit', month: 'short', year: 'numeric' });
 }
 
-function formatDateTime(iso?: string) {
+function formatDateTime(iso?: string, locale: string = 'en-US') {
   if (!iso) return 'Never';
   const d = new Date(iso);
-  return d.toLocaleString(undefined, {
+  return d.toLocaleString(locale, {
     day: '2-digit',
     month: 'short',
     year: 'numeric',
@@ -43,6 +44,8 @@ function formatDateTime(iso?: string) {
 }
 
 export function ProfilePage() {
+  const { language } = useLanguage();
+  const locale = language === 'tr' ? 'tr-TR' : 'en-US';
   const navigate = useNavigate();
   const user = getCurrentUser();
   const profileAvatar = user?.avatar || user?.discordAvatar || user?.steamAvatar;
@@ -164,7 +167,7 @@ export function ProfilePage() {
                   <div className="text-white">
                     <div className="text-3xl font-bold">{user.displayName}</div>
                     <div className="text-sm opacity-90">@{user.username}</div>
-                    <div className="mt-2 text-sm">Member since: {formatDate(user.createdAt)}</div>
+                    <div className="mt-2 text-sm">Member since: {formatDate(user.createdAt, locale)}</div>
                   </div>
                 </div>
               </div>
@@ -268,7 +271,7 @@ export function ProfilePage() {
                                   </div>
                                   <div className="flex items-center gap-2 text-sm text-muted-foreground">
                                     <Calendar className="h-4 w-4 flex-shrink-0" />
-                                    <span>{formatDate(job.start_date || job.created_at)}</span>
+                                    <span>{formatDate(job.start_date || job.created_at, locale)}</span>
                                     {job.planned_distance_km && <span>• {job.planned_distance_km.toLocaleString()} km</span>}
                                   </div>
                                 </div>

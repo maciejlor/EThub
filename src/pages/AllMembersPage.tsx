@@ -61,16 +61,16 @@ function deriveDepartmentFromRole(role: UserEntry['role']): UserEntry['departmen
   return 'None';
 }
 
-function formatDate(iso?: string) {
+function formatDate(iso?: string, locale: string = 'en-US') {
   if (!iso) return '—';
   const d = new Date(iso);
-  return d.toLocaleDateString(undefined, { day: '2-digit', month: 'short', year: 'numeric' });
+  return d.toLocaleDateString(locale, { day: '2-digit', month: 'short', year: 'numeric' });
 }
 
-function formatDateTime(iso?: string) {
+function formatDateTime(iso?: string, locale: string = 'en-US') {
   if (!iso) return 'Never';
   const d = new Date(iso);
-  return d.toLocaleString(undefined, {
+  return d.toLocaleString(locale, {
     day: '2-digit',
     month: 'short',
     year: 'numeric',
@@ -96,7 +96,8 @@ function EmptyState({ icon: Icon, title, sub }: { icon: React.ElementType; title
 // Page
 // ─────────────────────────────────────────────────────────────────────────────
 export function AllMembersPage() {
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
+  const locale = language === 'tr' ? 'tr-TR' : 'en-US';
   const [users, setUsers] = useState<UserEntry[]>(getUsers());
   const [activeTab, setActiveTab] = useState<'members' | 'requests'>('members');
 
@@ -409,13 +410,13 @@ export function AllMembersPage() {
                                     {t('Active now')}
                                   </span>
                                 ) : (
-                                  <span className="text-xs text-muted-foreground">{formatDateTime(u.lastLogin)}</span>
+                                  <span className="text-xs text-muted-foreground">{formatDateTime(u.lastLogin, locale)}</span>
                                 )}
                               </td>
 
                               {/* Member Since */}
                               <td className="px-4 py-3 hidden xl:table-cell">
-                                <span className="text-xs text-muted-foreground">{formatDate(u.createdAt)}</span>
+                                <span className="text-xs text-muted-foreground">{formatDate(u.createdAt, locale)}</span>
                               </td>
 
                               {/* Profile / Actions */}
@@ -553,7 +554,7 @@ export function AllMembersPage() {
 
                               {/* Requested date */}
                               <td className="px-4 py-3 hidden md:table-cell">
-                                <span className="text-xs text-muted-foreground">{formatDateTime(u.createdAt)}</span>
+                                <span className="text-xs text-muted-foreground">{formatDateTime(u.createdAt, locale)}</span>
                               </td>
 
                               {/* Actions */}

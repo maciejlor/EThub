@@ -49,7 +49,7 @@ const EVENT_GRADIENTS = [
 ];
 
 export function CalendarPage() {
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
   const today = useMemo(() => new Date(), []);
   const [cursor, setCursor] = useState(() => startOfMonth(new Date()));
 
@@ -108,8 +108,9 @@ export function CalendarPage() {
   }, []);
 
   const monthLabel = useMemo(() => {
-    return cursor.toLocaleString(undefined, { month: 'long', year: 'numeric' });
-  }, [cursor]);
+    const locale = language === 'tr' ? 'tr-TR' : 'en-US';
+    return cursor.toLocaleString(locale, { month: 'long', year: 'numeric' });
+  }, [cursor, language]);
 
   const cells = useMemo(() => {
     const first = startOfMonth(cursor);
