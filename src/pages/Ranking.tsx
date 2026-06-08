@@ -14,7 +14,7 @@ import {
 } from '@/lib/trucky';
 
 const RANKING_COMPANY_ID = 44349;
-import { TrophyIcon, RouteIcon, BriefcaseIcon, ChevronDownIcon, Check, CalendarIcon } from 'lucide-react';
+import { TrophyIcon, RouteIcon, BriefcaseIcon, ChevronDownIcon, Check } from 'lucide-react';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -22,6 +22,8 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Button } from '@/components/ui/button';
+import calendarPng from '@/assets/calendar.png';
+import globalPng from '@/assets/global.png';
 
 type SortKey = 'jobs' | 'distance';
 
@@ -44,7 +46,10 @@ const RANK_VALUE_COLOR = [
 export function RankingPage() {
   const { t } = useLanguage();
   const [sort, setSort] = useState<SortKey>('jobs');
-  const [timeFilter, setTimeFilter] = useState<string>('all');
+  const [timeFilter, setTimeFilter] = useState<string>(() => {
+    const d = new Date();
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+  });
   const [allJobs, setAllJobs] = useState<TruckyJob[] | null>(null);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
@@ -213,20 +218,24 @@ export function RankingPage() {
                       size='sm'
                       className='h-8 px-3 rounded-lg border-muted/20 hover:bg-muted/50 transition-all text-xs font-bold gap-2 cursor-pointer flex items-center bg-transparent'
                     >
-                      <CalendarIcon className='size-3.5 text-muted-foreground' />
+                      {timeFilter === 'all' ? (
+                        <img src={globalPng} alt="" className='size-3.5 object-contain' />
+                      ) : (
+                        <img src={calendarPng} alt="" className='size-3.5 object-contain' />
+                      )}
                       <span>{timeFilter === 'all' ? t('All Time') : monthLabel(timeFilter)}</span>
                       <ChevronDownIcon className='size-3.5 text-muted-foreground ml-0.5' />
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align='start' className='w-48 max-h-80 overflow-y-auto'>
                     <DropdownMenuItem onClick={() => setTimeFilter('all')} className='cursor-pointer flex items-center'>
-                      <span className='mr-2'>🌎</span>
+                      <img src={globalPng} alt="" className='size-4 mr-2 object-contain' />
                       <span>{t('All Time')}</span>
                       {timeFilter === 'all' && <Check className='size-4 text-primary ms-auto' />}
                     </DropdownMenuItem>
                     {availableMonths.map(m => (
                       <DropdownMenuItem key={m} onClick={() => setTimeFilter(m)} className='cursor-pointer flex items-center'>
-                        <span className='mr-2'>📅</span>
+                        <img src={calendarPng} alt="" className='size-4 mr-2 object-contain' />
                         <span>{monthLabel(m)}</span>
                         {timeFilter === m && <Check className='size-4 text-primary ms-auto' />}
                       </DropdownMenuItem>
