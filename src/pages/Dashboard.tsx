@@ -106,11 +106,10 @@ export function DashboardPage() {
     }).length;
   }, [vtcEvents]);
 
-  // Primary: internal EThub DB (Firebase-synced, always accurate)
-  // Fallback: TruckersMP → Trucky (external APIs, may fail on production)
+  // Primary: TruckersMP → Trucky (external APIs, total VTC members)
+  // Fallback: internal EThub DB (Firebase-synced, registered users count)
   const totalMembers = useMemo(() => {
-    if (dbMemberCount > 0) return dbMemberCount;
-    return vtcInfo?.members_count || truckyInfo?.members_count || 0;
+    return vtcInfo?.members_count || truckyInfo?.members_count || dbMemberCount || 0;
   }, [dbMemberCount, vtcInfo, truckyInfo]);
 
   return (
