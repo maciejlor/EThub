@@ -849,9 +849,9 @@ export function getUsers(): UserEntry[] {
           discordId: '877223306468687972',
           discordUsername: '',
           steamId: '',
-          rankLevel: 6,
-          rankTitle: 'Veteran Driver',
-          rankColor: '#ef4444',
+          rankLevel: 5,
+          rankTitle: 'Elite Driver',
+          rankColor: '#f97316',
         },
       ];
       persistUsers(defaultUsers);
@@ -1143,7 +1143,6 @@ export const RANKS: RankDefinition[] = [
   { level: 3, title: 'Experienced Driver', color: '#34d399', icon: '🚛', requirements: ['10 convoys completed'] },
   { level: 4, title: 'Senior Driver', color: '#fbbf24', icon: '🚛', requirements: ['25 convoys completed', 'Active for 3 months'] },
   { level: 5, title: 'Elite Driver', color: '#f97316', icon: '🚛', requirements: ['50 convoys completed', 'Active for 6 months'] },
-  { level: 6, title: 'Veteran Driver', color: '#ef4444', icon: '👑', requirements: ['100 convoys completed', 'Active for 1 year'] },
   { level: 7, title: 'Hall of Fame', color: '#a855f7', icon: '🏆', requirements: ['200+ convoys', 'Outstanding contributions'] },
 ];
 

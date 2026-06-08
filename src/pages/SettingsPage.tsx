@@ -713,44 +713,7 @@ export function SettingsPage() {
               </CardContent>
             </Card>
 
-            {/* Danger Zone */}
-            <Card className='bg-card border-destructive/20 mt-6 border'>
-              <CardHeader>
-                <CardTitle className='text-lg flex items-center gap-2 text-destructive'>
-                  <StarIcon className='h-5 w-5' />
-                  Danger Zone
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className='flex items-center justify-between'>
-                  <div>
-                    <h4 className='font-medium text-foreground'>Reset Application</h4>
-                    <p className='text-sm text-muted-foreground'>
-                      Clear your local session and cache. This fixes most login issues and refreshes all data from the database.
-                    </p>
-                  </div>
-                  <div className='flex gap-2'>
-                    {isAdmin && (
-                      <Button 
-                        variant='destructive' 
-                        onClick={handleWipeDatabase}
-                        disabled={isWiping}
-                        className='bg-red-900/50 text-red-200 border-red-800 hover:bg-red-800'
-                      >
-                        {isWiping ? 'Wiping...' : 'Wipe Central DB'}
-                      </Button>
-                    )}
-                    <Button 
-                      variant='destructive' 
-                      onClick={handleResetApp}
-                      className='bg-destructive text-white hover:bg-destructive/90'
-                    >
-                      Reset & Logout
-                    </Button>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
+
 
             {/* Avatar Upload Dialog */}
             <Dialog open={isAvatarDialogOpen} onOpenChange={setIsAvatarDialogOpen}>
