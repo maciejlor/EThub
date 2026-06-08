@@ -180,6 +180,8 @@ export function DiscordCallbackPage() {
 
         // Active user — sync Discord info then log in
         updateUser(matched.id, {
+          displayName: userData.username,
+          username: userData.username,
           discordUsername: userData.username,
           discordAvatar: userData.avatar
             ? `https://cdn.discordapp.com/avatars/${userData.id}/${userData.avatar}.png`
@@ -192,7 +194,7 @@ export function DiscordCallbackPage() {
         localStorage.setItem('ethub_discord_access_token', accessToken);
 
         setStatus('success');
-        setMessage(`Welcome back, ${matched.displayName}! Redirecting to dashboard…`);
+        setMessage(`Welcome back, ${userData.username}! Redirecting to dashboard…`);
         setTimeout(() => navigate('/'), 1800);
         return;
       }

@@ -13,6 +13,7 @@ import { APP_SIDEBAR } from '@/constants';
 import { 
   getCurrentUser, 
   getUsers, 
+  subscribeUsersChanges,
   setCurrentUser,
   updateUser,
   type UserEntry 
@@ -30,6 +31,10 @@ export function DashboardPage() {
   const [recentJobs, setRecentJobs] = useState<TruckyJob[]>([]);
   const [completedTotals, setCompletedTotals] = useState({ jobs: 0, distanceKm: 0 });
   const [loading, setLoading] = useState(true);
+  // Internal DB member count — live-updated from Firebase sync
+  const [dbMemberCount, setDbMemberCount] = useState<number>(
+    () => getUsers().filter(u => u.isActive && !u.isPending).length
+  );
 
   const [currentUser, setLocalUser] = useState<UserEntry | null>(null);
 
@@ -60,6 +65,14 @@ export function DashboardPage() {
         });
       }
     }
+  }, []);
+
+  // Keep member count live as Firebase syncs new/updated users
+  useEffect(() => {
+    const unsub = subscribeUsersChanges(() => {
+      setDbMemberCount(getUsers().filter(u => u.isActive && !u.isPending).length);
+    });
+    return unsub;
   }, []);
 
   useEffect(() => {
@@ -93,10 +106,12 @@ export function DashboardPage() {
     }).length;
   }, [vtcEvents]);
 
-  // Use Trucky member count if TruckersMP scraper fails or returns 0
+  // Primary: internal EThub DB (Firebase-synced, always accurate)
+  // Fallback: TruckersMP → Trucky (external APIs, may fail on production)
   const totalMembers = useMemo(() => {
+    if (dbMemberCount > 0) return dbMemberCount;
     return vtcInfo?.members_count || truckyInfo?.members_count || 0;
-  }, [vtcInfo, truckyInfo]);
+  }, [dbMemberCount, vtcInfo, truckyInfo]);
 
   return (
     <SidebarProvider>
