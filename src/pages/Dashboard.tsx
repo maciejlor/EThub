@@ -96,21 +96,20 @@ export function DashboardPage() {
     loadData();
   }, []);
 
-  const attendingThisMonth = useMemo(() => {
+  // Count upcoming events (future only) from TMP
+  const upcomingEventCount = useMemo(() => {
     const now = new Date();
-    const m = now.getMonth();
-    const y = now.getFullYear();
     return vtcEvents.filter((e) => {
       const d = new Date(e.startDate);
-      return d && d.getMonth() === m && d.getFullYear() === y;
+      return d && d.getTime() > now.getTime() - 4 * 60 * 60 * 1000;
     }).length;
   }, [vtcEvents]);
 
-  // Primary: TruckersMP → Trucky (external APIs, total VTC members)
+  // Primary: TruckersMP only (authoritative VTC member count)
   // Fallback: internal EThub DB (Firebase-synced, registered users count)
   const totalMembers = useMemo(() => {
-    return vtcInfo?.members_count || truckyInfo?.members_count || dbMemberCount || 0;
-  }, [dbMemberCount, vtcInfo, truckyInfo]);
+    return vtcInfo?.members_count || dbMemberCount || 0;
+  }, [dbMemberCount, vtcInfo]);
 
   return (
     <SidebarProvider>
@@ -147,8 +146,8 @@ export function DashboardPage() {
                 loading={loading}
               />
               <StatCard
-                title={t('Events This Month')}
-                value={attendingThisMonth}
+                title={t('Upcoming Events')}
+                value={upcomingEventCount}
                 subtitle={t('VTC Events Attending')}
                 icon={CalendarIcon}
                 loading={loading}

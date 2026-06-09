@@ -178,10 +178,9 @@ export function DiscordCallbackPage() {
           return;
         }
 
-        // Active user — sync Discord info then log in
+        // Active user — sync Discord-specific info only (do NOT overwrite custom username/displayName)
         updateUser(matched.id, {
-          displayName: userData.username,
-          username: userData.username,
+          discordId: userData.id,
           discordUsername: userData.username,
           discordAvatar: userData.avatar
             ? `https://cdn.discordapp.com/avatars/${userData.id}/${userData.avatar}.png`
