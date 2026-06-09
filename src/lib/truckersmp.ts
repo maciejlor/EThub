@@ -52,7 +52,7 @@ function cleanEventName(name?: string) {
 
 
 
-const TMP_BASE = 'https://api.truckersmp.com';
+const TMP_BASE = '/tmp-api';
 
 export async function fetchTruckersmpVtcInfo(vtcId: number) {
   try {
