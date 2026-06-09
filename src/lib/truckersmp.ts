@@ -53,16 +53,22 @@ function cleanEventName(name?: string) {
 
 
 export async function fetchTruckersmpVtcInfo(vtcId: number) {
-  try {
-    const res = await fetch(`/tmp-api/v2/vtc/${vtcId}`);
-    if (res.ok) {
-      const data = await res.json();
-      if (!data.error && data.response) {
-        return { members_count: data.response.members_count || 0 };
+  const urls = [
+    `https://corsproxy.io/?url=https://api.truckersmp.com/v2/vtc/${vtcId}`,
+    `/tmp-api/v2/vtc/${vtcId}`,
+  ];
+  for (const url of urls) {
+    try {
+      const res = await fetch(url);
+      if (res.ok) {
+        const data = await res.json();
+        if (!data.error && data.response) {
+          return { members_count: data.response.members_count || 0 };
+        }
       }
+    } catch (e) {
+      console.warn('TruckersMP VTC API failed for', url, e);
     }
-  } catch (e) {
-    console.warn('TruckersMP VTC API failed', e);
   }
   return null;
 }
@@ -93,44 +99,50 @@ export async function fetchUpcomingEvents(vtcId: number): Promise<UpcomingEvent[
   }
 
   try {
-    const hostedUrl = `/tmp-api/v2/vtc/${vtcId}/events`;
-    const attendingUrl = `/tmp-api/v2/vtc/${vtcId}/events/attending`;
+    const hostedUrl = `https://corsproxy.io/?url=https://api.truckersmp.com/v2/vtc/${vtcId}/events`;
+    const attendingUrl = `https://corsproxy.io/?url=https://api.truckersmp.com/v2/vtc/${vtcId}/events/attending`;
+    const hostedFallback = `/tmp-api/v2/vtc/${vtcId}/events`;
+    const attendingFallback = `/tmp-api/v2/vtc/${vtcId}/events/attending`;
     
     console.log(`[TMP] Fetching hosted events from: ${hostedUrl}`);
     console.log(`[TMP] Fetching attending events from: ${attendingUrl}`);
 
-    // Fetch both: events hosted BY the VTC, and events the VTC is attending
-    const [hostedRes, attendingRes] = await Promise.allSettled([
-      fetch(hostedUrl),
-      fetch(attendingUrl),
-    ]);
-
-    if (hostedRes.status === 'fulfilled') {
-      console.log(`[TMP] Hosted events response: ${hostedRes.value.status} ${hostedRes.value.statusText}`);
-      if (hostedRes.value.ok) {
-        const data = await hostedRes.value.json();
-        if (!data.error && Array.isArray(data.response)) {
-          (data.response as TruckersmpEvent[]).forEach(processEvent);
-        }
-      } else {
-        console.error(`[TMP] Failed to fetch hosted events: ${hostedRes.value.status}`);
-      }
-    } else {
-      console.error(`[TMP] Hosted events fetch REJECTED:`, hostedRes.reason);
+    async function tryFetch(primary: string, fallback: string): Promise<Response | null> {
+      try {
+        const r = await fetch(primary);
+        if (r.ok) return r;
+      } catch { /* ignore */ }
+      try {
+        const r = await fetch(fallback);
+        if (r.ok) return r;
+      } catch { /* ignore */ }
+      return null;
     }
 
-    if (attendingRes.status === 'fulfilled') {
-      console.log(`[TMP] Attending events response: ${attendingRes.value.status} ${attendingRes.value.statusText}`);
-      if (attendingRes.value.ok) {
-        const data = await attendingRes.value.json();
-        if (!data.error && Array.isArray(data.response)) {
-          (data.response as TruckersmpEvent[]).forEach(processEvent);
-        }
-      } else {
-        console.error(`[TMP] Failed to fetch attending events: ${attendingRes.value.status}`);
+    // Fetch both: events hosted BY the VTC, and events the VTC is attending
+    const [hostedRes, attendingRes] = await Promise.allSettled([
+      tryFetch(hostedUrl, hostedFallback),
+      tryFetch(attendingUrl, attendingFallback),
+    ]);
+
+    if (hostedRes.status === 'fulfilled' && hostedRes.value) {
+      console.log(`[TMP] Hosted events response OK`);
+      const data = await hostedRes.value.json();
+      if (!data.error && Array.isArray(data.response)) {
+        (data.response as TruckersmpEvent[]).forEach(processEvent);
       }
     } else {
-      console.error(`[TMP] Attending events fetch REJECTED:`, attendingRes.reason);
+      console.error(`[TMP] Failed to fetch hosted events`);
+    }
+
+    if (attendingRes.status === 'fulfilled' && attendingRes.value) {
+      console.log(`[TMP] Attending events response OK`);
+      const data = await attendingRes.value.json();
+      if (!data.error && Array.isArray(data.response)) {
+        (data.response as TruckersmpEvent[]).forEach(processEvent);
+      }
+    } else {
+      console.error(`[TMP] Failed to fetch attending events`);
     }
 
     const result = Array.from(eventsMap.values());

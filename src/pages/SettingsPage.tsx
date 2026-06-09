@@ -484,19 +484,6 @@ export function SettingsPage() {
                     <div className='flex-1'>
                       <h3 className='text-xl font-bold text-white'>{user.displayName}</h3>
                       <div className='mt-2 flex items-center gap-2 flex-wrap'>
-                        {currentRank && (
-                          <div
-                            className='inline-flex items-center gap-1 px-1.5 py-px rounded-full text-[9px] font-semibold border tracking-wider uppercase'
-                            style={{
-                              color: rankColor,
-                              backgroundColor: `${rankColor}18`,
-                              borderColor: `${rankColor}40`,
-                            }}
-                          >
-                            {displayRankIcon && <span>{displayRankIcon}</span>}
-                            <span>{displayRankTitle}</span>
-                          </div>
-                        )}
                         {user.role && user.role !== 'Driver' && (
                           <RoleBadge role={user.role} />
                         )}
