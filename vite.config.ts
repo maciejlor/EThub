@@ -79,14 +79,21 @@ export default defineConfig({
         secure: true,
         rewrite: (p) => p.replace(/^\/steam-api/, ''),
       },
-      '/tmp-api': {
+      '/api/truckersmp': {
         target: 'https://api.truckersmp.com',
         changeOrigin: true,
         secure: true,
         headers: {
-          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+          'User-Agent': 'EThub/1.0 (https://github.com/maciejlor/EThub)',
+          'Accept': 'application/json',
         },
-        rewrite: (p) => p.replace(/^\/tmp-api/, ''),
+        rewrite: (p) => {
+          if (p.includes('/events') && p.includes('type=attending')) {
+            const cleanPath = p.split('?')[0];
+            return cleanPath.replace(/^\/api\/truckersmp/, '/v2') + '/attending';
+          }
+          return p.replace(/^\/api\/truckersmp/, '/v2');
+        },
       },
       '/trucky-api': {
         target: 'https://e.truckyapp.com',

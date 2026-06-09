@@ -52,11 +52,9 @@ function cleanEventName(name?: string) {
 
 
 
-const TMP_BASE = '/tmp-api';
-
 export async function fetchTruckersmpVtcInfo(vtcId: number) {
   try {
-    const res = await fetch(`${TMP_BASE}/v2/vtc/${vtcId}`);
+    const res = await fetch(`/api/truckersmp/vtc/${vtcId}`);
     if (res.ok) {
       const data = await res.json();
       if (!data.error && data.response) {
@@ -95,8 +93,8 @@ export async function fetchUpcomingEvents(vtcId: number): Promise<UpcomingEvent[
   }
 
   try {
-    const hostedUrl  = `${TMP_BASE}/v2/vtc/${vtcId}/events`;
-    const attendingUrl = `${TMP_BASE}/v2/vtc/${vtcId}/events/attending`;
+    const hostedUrl  = `/api/truckersmp/vtc/${vtcId}/events`;
+    const attendingUrl = `/api/truckersmp/vtc/${vtcId}/events?type=attending`;
 
     console.log(`[TMP] Fetching hosted events:`, hostedUrl);
     console.log(`[TMP] Fetching attending events:`, attendingUrl);
@@ -176,9 +174,9 @@ export async function fetchTruckersmpEvent(id: number): Promise<TruckersmpEvent>
     return cached.data;
   }
 
-  // Try Official TruckersMP API directly
+  // Try Official TruckersMP API via serverless function
   try {
-    const res = await fetch(`${TMP_BASE}/v2/events/${id}`);
+    const res = await fetch(`/api/truckersmp/events/${id}`);
     if (res.ok) {
       const data = await res.json();
       if (!data.error && data.response) {
