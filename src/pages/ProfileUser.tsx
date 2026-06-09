@@ -182,7 +182,7 @@ export function ProfileUserPage() {
                   )}
                   <div className="text-white">
                     <div className="text-3xl font-bold">{user.displayName}</div>
-                    <div className="text-sm opacity-90">@{user.username}</div>
+
                     <div className="mt-2 text-sm">Member since: {formatDate(user.createdAt, locale)}</div>
                   </div>
                 </div>
@@ -191,7 +191,7 @@ export function ProfileUserPage() {
               <div className="p-6">
                 <div className="flex items-center gap-4">
                   <Badge className="text-sm border">{user.role}</Badge>
-                  {user.rankTitle && <div className="text-sm text-muted-foreground">{user.rankTitle} {user.rankLevel ? `· Level ${user.rankLevel}` : ''}</div>}
+
                   <div className="ml-auto flex gap-2">
                     <Button asChild>
                       <a href={`https://truckersmp.com/players?search=${encodeURIComponent(user.displayName)}`} target="_blank" rel="noreferrer" className="h-9 px-3">TMP</a>
@@ -223,18 +223,7 @@ export function ProfileUserPage() {
                       <div className="text-lg font-bold">{formatDateTime(user.lastLogin, locale)}</div>
                     )}
                   </div>
-                  <div className="p-4 bg-background border border-border rounded-lg">
-                    <div className="text-xs text-muted-foreground">Profile Links</div>
-                    <div className="text-sm">
-                      {user.discordId ? (
-                        <a href={`https://discord.com/users/${user.discordId}`} target="_blank" rel="noreferrer" className="text-primary hover:underline">Discord</a>
-                      ) : '—'}
-                      <span className="mx-2">•</span>
-                      {user.steamId ? (
-                        <a href={user.steamId.startsWith('http') ? user.steamId : `https://steamcommunity.com/profiles/${user.steamId}`} target="_blank" rel="noreferrer" className="text-primary hover:underline">Steam</a>
-                      ) : '—'}
-                    </div>
-                  </div>
+
                 </div>
 
                 <div className="mt-6">
