@@ -177,20 +177,12 @@ export function ProfilePage() {
                   <Badge className="text-sm border">{user.role}</Badge>
                   {user.rankTitle && <div className="text-sm text-muted-foreground">{user.rankTitle} {user.rankLevel ? `· Level ${user.rankLevel}` : ''}</div>}
                   <div className="ml-auto flex gap-2">
-                    {user.discordId ? (
-                      <Button asChild>
-                        <a href={`https://discord.com/users/${user.discordId}`} target="_blank" rel="noreferrer" className="h-9 px-3">Discord</a>
-                      </Button>
-                    ) : (
-                      <Button disabled className="h-9 px-3 opacity-40 cursor-not-allowed">Discord</Button>
-                    )}
-                    {user.steamId ? (
-                      <Button asChild>
-                        <a href={user.steamId.startsWith('http') ? user.steamId : `https://steamcommunity.com/profiles/${user.steamId}`} target="_blank" rel="noreferrer" className="h-9 px-3">Steam</a>
-                      </Button>
-                    ) : (
-                      <Button disabled className="h-9 px-3 opacity-40 cursor-not-allowed">Steam</Button>
-                    )}
+                    <Button asChild>
+                      <a href={`https://truckersmp.com/players?search=${encodeURIComponent(user.displayName)}`} target="_blank" rel="noreferrer" className="h-9 px-3">TMP</a>
+                    </Button>
+                    <Button asChild>
+                      <a href={user.steamId ? (user.steamId.startsWith('http') ? user.steamId : `https://steamcommunity.com/profiles/${user.steamId}`) : '#'} target="_blank" rel="noreferrer" className="h-9 px-3">Steam</a>
+                    </Button>
                   </div>
                 </div>
 
