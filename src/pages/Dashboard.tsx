@@ -36,7 +36,7 @@ export function DashboardPage() {
     () => getUsers().filter(u => u.isActive && !u.isPending).length
   );
 
-  const [currentUser, setLocalUser] = useState<UserEntry | null>(null);
+  const [currentUser, setLocalUser] = useState<UserEntry | null>(() => getCurrentUser());
 
   useEffect(() => {
     const user = getCurrentUser();
@@ -106,10 +106,11 @@ export function DashboardPage() {
   }, [vtcEvents]);
 
   // Primary: TruckersMP only (authoritative VTC member count)
-  // Fallback: internal EThub DB (Firebase-synced, registered users count)
+  // Fallback: Trucky VTC members count
+  // Fallback 2: internal EThub DB (Firebase-synced, registered users count)
   const totalMembers = useMemo(() => {
-    return vtcInfo?.members_count || dbMemberCount || 0;
-  }, [dbMemberCount, vtcInfo]);
+    return vtcInfo?.members_count || truckyInfo?.members_count || dbMemberCount || 0;
+  }, [dbMemberCount, vtcInfo, truckyInfo]);
 
   return (
     <SidebarProvider>
@@ -120,7 +121,7 @@ export function DashboardPage() {
 
         <main>
           <Page>
-            <PageHeader name={isDiscordAuthenticated() ? (currentUser?.discordUsername || currentUser?.displayName || currentUser?.username || t('Member')) : (currentUser?.displayName || currentUser?.username || t('Member'))} />
+            <PageHeader name={currentUser?.displayName || currentUser?.discordUsername || currentUser?.username || t('Member')} />
 
             {/* Stat Cards */}
             <div className='grid gap-6 mt-8 sm:grid-cols-2 lg:grid-cols-4'>

@@ -193,7 +193,7 @@ export function DiscordCallbackPage() {
         localStorage.setItem('ethub_discord_access_token', accessToken);
 
         setStatus('success');
-        setMessage(`Welcome back, ${userData.username}! Redirecting to dashboard…`);
+        setMessage(`Welcome back, ${matched.displayName}! Redirecting to dashboard…`);
         setTimeout(() => navigate('/'), 1800);
         return;
       }
