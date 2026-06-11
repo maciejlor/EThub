@@ -21,7 +21,7 @@
       "destination": "https://discord.com/api/:path*"
     },
     {
-      "source": "/((?!assets/).*)",
+      "source": "/((?!api/|assets/).*)",
       "destination": "/index.html"
     }
   ],
