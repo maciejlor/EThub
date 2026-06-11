@@ -75,7 +75,7 @@ export function DiscordCallbackPage() {
           localStorage.setItem('ethub_authenticated', 'true');
           localStorage.setItem('ethub_discord_user', JSON.stringify(userData));
           setStatus('success');
-          setMessage(`Welcome back, ${matched.displayName}! Redirecting to dashboard…`);
+          setMessage(`Welcome back, ${userData.username}! Redirecting to dashboard…`);
           setTimeout(() => navigate('/'), 1200);
           return;
         }
@@ -193,7 +193,7 @@ export function DiscordCallbackPage() {
         localStorage.setItem('ethub_discord_access_token', accessToken);
 
         setStatus('success');
-        setMessage(`Welcome back, ${matched.displayName}! Redirecting to dashboard…`);
+        setMessage(`Welcome back, ${userData.username}! Redirecting to dashboard…`);
         setTimeout(() => navigate('/'), 1800);
         return;
       }

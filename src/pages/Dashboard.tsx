@@ -121,7 +121,7 @@ export function DashboardPage() {
 
         <main>
           <Page>
-            <PageHeader name={currentUser?.displayName || currentUser?.discordUsername || currentUser?.username || t('Member')} />
+            <PageHeader name={isDiscordAuthenticated() ? (currentUser?.discordUsername || currentUser?.displayName || currentUser?.username || t('Member')) : (currentUser?.displayName || currentUser?.username || t('Member'))} />
 
             {/* Stat Cards */}
             <div className='grid gap-6 mt-8 sm:grid-cols-2 lg:grid-cols-4'>

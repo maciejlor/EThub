@@ -2,27 +2,39 @@
  * Vercel Serverless Function — TruckersMP VTC Events (hosted + attending)
  * GET /api/truckersmp/vtc/:id/events?type=hosted|attending
  * Proxies server-side to bypass Cloudflare.
+ *
+ * Key finding: sending a browser User-Agent triggers Cloudflare JS challenge.
+ * A plain fetch with no custom User-Agent (Node default) works fine directly.
  */
 async function fetchWithFallback(targetUrl) {
   const attempts = [
-    // Attempt 1: Direct fetch
+    // Attempt 1: Direct fetch — NO browser User-Agent (avoids Cloudflare trigger)
     async () => {
       return await fetch(targetUrl, {
         headers: {
-          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
           'Accept': 'application/json',
-          'Accept-Language': 'en-US,en;q=0.9',
         },
       });
     },
-    // Attempt 2: Via cors.eu.org
+    // Attempt 2: Via allorigins JSON wrapper (reliable fallback if direct fails)
     async () => {
-      return await fetch(`https://cors.eu.org/${targetUrl}`);
+      const res = await fetch(`https://api.allorigins.win/get?url=${encodeURIComponent(targetUrl)}`);
+      if (res.ok) {
+        const json = await res.json();
+        if (json.contents && !json.contents.includes('<!DOCTYPE html') && !json.contents.includes('Just a moment')) {
+          return {
+            ok: true,
+            status: 200,
+            text: async () => json.contents,
+          };
+        }
+      }
+      throw new Error('allorigins returned Cloudflare page');
     },
-    // Attempt 3: Via allorigins
+    // Attempt 3: Via allorigins raw (last resort)
     async () => {
       return await fetch(`https://api.allorigins.win/raw?url=${encodeURIComponent(targetUrl)}`);
-    }
+    },
   ];
 
   let lastError = null;
