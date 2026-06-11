@@ -32,13 +32,25 @@ function extractTmpEventId(url: string): string | null {
 
 async function fetchTmpEvent(eventId: string) {
   try {
-    const res = await fetch(`/tmp-api/v2/events/${eventId}`);
+    // Use the correct TruckersMP API proxy: /api/truckersmp → https://api.truckersmp.com/v2
+    const res = await fetch(`/api/truckersmp/events/${eventId}`);
+    console.log(`[TMP] fetchTmpEvent(${eventId}) status:`, res.status);
     if (!res.ok) return null;
     const data = await res.json();
+    console.log('[TMP] fetchTmpEvent response:', data);
     if (data.error) return null;
     const r = data.response;
-    return { name: r.name ?? '', banner: r.banner ?? '', date: r.start_at ?? '' };
-  } catch { return null; }
+    // TruckersMP API returns dates as "YYYY-MM-DD HH:MM:SS" (no timezone)
+    // Convert to ISO format so browsers parse it as UTC
+    let rawDate = r.start_at ?? '';
+    if (rawDate && !rawDate.includes('T') && rawDate.includes(' ')) {
+      rawDate = rawDate.replace(' ', 'T') + 'Z';
+    }
+    return { name: r.name ?? '', banner: r.banner ?? '', date: rawDate };
+  } catch (e) {
+    console.error('[TMP] fetchTmpEvent error:', e);
+    return null;
+  }
 }
 
 function MemberRow({ member, onChange, onRemove, canRemove }: {

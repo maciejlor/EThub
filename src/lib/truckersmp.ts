@@ -2,30 +2,41 @@ export interface TruckersmpEvent {
   id: number;
   name: string;
   game: string;
-  start_at: string;
-  meetup_at?: string;
+  start_at: string;       // Format: "YYYY-MM-DD HH:MM:SS" (UTC, no timezone marker)
+  meetup_at?: string;     // Format: "YYYY-MM-DD HH:MM:SS" (UTC, no timezone marker)
   banner?: string;
   server: {
+    id?: number;
     name: string;
   };
   departure: {
     city: string;
     location: string;
   };
-  arrival: {
-    city: string;
-    location: string;
-  };
+  // NOTE: The TruckersMP API returns 'arrive' (not 'arrival') for the destination
   arrive?: {
     city: string;
     location: string;
   };
+  // Keep arrival as optional alias for backwards compat
+  arrival?: {
+    city: string;
+    location: string;
+  };
   url?: string;
-  event_type?: { name: string };
-  dlc?: { name: string };
+  event_type?: { key?: string; name: string };
+  dlcs?: Record<string, string> | unknown[];
+  attendances?: { confirmed: number; unsure: number; vtcs: number };
   ups?: number;
   description?: string;
-  vtc?: { name: string; logo?: string };
+  vtc?: { id?: number; name: string; logo?: string };
+  slug?: string;
+  language?: string;
+  featured?: string;
+  voice_link?: string;
+  external_link?: string;
+  created_at?: string;
+  updated_at?: string;
 }
 
 export interface UpcomingEvent {
@@ -73,18 +84,22 @@ export async function fetchUpcomingEvents(vtcId: number): Promise<UpcomingEvent[
   const eventsMap = new Map<number, UpcomingEvent>();
 
   function processEvent(found: TruckersmpEvent) {
+    // TruckersMP returns dates as "YYYY-MM-DD HH:MM:SS" (UTC, no timezone marker)
+    // Convert to ISO format so browsers parse it correctly as UTC
     let safeStartAt = found.start_at || '';
     if (safeStartAt && !safeStartAt.includes('T') && safeStartAt.includes(' ')) {
       safeStartAt = safeStartAt.replace(' ', 'T') + 'Z';
     }
+    // API uses 'arrive' for destination (not 'arrival')
     const arrivalCity =
       found.arrive?.city || found.arrival?.city || 'To be determined';
+    const participants = found.attendances?.confirmed ?? 0;
     eventsMap.set(Number(found.id), {
       id: Number(found.id),
       name: cleanEventName(found.name || 'Convoy'),
       startDate: safeStartAt,
       bannerUrl: found.banner || '',
-      participants: (found as any).attendances?.confirmed || 0,
+      participants,
       game: found.game === 'ATS' ? 'ATS' : 'ETS2',
       server: found.server?.name || 'Event Server',
       departureCity: found.departure?.city || 'To be determined',
@@ -93,40 +108,65 @@ export async function fetchUpcomingEvents(vtcId: number): Promise<UpcomingEvent[
   }
 
   try {
-    const hostedUrl  = `/api/truckersmp/vtc/${vtcId}/events`;
+    // In dev: vite proxy rewrites /api/truckersmp/* → https://api.truckersmp.com/v2/*
+    // In prod: Vercel serverless functions at /api/truckersmp/vtc/[id]/events.js
+    const hostedUrl    = `/api/truckersmp/vtc/${vtcId}/events`;
     const attendingUrl = `/api/truckersmp/vtc/${vtcId}/events?type=attending`;
 
-    console.log(`[TMP] Fetching hosted events:`, hostedUrl);
-    console.log(`[TMP] Fetching attending events:`, attendingUrl);
+    console.log(`[TMP] Fetching hosted events: ${hostedUrl}`);
+    console.log(`[TMP] Fetching attending events: ${attendingUrl}`);
 
-    // Fetch both in parallel directly from the browser
+    // Fetch both in parallel
     const [hostedRes, attendingRes] = await Promise.allSettled([
       fetch(hostedUrl),
       fetch(attendingUrl),
     ]);
 
-    if (hostedRes.status === 'fulfilled' && hostedRes.value?.ok) {
-      console.log('[TMP] Hosted events OK');
-      const data = await hostedRes.value.json();
-      if (!data.error && Array.isArray(data.response)) {
-        (data.response as TruckersmpEvent[]).forEach(processEvent);
+    if (hostedRes.status === 'fulfilled') {
+      const r = hostedRes.value;
+      console.log(`[TMP] Hosted events HTTP status: ${r.status}`);
+      if (r.ok) {
+        const data = await r.json();
+        console.log('[TMP] Hosted events API error field:', data.error, '| response is array:', Array.isArray(data.response));
+        if (!data.error && Array.isArray(data.response)) {
+          console.log(`[TMP] Processing ${data.response.length} hosted events`);
+          (data.response as TruckersmpEvent[]).forEach(processEvent);
+        } else {
+          console.warn('[TMP] Hosted events unexpected format:', JSON.stringify(data).slice(0, 200));
+        }
+      } else {
+        const text = await r.text().catch(() => '');
+        console.error(`[TMP] Hosted events failed with HTTP ${r.status}:`, text.slice(0, 200));
       }
     } else {
-      console.error('[TMP] Hosted events failed');
+      console.error('[TMP] Hosted events fetch rejected:', hostedRes.reason);
     }
 
-    if (attendingRes.status === 'fulfilled' && attendingRes.value?.ok) {
-      console.log('[TMP] Attending events OK');
-      const data = await attendingRes.value.json();
-      if (!data.error && Array.isArray(data.response)) {
-        (data.response as TruckersmpEvent[]).forEach(processEvent);
+    if (attendingRes.status === 'fulfilled') {
+      const r = attendingRes.value;
+      console.log(`[TMP] Attending events HTTP status: ${r.status}`);
+      if (r.ok) {
+        const data = await r.json();
+        console.log('[TMP] Attending events API error field:', data.error, '| response is array:', Array.isArray(data.response));
+        if (!data.error && Array.isArray(data.response)) {
+          console.log(`[TMP] Processing ${data.response.length} attending events`);
+          (data.response as TruckersmpEvent[]).forEach(processEvent);
+        } else {
+          console.warn('[TMP] Attending events unexpected format:', JSON.stringify(data).slice(0, 200));
+        }
+      } else {
+        const text = await r.text().catch(() => '');
+        console.error(`[TMP] Attending events failed with HTTP ${r.status}:`, text.slice(0, 200));
       }
     } else {
-      console.error('[TMP] Attending events failed');
+      console.error('[TMP] Attending events fetch rejected:', attendingRes.reason);
     }
 
     const result = Array.from(eventsMap.values());
-    console.log('Total events fetched:', result.length);
+    console.log(`[TMP] Total unique events fetched: ${result.length}`);
+    if (result.length > 0) {
+      console.log('[TMP] Sample event:', JSON.stringify(result[0]));
+    }
 
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(result));
@@ -136,13 +176,16 @@ export async function fetchUpcomingEvents(vtcId: number): Promise<UpcomingEvent[
 
     return result;
   } catch (e) {
-    console.error('Failed to fetch events:', e);
+    console.error('[TMP] Failed to fetch events:', e);
   }
 
   // Fallback to fresh cache if fetch fails
   try {
     const cached = localStorage.getItem(STORAGE_KEY);
-    if (cached) return JSON.parse(cached);
+    if (cached) {
+      console.log('[TMP] Returning cached events');
+      return JSON.parse(cached);
+    }
   } catch {
     // ignore
   }
@@ -210,10 +253,12 @@ export async function fetchTruckersmpEvent(id: number): Promise<TruckersmpEvent>
           banner: found.banner || '',
           server: { name: found.server?.name || 'Event Server' },
           departure: { city: found.departure?.city || 'To be determined', location: found.departure?.location || '' },
-          arrival: { city: found.arrive?.city || 'To be determined', location: found.arrive?.location || '' },
+          // API uses 'arrive' for destination; map to both fields for compatibility
           arrive: { city: found.arrive?.city || 'To be determined', location: found.arrive?.location || '' },
+          arrival: { city: found.arrive?.city || 'To be determined', location: found.arrive?.location || '' },
           event_type: { name: found.event_type?.name || 'Convoy' },
           vtc: { name: found.vtc?.name || 'Community Event', logo: '' },
+          attendances: found.attendances ?? { confirmed: 0, unsure: 0, vtcs: 0 },
           ups: found.attendances?.confirmed || 0,
           description: found.description || ''
         };
