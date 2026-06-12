@@ -678,9 +678,8 @@ function sendHistoryToDiscord(entry: HistoryEntry) {
   if (entry.action === 'deleted' || entry.action === 'removed' || entry.action === 'declined') color = 15158332; // Red
   if (entry.action === 'updated' || entry.action === 'changed') color = 15105570; // Orange
 
-  // Format fields - start empty because 'Performed By' and 'Category' are in the markdown now
   const fields: any[] = [];
-  if (entry.department && entry.department !== 'General') {
+  if (entry.department) {
     fields.push({ name: '🏢 Department', value: entry.department, inline: true });
   }
 
