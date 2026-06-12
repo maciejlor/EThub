@@ -670,7 +670,7 @@ export function getHistory(): HistoryEntry[] {
 function sendHistoryToDiscord(entry: HistoryEntry) {
   if (typeof window === 'undefined') return;
 
-  const webhookUrl = '/discord-api/webhooks/1515005965144035418/cdee4Dd_hxm1XG5VKHrxmAoe5HBHP1MbBulwM49mRMInKj4O73H-BiYccYTjMqve2NJK';
+  const apiUrl = '/api/send-discord-log';
   
   // Choose color based on action
   let color = 3447003; // Light Blue
@@ -701,7 +701,7 @@ function sendHistoryToDiscord(entry: HistoryEntry) {
     }
   }
 
-  // Build a components-only (v2) webhook payload using link buttons only.
+  // Build a components-only (v2) bot payload using link buttons only.
   // Compose richer markdown content so the message includes structured fields
   // since we are not sending an embed.
   const origin = typeof window !== 'undefined' && window.location ? window.location.origin : '';
@@ -745,7 +745,7 @@ function sendHistoryToDiscord(entry: HistoryEntry) {
   body.embeds = [embed];
   if (components.length > 0) body.components = components;
 
-  fetch(webhookUrl, {
+  fetch(apiUrl, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(body)

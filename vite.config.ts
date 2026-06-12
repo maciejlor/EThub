@@ -111,6 +111,42 @@ export default defineConfig({
               return;
             }
           }
+
+          if (req.url && req.url.startsWith('/api/send-discord-log')) {
+            if (req.method === 'POST') {
+              let body = '';
+              req.on('data', chunk => body += chunk.toString());
+              req.on('end', async () => {
+                try {
+                  // Uses environment variables in local dev
+                  const token = process.env.DISCORD_BOT_TOKEN;
+                  const channel = process.env.DISCORD_LOG_CHANNEL_ID;
+                  
+                  if (!token || !channel) {
+                    res.statusCode = 500;
+                    return res.end(JSON.stringify({ error: 'Missing local env variables' }));
+                  }
+
+                  const response = await fetch(`https://discord.com/api/v10/channels/${channel}/messages`, {
+                    method: 'POST',
+                    headers: {
+                      'Authorization': `Bot ${token}`,
+                      'Content-Type': 'application/json',
+                    },
+                    body
+                  });
+                  const data = await response.json();
+                  res.statusCode = response.status;
+                  res.setHeader('Content-Type', 'application/json');
+                  res.end(JSON.stringify(data));
+                } catch (e) {
+                  res.statusCode = 500;
+                  res.end(JSON.stringify({ error: 'Failed to send' }));
+                }
+              });
+              return;
+            }
+          }
           next();
         });
       },
