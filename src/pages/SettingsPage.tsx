@@ -162,6 +162,11 @@ export function SettingsPage() {
     const file = e.target.files?.[0];
     if (!file || !user) return;
 
+    if (file.size > 800 * 1024) {
+      alert(t('Avatar image size exceeds the 800KB limit. Please upload a smaller image.'));
+      return;
+    }
+
     const reader = new FileReader();
     reader.onloadend = () => {
       const base64String = reader.result as string;
@@ -217,6 +222,11 @@ export function SettingsPage() {
   const handleCoverFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file || !user) return;
+
+    if (file.size > 800 * 1024) {
+      alert(t('Banner image size exceeds the 800KB limit. Please upload a smaller image.'));
+      return;
+    }
 
     const reader = new FileReader();
     reader.onloadend = () => {
