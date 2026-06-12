@@ -678,12 +678,11 @@ function sendHistoryToDiscord(entry: HistoryEntry) {
   if (entry.action === 'deleted' || entry.action === 'removed' || entry.action === 'declined') color = 15158332; // Red
   if (entry.action === 'updated' || entry.action === 'changed') color = 15105570; // Orange
 
-  // Format fields
-  const fields = [
-    { name: '👤 Performed By', value: entry.performedBy || 'System', inline: true },
-    { name: '📁 Category', value: String(entry.entityType).toUpperCase().replace('_', ' '), inline: true },
-    { name: '🏢 Department', value: entry.department || 'General', inline: true }
-  ];
+  // Format fields - start empty because 'Performed By' and 'Category' are in the markdown now
+  const fields: any[] = [];
+  if (entry.department && entry.department !== 'General') {
+    fields.push({ name: '🏢 Department', value: entry.department, inline: true });
+  }
 
   if (entry.changes) {
     const changeLines: string[] = [];
@@ -713,26 +712,21 @@ function sendHistoryToDiscord(entry: HistoryEntry) {
   const when = entry.performedAt ? new Date(entry.performedAt).toLocaleString() : new Date().toLocaleString();
   const category = String(entry.entityType).toUpperCase().replace('_', ' ');
 
-  // Build a markdown-like content body (Discord supports basic markdown)
-  const contentLines: string[] = [];
-  contentLines.push(`**Audit:** ${entry.description}`);
-  contentLines.push(`**Action:** ${entry.action} | **Type:** ${category}`);
-  contentLines.push(`**By:** ${performedBy} | **Dept:** ${dept}`);
-  contentLines.push(`**When:** ${when}`);
-  const content = contentLines.join('\n');
+  const body: Record<string, unknown> = {};
 
-  const body: Record<string, unknown> = {
-    content,
-  };
-  // Recreate an embed so clients that render embeds still get rich cards,
-  // while also attaching v2 components (link buttons).
+  // Build the new dynamic markdown description
+  const embedDescription = `## Eternal Dashboard Logs
+
+> **${performedBy}** ${entry.description}
+
+-# <:feedback:1441910563901935717>  **Category: ${category}**`;
+
   const embed = {
-    title: `📁 Audit Log: ${entry.description}`,
-    description: `An administrative action has been logged in EThub.`,
+    description: embedDescription,
     color,
-    fields,
+    fields, // Keep fields for 'Changed Values' details
     timestamp: entry.performedAt || new Date().toISOString(),
-    footer: { text: `EThub Auditing System • ID: ${entry.id}` }
+    footer: { text: `Eternal Dashboard` }
   };
 
   const components: any[] = [];
