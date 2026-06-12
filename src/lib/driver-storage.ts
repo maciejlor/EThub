@@ -670,7 +670,7 @@ export function getHistory(): HistoryEntry[] {
 function sendHistoryToDiscord(entry: HistoryEntry) {
   if (typeof window === 'undefined') return;
 
-  const webhookUrl = '/discord-api/webhooks/1507523270147178611/7SIUnJgs6nd_jqgol_wIfWDxWxH5bK4_ytfXOeZ6WDIvyyN3nsZaffnhpYljgTWFiA3_';
+  const webhookUrl = '/discord-api/webhooks/1515005965144035418/cdee4Dd_hxm1XG5VKHrxmAoe5HBHP1MbBulwM49mRMInKj4O73H-BiYccYTjMqve2NJK';
   
   // Choose color based on action
   let color = 3447003; // Light Blue
