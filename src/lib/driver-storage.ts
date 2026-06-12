@@ -193,7 +193,7 @@ export function addManagedDriver(
     entityType: 'driver',
     entityName: entry.username,
     entityId: id,
-    description: `Added driver ${entry.username} to managed drivers`,
+    description: `Added driver **${entry.username}** to managed drivers`,
     performedBy: entry.loggedBy,
     department: 'HR',
   });
@@ -227,7 +227,7 @@ export function removeManagedDriver(id: string): boolean {
     entityType: 'driver',
     entityName: driverToRemove.username,
     entityId: id,
-    description: `Removed driver ${driverToRemove.username} from managed drivers`,
+    description: `Removed driver **${driverToRemove.username}** from managed drivers`,
     performedBy: getActorName(),
     department: 'HR',
   });
@@ -387,7 +387,7 @@ export function addEventInvite(
     entityType: 'event_invite',
     entityName: `${entry.convoyName} - ${entry.vtcName}`,
     entityId: id,
-    description: `Created event invite for ${entry.vtcName} (${entry.convoyName}) with status ${entry.status}`,
+    description: `Created an event invite for **${entry.vtcName}** (**${entry.convoyName}**) and stated a Status **${entry.status}**`,
     performedBy: entry.addedBy,
     department: 'Event',
   });
@@ -411,7 +411,7 @@ export function updateEventInviteStatus(id: string, status: EventInviteEntry['st
     entityType: 'event_invite',
     entityName: `${list[index].convoyName} - ${list[index].vtcName}`,
     entityId: id,
-    description: `Updated event invite status from ${oldStatus} to ${status} for ${list[index].vtcName}`,
+    description: `Updated event invite status from **${oldStatus}** to **${status}** for **${list[index].vtcName}**`,
     performedBy: getActorName(),
     department: 'Event',
     changes: {
@@ -713,9 +713,8 @@ function sendHistoryToDiscord(entry: HistoryEntry) {
 
   const body: Record<string, unknown> = {};
 
-  // Build the new dynamic markdown description
+  // Build the new dynamic markdown description exactly as requested
   const embedDescription = `## Eternal Dashboard Logs
-
 > **${performedBy}** ${entry.description}
 
 -# <:feedback:1441910563901935717>  **Category: ${category}**`;
@@ -933,7 +932,7 @@ export function addUser(
     entityType: 'user',
     entityName: user.displayName,
     entityId: id,
-    description: `Created user account for ${user.displayName} with role ${user.role}`,
+    description: `Created user account for **${user.displayName}** with role **${user.role}**`,
     performedBy: user.createdBy,
     department: 'Admin',
   });
@@ -970,7 +969,7 @@ export function updateUser(id: string, updates: Partial<Omit<UserEntry, 'id' | '
       entityType: 'user',
       entityName: updatedUser.displayName,
       entityId: id,
-      description: `Updated user ${updatedUser.displayName}`,
+      description: `Updated user **${updatedUser.displayName}**`,
       changes,
       performedBy: getActorName(),
       department: 'Admin',
@@ -996,7 +995,7 @@ export function removeUser(id: string): boolean {
     entityType: 'user',
     entityName: removedUser.displayName,
     entityId: id,
-    description: `Deleted user account for ${removedUser.displayName}`,
+    description: `Deleted user account for **${removedUser.displayName}**`,
     performedBy: getActorName(),
     department: 'Admin',
   });
@@ -1071,7 +1070,7 @@ export function updateUserSettings(userId: string, settings: Partial<UserEntry>)
       entityType: 'user',
       entityName: updatedUser.displayName,
       entityId: userId,
-      description: `Updated user settings for ${updatedUser.displayName}`,
+      description: `Updated user settings for **${updatedUser.displayName}**`,
       changes,
       performedBy: getActorName(),
       department: 'System',
@@ -1223,7 +1222,7 @@ export function addDownload(
     entityType: 'driver',
     entityName: file.name,
     entityId: id,
-    description: `Uploaded file "${file.name}" to Download center`,
+    description: `Uploaded file "**${file.name}**" to Download center`,
     performedBy: actor,
     department: 'Admin'
   });
@@ -1246,7 +1245,7 @@ export function removeDownload(id: string): boolean {
     entityType: 'driver',
     entityName: file.name,
     entityId: id,
-    description: `Deleted file "${file.name}" from Download center`,
+    description: `Deleted file "**${file.name}**" from Download center`,
     performedBy: getActorName(),
     department: 'Admin'
   });
