@@ -510,7 +510,7 @@ export function SettingsPage() {
                           className='w-full h-40 object-cover transition-all' 
                           style={{ objectPosition: `50% ${user.coverPositionY ?? 50}%` }}
                         />
-                        <div className='absolute bottom-0 left-0 right-0 p-2 bg-black/60 backdrop-blur-md border-t border-white/10 opacity-0 group-hover:opacity-100 transition-opacity'>
+                        <div className='absolute bottom-0 left-0 right-0 p-2 bg-black/60 backdrop-blur-md border-t border-white/10'>
                           <div className='flex items-center gap-3 px-2'>
                             <span className='text-xs text-white/90 font-medium whitespace-nowrap'>{t('Reposition Banner')}</span>
                             <input 
