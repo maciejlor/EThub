@@ -28,7 +28,7 @@ const proxyConfig = {
       'User-Agent': 'EThub/1.0 (https://github.com/maciejlor/EThub)',
       'Accept': 'application/json',
     },
-    bypass: (req) => {
+    bypass: (req: any) => {
       if (req.url && req.url.includes('type=attending')) {
         req.url = req.url.replace('events?type=attending', 'events/attending').replace('events/?type=attending', 'events/attending');
       }
@@ -169,7 +169,7 @@ export default defineConfig({
                     },
                     body: JSON.stringify({ recipient_id: discordId }),
                   });
-                  const channelData = await channelRes.json();
+                  const channelData = await channelRes.json() as any;
                   if (!channelRes.ok) {
                     res.statusCode = channelRes.status;
                     return res.end(JSON.stringify(channelData));
