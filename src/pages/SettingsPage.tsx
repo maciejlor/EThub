@@ -519,7 +519,7 @@ export function SettingsPage() {
                               max='100' 
                               value={user.coverPositionY ?? 50}
                               onChange={(e) => setUser(prev => prev ? { ...prev, coverPositionY: parseInt(e.target.value) } : null)}
-                              onPointerUp={() => { if (user) updateUserSettings(user.id, { coverPositionY: user.coverPositionY }) }}
+                              onPointerUp={(e) => { if (user) updateUserSettings(user.id, { coverPositionY: parseInt(e.currentTarget.value) }) }}
                               className='flex-1 h-1.5 bg-white/20 rounded-lg appearance-none cursor-pointer accent-primary'
                             />
                           </div>
