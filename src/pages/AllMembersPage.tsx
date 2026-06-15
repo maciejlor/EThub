@@ -184,8 +184,17 @@ export function AllMembersPage() {
     setAcceptingUser(null);
 
     if (discordId && discordId !== '123456789') {
-      const dmContent = `## Eternal Dashboard \n\n> Greetings, <@${discordId}>! On behalf of the Human Resources Department, we are pleased to inform you that your request for dashboard access has been approved. <a:ETAccept2:1289196901844221962> \n\n> <:EThr:1289196918667575306> **To access the dashboard**, please reconnect with Discord login. You will have assigned roles **${finalRole}**. If you have any questions, feel free to ask the **Human Resources Team** or the Developer Team for support.\n\nHave an awesome day! <a:party:1289197479782551574>\n\n-----------------------\n\nhttps://i.vgy.me/TEaVfP.png`;
-      await sendDiscordDm(discordId, dmContent);
+      const dmContent = `## Eternal Dashboard \n\n> Greetings, <@${discordId}>! On behalf of the Human Resources Department, we are pleased to inform you that your request for dashboard access has been approved. <:ETAccept2:1498965544596930662> \n\n> <:EThr:1440120361479045211> **To access the dashboard**, please reconnect with Discord login. You will have assigned roles **${finalRole}**. If you have any questions, feel free to ask the **Human Resources Team** or the Developer Team for support.\n\nHave an awesome day! <:party:1441910585636950188>\n\n-----------------------\n\nhttps://i.vgy.me/TEaVfP.png`;
+      const dmComponents = [{
+        type: 1,
+        components: [{
+          type: 2,
+          style: 5,
+          label: "Open Dashboard",
+          url: window.location.origin
+        }]
+      }];
+      await sendDiscordDm(discordId, dmContent, dmComponents);
     }
   };
 
@@ -195,8 +204,17 @@ export function AllMembersPage() {
       removeUser(id);
       
       if (declinedUser?.discordId && declinedUser.discordId !== '123456789') {
-        const dmContent = `## Eternal Dashboard\n\n> Greetings, <@${declinedUser.discordId}>! On behalf of the Human Resources Department, we regret to notify you that your request for **dashboard access has been denied**. <a:ETrejected2:1289196924631879730> \n\nHave an awesome day! <a:party:1289197479782551574>\n\n-----------------------\n\nhttps://i.vgy.me/TEaVfP.png`;
-        await sendDiscordDm(declinedUser.discordId, dmContent);
+        const dmContent = `## Eternal Dashboard\n\n> Greetings, <@${declinedUser.discordId}>! On behalf of the Human Resources Department, we regret to notify you that your request for **dashboard access has been denied**. <:ETrejected2:1498965662947606628> \n\nHave an awesome day! <:party:1441910585636950188>\n\n-----------------------\n\nhttps://i.vgy.me/TEaVfP.png`;
+        const dmComponents = [{
+          type: 1,
+          components: [{
+            type: 2,
+            style: 5,
+            label: "Open Dashboard",
+            url: window.location.origin
+          }]
+        }];
+        await sendDiscordDm(declinedUser.discordId, dmContent, dmComponents);
       }
     }
   };

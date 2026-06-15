@@ -158,7 +158,7 @@ export default defineConfig({
                     return res.end(JSON.stringify({ error: 'Missing token' }));
                   }
 
-                  const { discordId, content } = JSON.parse(body);
+                  const { discordId, content, components } = JSON.parse(body);
 
                   // 1. Create DM channel
                   const channelRes = await fetch('https://discord.com/api/v10/users/@me/channels', {
@@ -182,7 +182,7 @@ export default defineConfig({
                       'Authorization': `Bot ${token}`,
                       'Content-Type': 'application/json',
                     },
-                    body: JSON.stringify({ content })
+                    body: JSON.stringify({ content, components })
                   });
                   const msgData = await msgRes.json();
                   res.statusCode = msgRes.status;
