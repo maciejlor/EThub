@@ -118,7 +118,6 @@ export const UserMenu = () => {
             )}
           </DropdownMenuItem>
         ))}
-
         <DropdownMenuSeparator />
 
         {/* Secondary Items (Sign out) */}
@@ -131,6 +130,8 @@ export const UserMenu = () => {
                 localStorage.removeItem('ethub_discord_user');
                 localStorage.removeItem('ethub_auth_method');
                 localStorage.removeItem('ethub_login_time');
+                localStorage.removeItem('ethub_current_user');
+                localStorage.removeItem('ethub_current_user_id');
                 window.location.href = '/login';
               }
             }}
