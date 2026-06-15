@@ -37,10 +37,7 @@ export function SteamCallbackPage() {
       updateUserSettings(currentUser.id, {
         steamId,
         steamUsername,
-        username: steamUsername,
-        displayName: steamUsername,
         steamAvatar: steamAvatar,
-        avatar: steamAvatar,
       });
 
       setStatus('success');
