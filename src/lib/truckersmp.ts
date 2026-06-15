@@ -163,18 +163,35 @@ export async function fetchUpcomingEvents(vtcId: number): Promise<UpcomingEvent[
     }
 
     const result = Array.from(eventsMap.values());
-    console.log(`[TMP] Total unique events fetched: ${result.length}`);
-    if (result.length > 0) {
-      console.log('[TMP] Sample event:', JSON.stringify(result[0]));
+    let mergedResult = result;
+    try {
+      const cached = localStorage.getItem(STORAGE_KEY);
+      if (cached) {
+        const cachedEvents: UpcomingEvent[] = JSON.parse(cached);
+        const newIds = new Set(result.map(e => e.id));
+        const now = Date.now();
+        
+        const pastEventsToKeep = cachedEvents.filter(e => {
+          if (newIds.has(e.id)) return false;
+          // Keep if it's in the past (since TMP stops returning past events)
+          return new Date(e.startDate).getTime() < now;
+        });
+        
+        mergedResult = [...result, ...pastEventsToKeep];
+        // Sort them by date
+        mergedResult.sort((a, b) => new Date(a.startDate).getTime() - new Date(b.startDate).getTime());
+      }
+    } catch {
+      // ignore
     }
 
     try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(result));
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(mergedResult));
     } catch {
       // ignore storage quota errors
     }
 
-    return result;
+    return mergedResult;
   } catch (e) {
     console.error('[TMP] Failed to fetch events:', e);
   }

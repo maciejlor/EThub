@@ -26,7 +26,7 @@ import {
   SearchIcon,
 } from 'lucide-react';
 import { hasPermission } from '@/lib/auth';
-import { getUsers, addUser, updateUser, removeUser, subscribeUsersChanges, getCurrentUser, getRoles, type UserEntry, type RoleEntry } from '@/lib/driver-storage';
+import { getUsers, addUser, updateUser, removeUser, subscribeUsersChanges, getCurrentUser, getRoles, sendDiscordDm, type UserEntry, type RoleEntry } from '@/lib/driver-storage';
 import { isFirebaseConfigured } from '@/lib/firebase';
 import { RoleBadge } from '@/components/RoleBadge';
 
@@ -170,19 +170,35 @@ export function AllMembersPage() {
     if (confirm(t('Are you sure you want to remove this user?'))) removeUser(id);
   };
 
-  const handleAccept = () => {
+  const handleAccept = async () => {
     if (!acceptingUser) return;
+    const discordId = acceptingUser.discordId;
+    const finalRole = acceptRole;
+
     updateUser(acceptingUser.id, {
-      role: acceptRole,
-      department: deriveDepartmentFromRole(acceptRole, roles),
+      role: finalRole,
+      department: deriveDepartmentFromRole(finalRole, roles),
       isActive: true,
       isPending: false,
     });
     setAcceptingUser(null);
+
+    if (discordId && discordId !== '123456789') {
+      const dmContent = `## Eternal Dashboard \n\n> Greetings, <@${discordId}>! On behalf of the Human Resources Department, we are pleased to inform you that your request for dashboard access has been approved. <a:ETAccept2:1289196901844221962> \n\n> <:EThr:1289196918667575306> **To access the dashboard**, please reconnect with Discord login. You will have assigned roles **${finalRole}**. If you have any questions, feel free to ask the **Human Resources Team** or the Developer Team for support.\n\nHave an awesome day! <a:party:1289197479782551574>\n\n-----------------------\n\nhttps://i.vgy.me/TEaVfP.png`;
+      await sendDiscordDm(discordId, dmContent);
+    }
   };
 
-  const handleDecline = (id: string) => {
-    if (confirm(t('Are you sure you want to decline and remove this join request?'))) removeUser(id);
+  const handleDecline = async (id: string) => {
+    if (confirm(t('Are you sure you want to decline and remove this join request?'))) {
+      const declinedUser = users.find(u => u.id === id);
+      removeUser(id);
+      
+      if (declinedUser?.discordId && declinedUser.discordId !== '123456789') {
+        const dmContent = `## Eternal Dashboard\n\n> Greetings, <@${declinedUser.discordId}>! On behalf of the Human Resources Department, we regret to notify you that your request for **dashboard access has been denied**. <a:ETrejected2:1289196924631879730> \n\nHave an awesome day! <a:party:1289197479782551574>\n\n-----------------------\n\nhttps://i.vgy.me/TEaVfP.png`;
+        await sendDiscordDm(declinedUser.discordId, dmContent);
+      }
+    }
   };
 
   // ── Render ───────────────────────────────────────────────────────────────

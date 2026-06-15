@@ -787,6 +787,19 @@ export function getHistory(): HistoryEntry[] {
   return safeParseHistory(localStorage.getItem(HISTORY_STORAGE_KEY));
 }
 
+export async function sendDiscordDm(discordId: string, content: string) {
+  if (typeof window === 'undefined') return;
+  try {
+    await fetch('/api/send-discord-dm', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ discordId, content }),
+    });
+  } catch (err) {
+    console.error('Failed to send discord DM:', err);
+  }
+}
+
 function sendHistoryToDiscord(entry: HistoryEntry) {
   if (typeof window === 'undefined') return;
 

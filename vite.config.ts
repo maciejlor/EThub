@@ -28,13 +28,12 @@ const proxyConfig = {
       'User-Agent': 'EThub/1.0 (https://github.com/maciejlor/EThub)',
       'Accept': 'application/json',
     },
-    rewrite: (p: string) => {
-      if (p.includes('/events') && p.includes('type=attending')) {
-        const cleanPath = p.split('?')[0];
-        return cleanPath.replace(/^\/api\/truckersmp/, '/v2') + '/attending';
+    bypass: (req) => {
+      if (req.url && req.url.includes('type=attending')) {
+        req.url = req.url.replace('events?type=attending', 'events/attending').replace('events/?type=attending', 'events/attending');
       }
-      return p.replace(/^\/api\/truckersmp/, '/v2');
     },
+    rewrite: (p: string) => p.replace(/^\/api\/truckersmp/, '/v2'),
   },
   '/trucky-api': {
     target: 'https://e.truckyapp.com',
@@ -142,6 +141,56 @@ export default defineConfig({
                 } catch (e) {
                   res.statusCode = 500;
                   res.end(JSON.stringify({ error: 'Failed to send' }));
+                }
+              });
+              return;
+            }
+          }
+          if (req.url && req.url.startsWith('/api/send-discord-dm')) {
+            if (req.method === 'POST') {
+              let body = '';
+              req.on('data', chunk => body += chunk.toString());
+              req.on('end', async () => {
+                try {
+                  const token = process.env.DISCORD_BOT_TOKEN;
+                  if (!token) {
+                    res.statusCode = 500;
+                    return res.end(JSON.stringify({ error: 'Missing token' }));
+                  }
+
+                  const { discordId, content } = JSON.parse(body);
+
+                  // 1. Create DM channel
+                  const channelRes = await fetch('https://discord.com/api/v10/users/@me/channels', {
+                    method: 'POST',
+                    headers: {
+                      'Authorization': `Bot ${token}`,
+                      'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ recipient_id: discordId }),
+                  });
+                  const channelData = await channelRes.json();
+                  if (!channelRes.ok) {
+                    res.statusCode = channelRes.status;
+                    return res.end(JSON.stringify(channelData));
+                  }
+                  
+                  // 2. Send message
+                  const msgRes = await fetch(`https://discord.com/api/v10/channels/${channelData.id}/messages`, {
+                    method: 'POST',
+                    headers: {
+                      'Authorization': `Bot ${token}`,
+                      'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ content })
+                  });
+                  const msgData = await msgRes.json();
+                  res.statusCode = msgRes.status;
+                  res.setHeader('Content-Type', 'application/json');
+                  res.end(JSON.stringify(msgData));
+                } catch (e) {
+                  res.statusCode = 500;
+                  res.end(JSON.stringify({ error: 'Failed to send DM' }));
                 }
               });
               return;
