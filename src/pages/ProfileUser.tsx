@@ -165,7 +165,7 @@ export function ProfileUserPage() {
               <div className="relative w-full h-[320px] md:h-[380px] bg-black">
                 {user.coverImage ? (
                   <>
-                    <img src={user.coverImage} alt="cover" className="w-full h-full object-cover" />
+                    <img src={user.coverImage} alt="cover" className="w-full h-full object-cover" style={{ objectPosition: `50% ${user.coverPositionY ?? 50}%` }} />
                     <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent" />
                   </>
                 ) : (

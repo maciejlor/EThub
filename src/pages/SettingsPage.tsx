@@ -503,7 +503,27 @@ export function SettingsPage() {
 
                   <div className='rounded-2xl overflow-hidden border border-border bg-slate-950/40'>
                     {user.coverImage ? (
-                      <img src={user.coverImage} alt='banner preview' className='w-full h-40 object-cover' />
+                      <div className='relative group'>
+                        <img 
+                          src={user.coverImage} 
+                          alt='banner preview' 
+                          className='w-full h-40 object-cover transition-all' 
+                          style={{ objectPosition: `50% ${user.coverPositionY ?? 50}%` }}
+                        />
+                        <div className='absolute bottom-0 left-0 right-0 p-2 bg-black/60 backdrop-blur-md border-t border-white/10 opacity-0 group-hover:opacity-100 transition-opacity'>
+                          <div className='flex items-center gap-3 px-2'>
+                            <span className='text-xs text-white/90 font-medium whitespace-nowrap'>{t('Reposition Banner')}</span>
+                            <input 
+                              type='range' 
+                              min='0' 
+                              max='100' 
+                              value={user.coverPositionY ?? 50}
+                              onChange={(e) => setUser(prev => prev ? { ...prev, coverPositionY: parseInt(e.target.value) } : null)}
+                              className='flex-1 h-1.5 bg-white/20 rounded-lg appearance-none cursor-pointer accent-primary'
+                            />
+                          </div>
+                        </div>
+                      </div>
                     ) : (
                       <div className='flex h-40 items-center justify-center bg-slate-900 text-sm text-muted-foreground'>
                         No profile banner uploaded yet.

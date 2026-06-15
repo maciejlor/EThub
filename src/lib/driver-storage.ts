@@ -102,6 +102,7 @@ export interface UserEntry {
   profileNumber?: number;
   rankColor?: string;
   coverImage?: string;
+  coverPositionY?: number;
   rankTitle?: string;
   rankLevel?: number;
   truckyId?: string;
