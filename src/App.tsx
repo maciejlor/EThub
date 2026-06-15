@@ -35,6 +35,7 @@ import { ProfilePage } from '@/pages/Profile';
 import { ProfileUserPage } from '@/pages/ProfileUser';
 import { DiscordCallbackPage } from '@/pages/DiscordCallbackPage';
 import { SteamCallbackPage } from '@/pages/SteamCallbackPage';
+import { RolesManagementPage } from '@/pages/RolesManagementPage';
 import { getCurrentUser } from '@/lib/driver-storage';
 import { useEffect } from 'react';
 import { startSync } from '@/lib/sync';
@@ -109,6 +110,7 @@ export const App = () => {
           <Route path='/event/blacklist-vtcs' element={<ProtectedRoute><BlacklistVTCsPage /></ProtectedRoute>} />
 
           {/* Admin */}
+          <Route path='/admin/roles' element={<ProtectedRoute><RolesManagementPage /></ProtectedRoute>} />
           <Route path='/admin/members' element={<ProtectedRoute><AllMembersPage /></ProtectedRoute>} />
           <Route path='/admin/allmembers' element={<Navigate to='/admin/members' replace />} />
           <Route path='/admin/blacklist-staff' element={<ProtectedRoute><BlacklistStaffPage /></ProtectedRoute>} />

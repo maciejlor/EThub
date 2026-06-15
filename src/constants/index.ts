@@ -35,6 +35,7 @@ import {
   PencilIcon,
   TrashIcon,
   CopyIcon,
+  Shield,
 } from 'lucide-react';
 
 /**
@@ -184,6 +185,11 @@ export const APP_SIDEBAR = {
       title: 'Admin',
       isCollapsible: true,
       items: [
+        {
+          title: 'Roles & Permissions',
+          url: '/admin/roles',
+          Icon: Shield,
+        },
         {
           title: 'All members',
           url: '/admin/members',

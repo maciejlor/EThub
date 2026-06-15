@@ -36,9 +36,11 @@ import {
   getUsers,
   addUser,
   removeUser,
+  getRoles,
   RANKS,
   type UserEntry 
 } from '@/lib/driver-storage';
+import { hasPermission } from '@/lib/auth';
 import { getSteamPlayerSummary } from '@/lib/steam-ets2';
 import { generateDiscordOAuthUrl, generateSteamOAuthUrl } from '@/lib/discord-auth';
 import { db, isFirebaseConfigured, COLLECTIONS } from '@/lib/firebase';
@@ -58,57 +60,69 @@ export function SettingsPage() {
         // Create test users with different roles
         const testUsers = [
           {
-            username: 'admin_user',
-            email: 'admin@ethub.com',
-            displayName: 'Admin User',
-            role: 'Admin' as const,
+            id: 'test-admin',
+            username: 'admin_test',
+            displayName: 'Admin Test',
+            email: 'admin@test.com',
+            role: 'role_admin',
             department: 'Admin' as const,
             isActive: true,
+            isPending: false,
             createdBy: 'System'
           },
           {
-            username: 'hr_manager',
-            email: 'hr@ethub.com',
-            displayName: 'HR Manager',
-            role: 'HR Staff' as const,
+            id: 'test-hr-manager',
+            username: 'hrmanager_test',
+            displayName: 'HR Manager Test',
+            email: 'hrmanager@test.com',
+            role: 'role_admin',
             department: 'HR' as const,
             isActive: true,
+            isPending: false,
             createdBy: 'System'
           },
           {
-            username: 'event_manager',
-            email: 'events@ethub.com',
-            displayName: 'Event Manager',
-            role: 'Event Staff' as const,
+            id: 'test-event-manager',
+            username: 'eventmanager_test',
+            displayName: 'Event Manager Test',
+            email: 'eventmanager@test.com',
+            role: 'role_admin',
             department: 'Event' as const,
             isActive: true,
+            isPending: false,
             createdBy: 'System'
           },
           {
-            username: 'assistant_user',
-            email: 'assistant@ethub.com',
-            displayName: 'HR Staff',
-            role: 'HR Staff' as const,
+            id: 'test-hr-staff',
+            username: 'hrstaff_test',
+            displayName: 'HR Staff Test',
+            email: 'hrstaff@test.com',
+            role: 'role_admin',
             department: 'HR' as const,
             isActive: true,
+            isPending: false,
             createdBy: 'System'
           },
           {
-            username: 'staff_user',
-            email: 'staff@ethub.com',
-            displayName: 'Event Staff',
-            role: 'Event Staff' as const,
+            id: 'test-event-staff',
+            username: 'eventstaff_test',
+            displayName: 'Event Staff Test',
+            email: 'eventstaff@test.com',
+            role: 'role_admin',
             department: 'Event' as const,
             isActive: true,
+            isPending: false,
             createdBy: 'System'
           },
           {
-            username: 'driver_user',
-            email: 'driver@ethub.com',
-            displayName: 'Driver',
-            role: 'Driver' as const,
-            department: 'Event' as const,
+            id: 'test-driver',
+            username: 'driver_test',
+            displayName: 'Driver Test',
+            email: 'driver@test.com',
+            role: 'role_driver',
+            department: 'None' as const,
             isActive: true,
+            isPending: false,
             createdBy: 'System'
           }
         ];
@@ -329,7 +343,8 @@ export function SettingsPage() {
     }
   };
 
-  const isAdmin = user?.role === 'Admin';
+  const roles = getRoles();
+  const isAdmin = user ? hasPermission(user, 'manage_settings') || user.role === 'Admin' || user.role === 'role_admin' : false;
 
   const handleWipeDatabase = async () => {
     if (!isAdmin) return;
@@ -494,7 +509,7 @@ export function SettingsPage() {
                     <div className='flex-1'>
                       <h3 className='text-xl font-bold text-white'>{user.displayName}</h3>
                       <div className='mt-2 flex items-center gap-2 flex-wrap'>
-                        {user.role && user.role !== 'Driver' && (
+                        {user.role && roles.find(r => r.id === user.role)?.name !== 'Driver' && (
                           <RoleBadge role={user.role} />
                         )}
                       </div>

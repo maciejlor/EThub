@@ -68,6 +68,28 @@ export interface HistoryEntry {
   department?: 'HR' | 'Event' | 'Admin' | 'System';
 }
 
+export type Permission = 
+  | 'manage_users' 
+  | 'manage_roles' 
+  | 'manage_events' 
+  | 'manage_hr' 
+  | 'manage_loa'
+  | 'manage_attendance'
+  | 'manage_blacklist'
+  | 'manage_left_drivers'
+  | 'view_audit_logs'
+  | 'manage_settings';
+
+export interface RoleEntry {
+  id: string;
+  name: string;
+  color: string;
+  gradientColor?: string;
+  iconUrl?: string;
+  permissions: Permission[];
+  isSystem: boolean; // cannot be deleted
+}
+
 export interface UserEntry {
   id: string;
   username: string;
@@ -76,17 +98,7 @@ export interface UserEntry {
   avatar?: string;
   // Stored for future authentication (currently login flow uses user selection).
   password?: string;
-  role:
-    | 'Admin'
-    | 'Overseer'
-    | 'HR Staff'
-    | 'Event Staff'
-    | 'Senior Staff'
-    | 'Driver'
-    | 'HR Team'
-    | 'Event Assistant'
-    | 'HR Manager'
-    | 'Event Manager';
+  role: string; // ID of a RoleEntry
   department: 'HR' | 'Event' | 'Admin' | 'None';
   isActive: boolean;
   isPending?: boolean;
@@ -109,6 +121,113 @@ export interface UserEntry {
 }
 
 const STORAGE_KEY = 'ethub_managed_drivers_v1';
+
+const ROLES_STORAGE_KEY = 'ethub_roles_v2';
+
+// Default roles to seed the database if it's empty
+const DEFAULT_ROLES: RoleEntry[] = [
+  {
+    id: 'role_admin',
+    name: 'Admin',
+    color: '#E11D48', // rose-600
+    permissions: ['manage_users', 'manage_roles', 'manage_events', 'manage_hr', 'view_audit_logs', 'manage_settings'],
+    isSystem: true,
+  },
+  {
+    id: 'role_overseer',
+    name: 'Overseer',
+    color: '#F97316', // orange-500
+    permissions: ['manage_users', 'manage_roles', 'manage_events', 'manage_hr', 'view_audit_logs', 'manage_settings'],
+    isSystem: true,
+  },
+  {
+    id: 'role_hr_manager',
+    name: 'HR Manager',
+    color: '#2563EB', // blue-600
+    permissions: ['manage_users', 'manage_hr', 'view_audit_logs'],
+    isSystem: true,
+  },
+  {
+    id: 'role_event_manager',
+    name: 'Event Manager',
+    color: '#9333EA', // purple-600
+    permissions: ['manage_events', 'view_audit_logs'],
+    isSystem: true,
+  },
+  {
+    id: 'role_hr_staff',
+    name: 'HR Staff',
+    color: '#3B82F6', // blue-500
+    permissions: ['manage_hr'],
+    isSystem: true,
+  },
+  {
+    id: 'role_event_staff',
+    name: 'Event Staff',
+    color: '#A855F7', // purple-500
+    permissions: ['manage_events'],
+    isSystem: true,
+  },
+  {
+    id: 'role_senior_staff',
+    name: 'Senior Staff',
+    color: '#22C55E', // green-500
+    permissions: ['view_audit_logs'],
+    isSystem: true,
+  },
+  {
+    id: 'role_driver',
+    name: 'Driver',
+    color: '#10B981', // emerald-500
+    permissions: [],
+    isSystem: true,
+  }
+];
+
+export function getRoles(): RoleEntry[] {
+  if (typeof window === 'undefined') return DEFAULT_ROLES;
+  const raw = localStorage.getItem(ROLES_STORAGE_KEY);
+  if (!raw) {
+    localStorage.setItem(ROLES_STORAGE_KEY, JSON.stringify(DEFAULT_ROLES));
+    return DEFAULT_ROLES;
+  }
+  try {
+    return JSON.parse(raw);
+  } catch {
+    return DEFAULT_ROLES;
+  }
+}
+
+export function persistRoles(roles: RoleEntry[]): void {
+  localStorage.setItem(ROLES_STORAGE_KEY, JSON.stringify(roles));
+  window.dispatchEvent(new Event('ethub-roles-changed'));
+}
+
+export function addRole(role: Omit<RoleEntry, 'id'>): RoleEntry {
+  const roles = getRoles();
+  const newRole: RoleEntry = { ...role, id: `role_${Date.now()}` };
+  roles.push(newRole);
+  persistRoles(roles);
+  return newRole;
+}
+
+export function updateRole(id: string, data: Partial<RoleEntry>): boolean {
+  const roles = getRoles();
+  const idx = roles.findIndex(r => r.id === id);
+  if (idx === -1) return false;
+  roles[idx] = { ...roles[idx], ...data };
+  persistRoles(roles);
+  return true;
+}
+
+export function deleteRole(id: string): boolean {
+  let roles = getRoles();
+  const idx = roles.findIndex(r => r.id === id);
+  if (idx === -1 || roles[idx].id === 'role_admin') return false;
+  roles = roles.filter(r => r.id !== id);
+  persistRoles(roles);
+  return true;
+}
 
 function safeParse(raw: string | null): ManagedDriverEntry[] {
   if (!raw) return [];
@@ -834,7 +953,7 @@ export function getUsers(): UserEntry[] {
           username: '',
           email: '',
           displayName: '',
-          role: 'Admin',
+          role: 'role_admin',
           department: 'Admin',
           isActive: true,
           createdBy: 'System',
@@ -864,12 +983,12 @@ export function getUsers(): UserEntry[] {
     // Ensure any user entry matching the user's Discord ID is active Admin
     if (
       u.discordId === '877223306468687972' &&
-      (u.role !== 'Admin' || u.department !== 'Admin' || !u.isActive || u.isPending)
+      (u.role !== 'role_admin' || u.department !== 'Admin' || !u.isActive || u.isPending)
     ) {
       changed = true;
       return {
         ...u,
-        role: 'Admin',
+        role: 'role_admin',
         department: 'Admin',
         isActive: true,
         isPending: false,

@@ -25,39 +25,21 @@ import {
   EyeIcon,
   SearchIcon,
 } from 'lucide-react';
-import { getUsers, addUser, updateUser, removeUser, subscribeUsersChanges, getCurrentUser, type UserEntry } from '@/lib/driver-storage';
+import { hasPermission } from '@/lib/auth';
+import { getUsers, addUser, updateUser, removeUser, subscribeUsersChanges, getCurrentUser, getRoles, type UserEntry, type RoleEntry } from '@/lib/driver-storage';
 import { isFirebaseConfigured } from '@/lib/firebase';
+import { RoleBadge } from '@/components/RoleBadge';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Constants
 // ─────────────────────────────────────────────────────────────────────────────
-const ALL_ROLES: UserEntry['role'][] = [
-  'Driver',
-  'HR Team',
-  'Event Assistant',
-  'HR Manager',
-  'Event Manager',
-  'Admin',
-];
 
-const ROLE_COLORS: Record<string, string> = {
-  Admin: 'bg-red-500/20 text-red-400 border-red-500/30',
-  'HR Manager': 'bg-blue-600/20 text-blue-400 border-blue-500/30',
-  'Event Manager': 'bg-purple-600/20 text-purple-400 border-purple-500/30',
-  'HR Team': 'bg-sky-500/15 text-sky-400 border-sky-500/30',
-  'Event Assistant': 'bg-violet-500/15 text-violet-400 border-violet-500/30',
-  Driver: 'bg-emerald-500/15 text-emerald-400 border-emerald-500/30',
-  // Legacy colours kept for backwards-compat with old stored data
-  Overseer: 'bg-orange-500/20 text-orange-400 border-orange-500/30',
-  'HR Staff': 'bg-blue-500/15 text-blue-400 border-blue-500/30',
-  'Event Staff': 'bg-purple-500/15 text-purple-400 border-purple-500/30',
-  'Senior Staff': 'bg-green-500/20 text-green-400 border-green-500/30',
-};
-
-function deriveDepartmentFromRole(role: UserEntry['role']): UserEntry['department'] {
-  if (role === 'HR Team' || role === 'HR Manager' || role === 'HR Staff') return 'HR';
-  if (role === 'Event Assistant' || role === 'Event Manager' || role === 'Event Staff') return 'Event';
-  if (role === 'Admin' || role === 'Overseer') return 'Admin';
+function deriveDepartmentFromRole(roleId: string, roles: RoleEntry[]): UserEntry['department'] {
+  const role = roles.find(r => r.id === roleId);
+  if (!role) return 'None';
+  if (role.permissions.includes('manage_hr')) return 'HR';
+  if (role.permissions.includes('manage_events')) return 'Event';
+  if (role.permissions.includes('manage_roles') || role.name === 'Admin') return 'Admin';
   return 'None';
 }
 
@@ -99,10 +81,11 @@ export function AllMembersPage() {
   const { t, language } = useLanguage();
   const locale = language === 'tr' ? 'tr-TR' : 'en-US';
   const [users, setUsers] = useState<UserEntry[]>(getUsers());
+  const [roles, setRoles] = useState<RoleEntry[]>(getRoles());
   const [activeTab, setActiveTab] = useState<'members' | 'requests'>('members');
 
   const currentUser = getCurrentUser();
-  const isAdmin = currentUser?.role === 'Admin';
+  const isAdmin = currentUser ? hasPermission(currentUser, 'manage_users') || currentUser.role === 'Admin' || currentUser.role === 'role_admin' : false;
   const isSyncActive = isFirebaseConfigured();
 
   // Dialogs
@@ -110,7 +93,7 @@ export function AllMembersPage() {
   const [editingUser, setEditingUser] = useState<UserEntry | null>(null);
   const navigate = useNavigate();
   const [acceptingUser, setAcceptingUser] = useState<UserEntry | null>(null);
-  const [acceptRole, setAcceptRole] = useState<UserEntry['role']>('Driver');
+  const [acceptRole, setAcceptRole] = useState<string>('role_driver');
 
   // Filters
   const [search, setSearch] = useState('');
@@ -161,7 +144,7 @@ export function AllMembersPage() {
       discordId: newUser.discordId.trim() || undefined,
       steamId: newUser.steamId.trim() || undefined,
       role,
-      department: deriveDepartmentFromRole(role),
+      department: deriveDepartmentFromRole(role, roles),
       isActive: true,
       isPending: false,
       createdBy: currentUserInfo.displayName ?? 'Admin',
@@ -177,7 +160,7 @@ export function AllMembersPage() {
       discordId: editingUser.discordId,
       steamId: editingUser.steamId,
       role: editingUser.role,
-      department: deriveDepartmentFromRole(editingUser.role),
+      department: deriveDepartmentFromRole(editingUser.role, roles),
       isActive: editingUser.isActive,
     });
     setEditingUser(null);
@@ -191,7 +174,7 @@ export function AllMembersPage() {
     if (!acceptingUser) return;
     updateUser(acceptingUser.id, {
       role: acceptRole,
-      department: deriveDepartmentFromRole(acceptRole),
+      department: deriveDepartmentFromRole(acceptRole, roles),
       isActive: true,
       isPending: false,
     });
@@ -291,8 +274,8 @@ export function AllMembersPage() {
                     </SelectTrigger>
                     <SelectContent className="bg-card border-border">
                       <SelectItem value="all">{t('All Roles')}</SelectItem>
-                      {ALL_ROLES.map((r) => (
-                        <SelectItem key={r} value={r}>{r}</SelectItem>
+                      {roles.map((r) => (
+                        <SelectItem key={r.id} value={r.id}>{r.name}</SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
@@ -360,10 +343,7 @@ export function AllMembersPage() {
 
                               {/* Rank */}
                               <td className="px-4 py-3">
-                                <Badge className={`${ROLE_COLORS[u.role] ?? 'bg-muted text-muted-foreground'} text-xs border`}>
-                                  <ShieldIcon className="h-3 w-3 mr-1" />
-                                  {u.role}
-                                </Badge>
+                                <RoleBadge role={u.role} />
                               </td>
 
                               {/* Discord (clickable) */}
@@ -640,15 +620,15 @@ export function AllMembersPage() {
               <label className="text-sm font-medium text-foreground block mb-2">Rank</label>
               <Select
                 value={newUser.role}
-                onValueChange={(v: UserEntry['role']) => setNewUser((p) => ({ ...p, role: v }))}
+                onValueChange={(v: string) => setNewUser((p) => ({ ...p, role: v }))}
               >
                 <SelectTrigger id="add-role" className="bg-background border-border">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent className="bg-card border-border">
-                  {ALL_ROLES.map((r) => (
-                    <SelectItem key={r} value={r} className="text-foreground hover:bg-accent">
-                      {r}
+                  {roles.map((r) => (
+                    <SelectItem key={r.id} value={r.id} className="text-foreground hover:bg-accent">
+                      {r.name}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -719,9 +699,9 @@ export function AllMembersPage() {
                 <label className="text-sm font-medium text-foreground block mb-2">Rank</label>
                 <Select
                   value={editingUser.role}
-                  onValueChange={(v: UserEntry['role']) =>
+                  onValueChange={(v: string) =>
                     setEditingUser((p) =>
-                      p ? { ...p, role: v, department: deriveDepartmentFromRole(v) } : null
+                      p ? { ...p, role: v, department: deriveDepartmentFromRole(v, roles) } : null
                     )
                   }
                 >
@@ -729,9 +709,9 @@ export function AllMembersPage() {
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent className="bg-card border-border">
-                    {ALL_ROLES.map((r) => (
-                      <SelectItem key={r} value={r} className="text-foreground hover:bg-accent">
-                        {r}
+                    {roles.map((r) => (
+                      <SelectItem key={r.id} value={r.id} className="text-foreground hover:bg-accent">
+                        {r.name}
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -784,14 +764,14 @@ export function AllMembersPage() {
                 <label className="text-sm font-medium text-foreground block mb-2">
                   Assign Rank
                 </label>
-                <Select value={acceptRole} onValueChange={(v: UserEntry['role']) => setAcceptRole(v)}>
+                <Select value={acceptRole} onValueChange={(v: string) => setAcceptRole(v)}>
                   <SelectTrigger id="accept-role" className="bg-background border-border">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent className="bg-card border-border">
-                    {ALL_ROLES.map((r) => (
-                      <SelectItem key={r} value={r} className="text-foreground hover:bg-accent">
-                        {r}
+                    {roles.map((r) => (
+                      <SelectItem key={r.id} value={r.id} className="text-foreground hover:bg-accent">
+                        {r.name}
                       </SelectItem>
                     ))}
                   </SelectContent>

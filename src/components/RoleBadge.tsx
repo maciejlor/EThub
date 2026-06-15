@@ -1,38 +1,54 @@
 import { Shield } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { getRoles, type RoleEntry } from '@/lib/driver-storage';
 
 interface RoleBadgeProps {
-  role: string;
+  role: string | RoleEntry; // This is now a role ID or a role object
   className?: string;
 }
 
 export function RoleBadge({ role, className }: RoleBadgeProps) {
-  let colorClass = 'text-primary bg-primary/10 border-primary/20'; // default
+  if (!role) return null;
   
-  if (!role) {
-    return null;
-  }
+  const roles = getRoles();
+  let roleObj = typeof role === 'string' ? roles.find(r => r.id === role) : role;
+  if (!roleObj && typeof role === 'string') roleObj = roles.find(r => r.name === role);
   
-  const lowerRole = role.toLowerCase();
-  
-  if (lowerRole.includes('admin')) {
-    colorClass = 'text-red-500 bg-red-500/10 border-red-500/30';
-  } else if (lowerRole.includes('driver')) {
-    colorClass = 'text-emerald-500 bg-emerald-500/10 border-emerald-500/30';
-  } else if (lowerRole.includes('hr staff') || lowerRole.includes('hr manager')) {
-    colorClass = 'text-blue-500 bg-blue-500/10 border-blue-500/30';
-  } else if (lowerRole.includes('event staff') || lowerRole.includes('event manager')) {
-    colorClass = 'text-amber-500 bg-amber-500/10 border-amber-500/30';
-  }
+  const name = roleObj?.name || (typeof role === 'string' ? role : role.name) || 'Unknown';
+  const color = roleObj?.color || '#a1a1aa'; // default zinc-400
+  const gradientColor = roleObj?.gradientColor;
+  const iconUrl = roleObj?.iconUrl;
 
   return (
-    <div className={cn(
-      'inline-flex items-center gap-1 px-1.5 py-px rounded-full text-[9px] font-semibold border tracking-wider uppercase',
-      colorClass,
-      className
-    )}>
-      <Shield className="w-2.5 h-2.5" />
-      <span>{role}</span>
+    <div 
+      className={cn(
+        'inline-flex items-center gap-1 px-1.5 py-px rounded-full text-[10px] font-bold border tracking-wider uppercase shadow-sm',
+        className
+      )}
+      style={{
+        ...(gradientColor ? {
+          background: `linear-gradient(135deg, ${color}22, ${gradientColor}22)`,
+          borderColor: `${color}55`,
+        } : {
+          color: color,
+          backgroundColor: `${color}1A`,
+          borderColor: `${color}4D`
+        })
+      }}
+    >
+      {iconUrl ? (
+        <img src={iconUrl} alt={name} className="w-3 h-3 object-contain drop-shadow-md" />
+      ) : (
+        <Shield className="w-2.5 h-2.5" style={gradientColor ? { color } : undefined} />
+      )}
+      <span style={gradientColor ? {
+        backgroundImage: `linear-gradient(to right, ${color}, ${gradientColor})`,
+        WebkitBackgroundClip: 'text',
+        WebkitTextFillColor: 'transparent',
+        filter: 'drop-shadow(0px 1px 1px rgba(0,0,0,0.5))'
+      } : undefined}>
+        {name}
+      </span>
     </div>
   );
 }
