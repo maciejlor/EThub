@@ -37,9 +37,10 @@ import { RoleBadge } from '@/components/RoleBadge';
 function deriveDepartmentFromRole(roleId: string, roles: RoleEntry[]): UserEntry['department'] {
   const role = roles.find(r => r.id === roleId);
   if (!role) return 'None';
-  if (role.permissions.includes('manage_hr')) return 'HR';
-  if (role.permissions.includes('manage_events')) return 'Event';
-  if (role.permissions.includes('manage_roles') || role.name === 'Admin') return 'Admin';
+  const perms = role.permissions || [];
+  if (perms.includes('manage_hr')) return 'HR';
+  if (perms.includes('manage_events')) return 'Event';
+  if (perms.includes('manage_roles') || role.name === 'Admin') return 'Admin';
   return 'None';
 }
 
