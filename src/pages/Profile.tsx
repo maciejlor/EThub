@@ -166,8 +166,10 @@ export function ProfilePage() {
                     </div>
                   )}
                   <div className="text-white">
-                    <div className="text-3xl font-bold">{user.displayName}</div>
-                    <div className="text-sm opacity-90">@{user.username}</div>
+                    <div className="text-3xl font-bold">{user.displayName || user.discordUsername || user.steamUsername || 'Member'}</div>
+                    {(user.username || user.discordUsername) && (
+                      <div className="text-sm opacity-90">@{user.username || user.discordUsername}</div>
+                    )}
                     <div className="mt-2 text-sm">Member since: {formatDate(user.createdAt, locale)}</div>
                   </div>
                 </div>
