@@ -19,7 +19,7 @@ const MONTHS = [
 
 export function EventInvitesPage() {
   const [invites, setInvites] = useState<EventInviteEntry[]>(getEventInvites());
-  const [selectedYear, setSelectedYear] = useState(new Date().getFullYear().toString());
+  const [selectedYear, setSelectedYear] = useState(Math.max(2027, new Date().getFullYear()).toString());
   const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth());
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [newInvite, setNewInvite] = useState({
@@ -29,10 +29,13 @@ export function EventInvitesPage() {
     addedBy: 'Current User'
   });
 
-  // Generate years from current year - 3 to current year + 3
+  // Generate years starting from 2027
   const years = useMemo(() => {
+    const startYear = 2027;
     const currentYear = new Date().getFullYear();
-    return Array.from({ length: 7 }, (_, i) => (currentYear - 3 + i).toString());
+    const endYear = Math.max(startYear + 3, currentYear + 3);
+    const length = endYear - startYear + 1;
+    return Array.from({ length }, (_, i) => (startYear + i).toString());
   }, []);
 
   // Filter invites by selected year and month
