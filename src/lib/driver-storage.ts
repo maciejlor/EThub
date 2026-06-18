@@ -779,6 +779,12 @@ export function getHistory(): HistoryEntry[] {
   return safeParseHistory(localStorage.getItem(HISTORY_STORAGE_KEY));
 }
 
+export function clearHistory(): void {
+  if (typeof window === 'undefined') return;
+  localStorage.setItem(HISTORY_STORAGE_KEY, JSON.stringify([]));
+  dispatchHistoryChanged();
+}
+
 export async function sendDiscordDm(discordId: string, payload: { content?: string; components?: any[]; embeds?: any[] }) {
   if (typeof window === 'undefined') return;
   try {

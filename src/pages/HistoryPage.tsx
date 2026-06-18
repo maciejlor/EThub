@@ -8,8 +8,9 @@ import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
-import { HistoryIcon, FilterIcon, SearchIcon, UserIcon, CalendarIcon, ActivityIcon } from 'lucide-react';
-import { getHistory, subscribeHistoryChanges, type HistoryEntry } from '@/lib/driver-storage';
+import { HistoryIcon, FilterIcon, SearchIcon, UserIcon, CalendarIcon, ActivityIcon, TrashIcon } from 'lucide-react';
+import { getHistory, subscribeHistoryChanges, clearHistory, getCurrentUser, type HistoryEntry } from '@/lib/driver-storage';
+import { hasPermission } from '@/lib/auth';
 
 const ACTION_COLORS: Record<string, string> = {
   created: 'bg-green-500/20 text-green-700 dark:text-green-400 border-green-500/30',
@@ -122,6 +123,15 @@ export function HistoryPage() {
     );
   };
 
+  const currentUser = getCurrentUser();
+  const isAdmin = currentUser ? hasPermission(currentUser, 'manage_settings') || currentUser.role === 'Admin' || currentUser.role === 'role_admin' : false;
+
+  const handleClearLogs = () => {
+    if (!isAdmin) return;
+    if (confirm('Are you sure you want to permanently reset and delete all history audit logs? This cannot be undone.')) {
+      clearHistory();
+    }
+  };
   
   return (
     <SidebarProvider>
@@ -130,11 +140,21 @@ export function HistoryPage() {
         <Header />
         <main className='bg-background'>
           <Page>
-            <div className='flex flex-col gap-4 lg:flex-row lg:justify-between mb-8'>
+            <div className='flex flex-col gap-4 lg:flex-row lg:justify-between lg:items-center mb-8'>
               <div>
                 <h1 className='text-xl font-semibold lg:text-2xl text-foreground'>System History</h1>
                 <p className='text-sm text-muted-foreground'>Track all changes and activities across the system.</p>
               </div>
+              {isAdmin && (
+                <Button 
+                  variant='destructive' 
+                  onClick={handleClearLogs}
+                  className='bg-destructive text-destructive-foreground hover:bg-destructive/90 self-start lg:self-center'
+                >
+                  <TrashIcon className='mr-2 h-4 w-4' />
+                  Clear Logs
+                </Button>
+              )}
             </div>
 
             {/* Filters */}
