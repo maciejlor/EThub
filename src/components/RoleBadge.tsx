@@ -45,7 +45,8 @@ export function RoleBadge({ role, className }: RoleBadgeProps) {
         backgroundImage: `linear-gradient(to right, ${color}, ${gradientColor})`,
         WebkitBackgroundClip: 'text',
         WebkitTextFillColor: 'transparent',
-        filter: 'drop-shadow(0px 1px 1px rgba(0,0,0,0.5))'
+        backgroundClip: 'text',
+        color: color // Fallback if background-clip isn't supported
       } : undefined}>
         {name}
       </span>

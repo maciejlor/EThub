@@ -186,7 +186,15 @@ export function AllMembersPage() {
     const finalRoleName = roles.find(r => r.id === finalRole)?.name || finalRole;
 
     if (discordId && discordId !== '123456789') {
-      const dmContent = `## Eternal Dashboard \n\n> Greetings, <@${discordId}>! On behalf of the Human Resources Department, we are pleased to inform you that your request for dashboard access has been approved. <:ETAccept2:1498965544596930662> \n\n> <:EThr:1440120361479045211> **To access the dashboard**, please reconnect with Discord login. You will have assigned roles **${finalRoleName}**. If you have any questions, feel free to ask the **Human Resources Team** or the Developer Team for support.\n\nHave an awesome day! <:party:1441910585636950188>\n\n-----------------------\n\nhttps://i.vgy.me/TEaVfP.png`;
+      const dmEmbeds = [{
+        title: "Eternal Dashboard",
+        description: `Greetings, <@${discordId}>! On behalf of the Human Resources Department, we are pleased to inform you that your request for dashboard access has been approved. <:ETAccept2:1498965544596930662> \n\n<:EThr:1440120361479045211> **To access the dashboard**, please reconnect with Discord login. You will have assigned roles **${finalRoleName}**. If you have any questions, feel free to ask the **Human Resources Team** or the Developer Team for support.\n\nHave an awesome day! <:party:1441910585636950188>`,
+        color: 3066993, // Greenish
+        image: {
+          url: "https://i.vgy.me/TEaVfP.png"
+        }
+      }];
+      
       const dmComponents = [{
         type: 1,
         components: [{
@@ -196,7 +204,7 @@ export function AllMembersPage() {
           url: window.location.origin
         }]
       }];
-      await sendDiscordDm(discordId, dmContent, dmComponents);
+      await sendDiscordDm(discordId, { embeds: dmEmbeds, components: dmComponents });
     }
   };
 
@@ -206,7 +214,15 @@ export function AllMembersPage() {
       removeUser(id);
       
       if (declinedUser?.discordId && declinedUser.discordId !== '123456789') {
-        const dmContent = `## Eternal Dashboard\n\n> Greetings, <@${declinedUser.discordId}>! On behalf of the Human Resources Department, we regret to notify you that your request for **dashboard access has been denied**. <:ETrejected2:1498965662947606628> \n\nHave an awesome day! <:party:1441910585636950188>\n\n-----------------------\n\nhttps://i.vgy.me/TEaVfP.png`;
+        const dmEmbeds = [{
+          title: "Eternal Dashboard",
+          description: `Greetings, <@${declinedUser.discordId}>! On behalf of the Human Resources Department, we regret to notify you that your request for **dashboard access has been denied**. <:ETrejected2:1498965662947606628> \n\nHave an awesome day! <:party:1441910585636950188>`,
+          color: 15158332, // Reddish
+          image: {
+            url: "https://i.vgy.me/TEaVfP.png"
+          }
+        }];
+        
         const dmComponents = [{
           type: 1,
           components: [{
@@ -216,7 +232,7 @@ export function AllMembersPage() {
             url: window.location.origin
           }]
         }];
-        await sendDiscordDm(declinedUser.discordId, dmContent, dmComponents);
+        await sendDiscordDm(declinedUser.discordId, { embeds: dmEmbeds, components: dmComponents });
       }
     }
   };
