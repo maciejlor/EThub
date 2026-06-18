@@ -5,6 +5,7 @@ import { Header } from '@/components/Header';
 import { Page } from '@/components/Page';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { RoleBadge } from '@/components/RoleBadge';
 import { UserIcon, TruckIcon, MapPin, Package, Calendar, ChevronDown, ChevronLeft, ChevronRight } from 'lucide-react';
 import { getCurrentUser, getUsers, type UserEntry } from '@/lib/driver-storage';
 import { fetchTruckyCompanyJobsAll, isTruckyJobForUser, type TruckyJob } from '@/lib/trucky';
@@ -181,8 +182,10 @@ export function ProfileUserPage() {
                     </div>
                   )}
                   <div className="text-white">
-                    <div className="text-3xl font-bold">{user.displayName}</div>
-
+                    <div className="text-3xl font-bold">{user.displayName || user.discordUsername || user.steamUsername || 'Member'}</div>
+                    {(user.username || user.discordUsername) && (
+                      <div className="text-sm opacity-90">@{user.username || user.discordUsername}</div>
+                    )}
                     <div className="mt-2 text-sm">Member since: {formatDate(user.createdAt, locale)}</div>
                   </div>
                 </div>
@@ -190,13 +193,19 @@ export function ProfileUserPage() {
 
               <div className="p-6">
                 <div className="flex items-center gap-4">
-                  <Badge className="text-sm border">{user.role}</Badge>
+                  <RoleBadge role={user.role} />
 
                   <div className="ml-auto flex gap-2">
-                    <Button asChild>
-                      <a href={`https://truckersmp.com/players?search=${encodeURIComponent(user.displayName)}`} target="_blank" rel="noreferrer" className="h-9 px-3">TMP</a>
-                    </Button>
-                    <Button asChild>
+                    {user.discordId ? (
+                      <Button asChild className="bg-[#5865F2] hover:bg-[#4752C4] text-white">
+                        <a href={`https://discord.com/users/${user.discordId}`} target="_blank" rel="noreferrer" className="h-9 px-3">Discord</a>
+                      </Button>
+                    ) : (
+                      <Button asChild>
+                        <a href={`https://truckersmp.com/players?search=${encodeURIComponent(user.displayName)}`} target="_blank" rel="noreferrer" className="h-9 px-3">TMP</a>
+                      </Button>
+                    )}
+                    <Button asChild className="bg-[#171a21] hover:bg-[#2a475e] text-white border border-[#2a475e]">
                       <a href={user.steamId ? (user.steamId.startsWith('http') ? user.steamId : `https://steamcommunity.com/profiles/${user.steamId}`) : '#'} target="_blank" rel="noreferrer" className="h-9 px-3">Steam</a>
                     </Button>
                   </div>
