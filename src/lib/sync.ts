@@ -9,6 +9,7 @@ import { collection, doc, onSnapshot, writeBatch } from 'firebase/firestore';
 // Exact key names from storage modules — DO NOT include session/auth keys
 const SYNC_KEYS = new Set([
   'ethub_users_v1',
+  'ethub_roles_v2',
   'ethub_seeded_v1',
   'ethub_managed_drivers_v1',
   'ethub_left_drivers_v1',
@@ -23,6 +24,7 @@ const SYNC_KEYS = new Set([
 
 const KEY_TO_COLLECTION: Record<string, string> = {
   'ethub_users_v1': 'users',
+  'ethub_roles_v2': 'roles',
   'ethub_managed_drivers_v1': 'managed_drivers',
   'ethub_left_drivers_v1': 'left_drivers',
   'ethub_event_invites_v1': 'event_invites',

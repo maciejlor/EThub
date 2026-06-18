@@ -55,6 +55,7 @@ export function isFirebaseConfigured(): boolean {
 // ─── Collection Names ───────────────────────────────────────────────
 export const COLLECTIONS = {
   users: 'users',
+  roles: 'roles',
   managedDrivers: 'managed_drivers',
   leftDrivers: 'left_drivers',
   eventInvites: 'event_invites',
