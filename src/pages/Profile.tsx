@@ -5,6 +5,7 @@ import { Header } from '@/components/Header';
 import { Page } from '@/components/Page';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { RoleBadge } from '@/components/RoleBadge';
 import { UserIcon, TruckIcon, MapPin, Package, Calendar, ChevronDown, ChevronLeft, ChevronRight } from 'lucide-react';
 import { getCurrentUser, type UserEntry } from '@/lib/driver-storage';
 import { fetchTruckyCompanyJobsAll, isTruckyJobForUser, type TruckyJob } from '@/lib/trucky';
@@ -174,14 +175,22 @@ export function ProfilePage() {
 
               <div className="p-6">
                 <div className="flex items-center gap-4">
-                  <Badge className="text-sm border">{user.role}</Badge>
+                  <RoleBadge role={user.role} className="text-sm px-2 py-0.5" />
                   {user.rankTitle && <div className="text-sm text-muted-foreground">{user.rankTitle} {user.rankLevel ? `· Level ${user.rankLevel}` : ''}</div>}
                   <div className="ml-auto flex gap-2">
-                    <Button asChild>
-                      <a href={`https://truckersmp.com/players?search=${encodeURIComponent(user.displayName)}`} target="_blank" rel="noreferrer" className="h-9 px-3">TMP</a>
-                    </Button>
-                    <Button asChild>
-                      <a href={user.steamId ? (user.steamId.startsWith('http') ? user.steamId : `https://steamcommunity.com/profiles/${user.steamId}`) : '#'} target="_blank" rel="noreferrer" className="h-9 px-3">Steam</a>
+                    {user.discordId ? (
+                      <Button asChild className="h-9 px-3 bg-[#5865F2] hover:bg-[#4752C4] text-white">
+                        <a href={`https://discord.com/users/${user.discordId}`} target="_blank" rel="noreferrer">
+                          Discord
+                        </a>
+                      </Button>
+                    ) : (
+                      <Button asChild className="h-9 px-3" variant="secondary">
+                        <a href={`https://truckersmp.com/players?search=${encodeURIComponent(user.displayName)}`} target="_blank" rel="noreferrer">TMP</a>
+                      </Button>
+                    )}
+                    <Button asChild className="h-9 px-3 bg-[#171a21] hover:bg-[#2a475e] text-white">
+                      <a href={user.steamId ? (user.steamId.startsWith('http') ? user.steamId : `https://steamcommunity.com/profiles/${user.steamId}`) : '#'} target="_blank" rel="noreferrer">Steam</a>
                     </Button>
                   </div>
                 </div>
