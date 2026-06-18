@@ -67,10 +67,11 @@ export function RolesManagementPage() {
     if (!editingRole) return;
     setEditingRole(prev => {
       if (!prev) return prev;
-      const has = prev.permissions.includes(permId);
+      const currentPerms = prev.permissions || [];
+      const has = currentPerms.includes(permId);
       return {
         ...prev,
-        permissions: has ? prev.permissions.filter(p => p !== permId) : [...prev.permissions, permId]
+        permissions: has ? currentPerms.filter(p => p !== permId) : [...currentPerms, permId]
       };
     });
   };
@@ -193,7 +194,7 @@ export function RolesManagementPage() {
                         <label className="block text-sm font-medium text-white/80 mb-1">Permissions</label>
                         <div className="bg-black/30 border border-white/5 rounded-lg p-2 space-y-2 max-h-[300px] overflow-y-auto">
                           {ALL_PERMISSIONS.map(perm => {
-                            const isChecked = editingRole.permissions.includes(perm.id);
+                            const isChecked = (editingRole.permissions || []).includes(perm.id);
                             return (
                               <label key={perm.id} className="flex items-start gap-3 p-3 rounded-lg hover:bg-white/5 cursor-pointer transition-colors border border-transparent hover:border-white/5">
                                 <input
@@ -272,9 +273,9 @@ export function RolesManagementPage() {
                             </td>
                             
                             <td className="px-4 py-4 align-top">
-                              {role.permissions.length > 0 ? (
+                              {(role.permissions || []).length > 0 ? (
                                 <div className="flex flex-wrap gap-1.5">
-                                  {role.permissions.map(permId => {
+                                  {(role.permissions || []).map(permId => {
                                     const permDef = ALL_PERMISSIONS.find(p => p.id === permId);
                                     return (
                                       <div key={permId} className="flex items-center gap-1.5 px-2 py-0.5 rounded bg-muted text-xs text-muted-foreground border border-border/50">
