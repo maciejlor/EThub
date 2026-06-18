@@ -46,7 +46,7 @@ export function RoleBadge({ role, className }: RoleBadgeProps) {
         WebkitBackgroundClip: 'text',
         WebkitTextFillColor: 'transparent',
         backgroundClip: 'text',
-        color: color // Fallback if background-clip isn't supported
+        color: 'transparent'
       } : undefined}>
         {name}
       </span>
