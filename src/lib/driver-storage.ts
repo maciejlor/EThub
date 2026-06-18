@@ -731,17 +731,9 @@ const HISTORY_STORAGE_KEY = 'ethub_history_v1';
 /** Returns the display name of the currently logged-in user for audit log entries. */
 function getActorName(): string {
   try {
-    const raw = localStorage.getItem('ethub_current_user');
-    if (raw) {
-      const parsed = JSON.parse(raw) as { displayName?: string };
-      if (parsed.displayName) return parsed.displayName;
-    }
-    // Fallback: look up by local storage user id
-    const userId = localStorage.getItem('ethub_current_user_id');
-    if (userId) {
-      const users = safeParseUsers(localStorage.getItem(USERS_STORAGE_KEY));
-      const found = users.find(u => u.id === userId);
-      if (found?.displayName) return found.displayName;
+    const user = getCurrentUser();
+    if (user) {
+      return user.displayName || user.username || 'System';
     }
   } catch {
     // ignore

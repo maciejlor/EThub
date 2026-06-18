@@ -10,7 +10,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { CalendarIcon, PlusIcon, MailIcon } from 'lucide-react';
-import { getEventInvites, addEventInvite, updateEventInviteStatus, removeEventInvite, subscribeEventInviteChanges, type EventInviteEntry } from '@/lib/driver-storage';
+import { getEventInvites, addEventInvite, updateEventInviteStatus, removeEventInvite, subscribeEventInviteChanges, getCurrentUser, type EventInviteEntry } from '@/lib/driver-storage';
 
 const MONTHS = [
   'January', 'February', 'March', 'April', 'May', 'June',
@@ -27,7 +27,6 @@ export function EventInvitesPage() {
     year: Math.max(2027, new Date().getFullYear()).toString(),
     vtcName: '',
     status: 'pending' as 'pending' | 'accepted' | 'declined' | 'maybe',
-    addedBy: 'Current User'
   });
 
   // Generate years starting from 2027
@@ -87,13 +86,16 @@ export function EventInvitesPage() {
     const monthIndex = MONTHS.indexOf(newInvite.convoyName);
     const dateStr = `${newInvite.year}-${String(monthIndex + 1).padStart(2, '0')}-02`;
 
+    const currentUser = getCurrentUser();
+    const actorName = currentUser ? (currentUser.displayName || currentUser.username) : 'System';
+
     console.log('Adding invite with date:', dateStr);
     const result = addEventInvite({
       convoyName: newInvite.convoyName,
       vtcName: newInvite.vtcName,
       status: newInvite.status,
       inviteDate: dateStr,
-      addedBy: newInvite.addedBy
+      addedBy: actorName
     });
     
     console.log('Add result:', result);
@@ -102,8 +104,7 @@ export function EventInvitesPage() {
       convoyName: MONTHS[new Date().getMonth()],
       year: Math.max(2027, new Date().getFullYear()).toString(),
       vtcName: '',
-      status: 'pending',
-      addedBy: 'Current User'
+      status: 'pending'
     });
     setIsAddDialogOpen(false);
   };
