@@ -23,7 +23,8 @@ export function EventInvitesPage() {
   const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth());
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [newInvite, setNewInvite] = useState({
-    convoyName: '',
+    convoyName: MONTHS[new Date().getMonth()],
+    year: Math.max(2027, new Date().getFullYear()).toString(),
     vtcName: '',
     status: 'pending' as 'pending' | 'accepted' | 'declined' | 'maybe',
     addedBy: 'Current User'
@@ -40,20 +41,26 @@ export function EventInvitesPage() {
 
   // Filter invites by selected year and month
   const filteredInvites = useMemo(() => {
-    // Temporarily show all invites to debug
-    console.log('All invites (no filtering):', invites);
-    return invites;
-  }, [invites]);
+    return invites.filter(invite => {
+      if (!invite.inviteDate) return false;
+      const parts = invite.inviteDate.split('-');
+      if (parts.length < 2) return false;
+      const inviteYear = parts[0];
+      const inviteMonth = parseInt(parts[1], 10) - 1;
+      return inviteYear === selectedYear && inviteMonth === selectedMonth;
+    });
+  }, [invites, selectedYear, selectedMonth]);
 
   // Get count of invites per month for selected year
   const monthlyCounts = useMemo(() => {
     return MONTHS.map((_, monthIndex) => {
       return invites.filter(invite => {
-        // Count by convoyName (which now contains month name) or by inviteDate
-        const inviteDate = new Date(invite.inviteDate);
-        const inviteMonth = inviteDate.getMonth();
-        return inviteDate.getFullYear().toString() === selectedYear && 
-               inviteMonth === monthIndex;
+        if (!invite.inviteDate) return false;
+        const parts = invite.inviteDate.split('-');
+        if (parts.length < 2) return false;
+        const inviteYear = parts[0];
+        const inviteMonth = parseInt(parts[1], 10) - 1;
+        return inviteYear === selectedYear && inviteMonth === monthIndex;
       }).length;
     });
   }, [invites, selectedYear]);
@@ -77,19 +84,23 @@ export function EventInvitesPage() {
       return;
     }
 
-    console.log('Adding invite...');
+    const monthIndex = MONTHS.indexOf(newInvite.convoyName);
+    const dateStr = `${newInvite.year}-${String(monthIndex + 1).padStart(2, '0')}-02`;
+
+    console.log('Adding invite with date:', dateStr);
     const result = addEventInvite({
       convoyName: newInvite.convoyName,
       vtcName: newInvite.vtcName,
       status: newInvite.status,
-      inviteDate: new Date().toISOString().split('T')[0],
+      inviteDate: dateStr,
       addedBy: newInvite.addedBy
     });
     
     console.log('Add result:', result);
 
     setNewInvite({
-      convoyName: '',
+      convoyName: MONTHS[new Date().getMonth()],
+      year: Math.max(2027, new Date().getFullYear()).toString(),
       vtcName: '',
       status: 'pending',
       addedBy: 'Current User'
@@ -135,20 +146,37 @@ export function EventInvitesPage() {
                     <DialogTitle className='text-foreground'>Add New Event Invite</DialogTitle>
                   </DialogHeader>
                   <div className='space-y-4'>
-                    <div>
-                      <label htmlFor='convoyName' className='text-sm font-medium text-foreground block mb-2'>Month</label>
-                      <Select value={newInvite.convoyName} onValueChange={(value) => setNewInvite(prev => ({ ...prev, convoyName: value }))}>
-                        <SelectTrigger className='bg-background border-border'>
-                          <SelectValue placeholder='Select month' />
-                        </SelectTrigger>
-                        <SelectContent className='bg-card border-border'>
-                          {MONTHS.map(month => (
-                            <SelectItem key={month} value={month} className='text-foreground hover:bg-accent'>
-                              {month}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
+                    <div className='grid grid-cols-2 gap-4'>
+                      <div>
+                        <label htmlFor='convoyName' className='text-sm font-medium text-foreground block mb-2'>Month</label>
+                        <Select value={newInvite.convoyName} onValueChange={(value) => setNewInvite(prev => ({ ...prev, convoyName: value }))}>
+                          <SelectTrigger className='bg-background border-border'>
+                            <SelectValue placeholder='Select month' />
+                          </SelectTrigger>
+                          <SelectContent className='bg-card border-border'>
+                            {MONTHS.map(month => (
+                              <SelectItem key={month} value={month} className='text-foreground hover:bg-accent'>
+                                {month}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div>
+                        <label htmlFor='inviteYear' className='text-sm font-medium text-foreground block mb-2'>Year</label>
+                        <Select value={newInvite.year} onValueChange={(value) => setNewInvite(prev => ({ ...prev, year: value }))}>
+                          <SelectTrigger className='bg-background border-border'>
+                            <SelectValue placeholder='Select year' />
+                          </SelectTrigger>
+                          <SelectContent className='bg-card border-border'>
+                            {years.map(year => (
+                              <SelectItem key={year} value={year} className='text-foreground hover:bg-accent'>
+                                {year}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
                     </div>
                     <div>
                       <label htmlFor='vtcName' className='text-sm font-medium text-foreground block mb-2'>VTC Name</label>
