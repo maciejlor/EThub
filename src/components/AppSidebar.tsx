@@ -37,7 +37,7 @@ import {
   DropdownMenuSeparator,
 } from '@/components/ui/dropdown-menu';
 import { UserMenu } from '@/components/UserMenu';
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 
 /**
  * Hooks
@@ -64,6 +64,14 @@ import { useLanguage } from '@/components/LanguageProvider';
 export const AppSidebar = () => {
   const { state, isMobile } = useSidebar();
   const { t } = useLanguage();
+  const location = useLocation();
+
+  const isActiveRoute = (url: string) => {
+    if (url === '/') {
+      return location.pathname === '/';
+    }
+    return location.pathname === url || location.pathname.startsWith(url + '/');
+  };
   const [openGroups, setOpenGroups] = React.useState<Record<string, boolean>>({
     'Human Resources Department': true,
     'Event Department': true,
@@ -115,11 +123,15 @@ export const AppSidebar = () => {
                   const isCollapsed = state === 'collapsed' && !isMobile;
 
                   if (isCollapsed) {
+                    const isGroupActive = group.items.some((subItem) => isActiveRoute(subItem.url));
                     return (
                       <SidebarMenuItem>
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>
-                            <SidebarMenuButton tooltip={t((group as any).shortTitle || group.title)}>
+                            <SidebarMenuButton 
+                              tooltip={t((group as any).shortTitle || group.title)}
+                              isActive={isGroupActive}
+                            >
                               <GroupIcon />
                             </SidebarMenuButton>
                           </DropdownMenuTrigger>
@@ -179,6 +191,7 @@ export const AppSidebar = () => {
                                   asChild
                                   size='md'
                                   className='font-medium'
+                                  isActive={isActiveRoute(subItem.url)}
                                 >
                                   <Link to={subItem.url}>
                                     <Icon className='size-4' />
@@ -206,6 +219,7 @@ export const AppSidebar = () => {
                           tooltip={t(item.title)}
                           asChild
                           className='font-semibold text-sm'
+                          isActive={isActiveRoute(item.url)}
                         >
                           <Link to={item.url}>
                             <Icon />
@@ -236,6 +250,7 @@ export const AppSidebar = () => {
                   <SidebarMenuButton
                     tooltip={t(item.title)}
                     asChild
+                    isActive={isActiveRoute(item.url)}
                   >
                     <Link to={item.url}>
                       <item.Icon />

@@ -159,7 +159,6 @@ export function DashboardPage() {
               <DashboardCard
                 title={t('Job Statistics')}
                 description={t('Performance overview of distance and deliveries.')}
-                buttonText={t('View performance')}
                 className='h-[600px]'
               >
                 <div className='relative h-full'>
