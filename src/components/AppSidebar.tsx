@@ -90,23 +90,20 @@ export const AppSidebar = () => {
       collapsible='icon'
     >
       {/* Sidebar Header */}
-      <SidebarHeader>
-        <div className="flex flex-col gap-2 p-2">
-          <SidebarMenu>
-            <SidebarMenuItem className="group/menu-item relative px-0.5 max-lg:p-2">
-              <Link to="/" className="flex items-center gap-2">
-                <img 
-                  src="/ethub.png"
-                  alt="ET logo" 
-                  className={cn(
-                    "h-8 w-auto transition-all duration-300",
-                    state === 'collapsed' && !isMobile ? "h-6" : "h-7"
-                  )} 
-                />
-              </Link>
-            </SidebarMenuItem>
-          </SidebarMenu>
-        </div>
+      <SidebarHeader className={cn(
+        "flex items-center justify-center transition-all duration-300",
+        state === 'collapsed' && !isMobile ? "p-1 py-4" : "p-4"
+      )}>
+        <Link to="/" className="flex items-center justify-center w-full">
+          <img 
+            src="/ethub.png"
+            alt="ET logo" 
+            className={cn(
+              "transition-all duration-300 object-contain",
+              state === 'collapsed' && !isMobile ? "h-7 w-7" : "h-8 w-auto"
+            )} 
+          />
+        </Link>
       </SidebarHeader>
 
       {/* Sidebar Content */}
