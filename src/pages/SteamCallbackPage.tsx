@@ -30,8 +30,12 @@ export function SteamCallbackPage() {
       setMessage('Fetching Steam profile details...');
       const steamProfile = await getSteamPlayerSummary(steamId);
       
-      const steamUsername = steamProfile?.personaname || steamId;
-      const steamAvatar = steamProfile?.avatarfull || `https://avatars.akamai.steamstatic.com/fef49e7fa7e1997310d705b2a6158ff8dc1cdfeb_full.jpg`;
+      if (!steamProfile) {
+        throw new Error('Could not fetch Steam profile details. Ensure VITE_STEAM_WEB_API_KEY is set in your environment variables and /steam-api proxy is running.');
+      }
+      
+      const steamUsername = steamProfile.personaname;
+      const steamAvatar = steamProfile.avatarfull;
 
       // Update user settings with Steam info (store steam avatar separately)
       updateUserSettings(currentUser.id, {

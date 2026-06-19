@@ -272,11 +272,12 @@ export const AppSidebar = () => {
                   <div className='relative'>
                     <Avatar
                       src={APP_SIDEBAR.curProfile.src}
+                      name={APP_SIDEBAR.curProfile.name}
                       size='36px'
                       round='8px'
                     />
 
-                    <div className='absolute bottom-0 right-0 size-2 rounded-full bg-emerald-500 dark:bg-emerald-400 ring-sidebar ring-1'></div>
+                    <div className='absolute bottom-0 right-0 size-3 rounded-full bg-emerald-500 dark:bg-emerald-400 ring-2 ring-sidebar'></div>
                   </div>
 
                   <div>
