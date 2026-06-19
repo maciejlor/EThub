@@ -159,13 +159,13 @@
   scrollbar-color: var(--muted-foreground) transparent;
 }
 
-/* Premium Green Gradient for Active Navigation Items */
+/* Premium Purple Gradient for Active Navigation Items */
 [data-sidebar="menu-button"][data-active="true"],
 [data-sidebar="menu-sub-button"][data-active="true"] {
-  background: linear-gradient(90deg, #047857 0%, rgba(4, 120, 87, 0.1) 100%) !important;
+  background: linear-gradient(90deg, #7c3aed 0%, rgba(124, 58, 237, 0.1) 100%) !important;
   color: #ffffff !important;
   font-weight: 600 !important;
-  box-shadow: 0 4px 12px rgba(4, 120, 87, 0.08) !important;
+  box-shadow: 0 4px 12px rgba(124, 58, 237, 0.08) !important;
 }
 
 [data-sidebar="menu-button"][data-active="true"] svg,
@@ -176,13 +176,14 @@
 /* Dark Mode Gradient Override */
 .dark [data-sidebar="menu-button"][data-active="true"],
 .dark [data-sidebar="menu-sub-button"][data-active="true"] {
-  background: linear-gradient(90deg, #00c980 0%, rgba(0, 201, 128, 0.15) 100%) !important;
+  background: linear-gradient(90deg, #a855f7 0%, rgba(168, 85, 247, 0.15) 100%) !important;
   color: #ffffff !important;
-  box-shadow: 0 4px 12px rgba(0, 201, 128, 0.15) !important;
+  box-shadow: 0 4px 12px rgba(168, 85, 247, 0.15) !important;
 }
 
 .dark [data-sidebar="menu-button"][data-active="true"] svg,
 .dark [data-sidebar="menu-sub-button"][data-active="true"] svg {
   color: #ffffff !important;
 }
+
 
